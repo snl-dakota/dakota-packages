@@ -213,8 +213,11 @@ public:
       : ExceptionMngr(file, line)
    {}
 
-   ~ExceptionMngr_instance()
+   void handle_now()
    { handle_exception(ExceptionGenerator<TYPE>(), msg); }
+
+   ~ExceptionMngr_instance()
+   {}
 };
  
 
@@ -341,9 +344,15 @@ public:
 // defeat some compiler's in-lining rules, see: 
 // http://www.parashift.com/c++-faq-lite/misc-technical-issues.html#faq-39.5
 #else
+// The do while allows these multiple lines of code to have a containing scope,
+// while still allowing the macro to be called as a semicolon-terminated
+// statement
 #define EXCEPTION_MNGR(TYPE_, MSG_)                           \
-   utilib::exception_mngr::ExceptionMngr_instance<TYPE_>(__FILE__, __LINE__) \
-      << MSG_
+  do {                                                        \
+      utilib::exception_mngr::ExceptionMngr_instance<TYPE_> emi(__FILE__, __LINE__); \
+      emi << MSG_;                                            \
+      emi.handle_now();                                       \
+      } while(0)
 #endif
 
 /// A macro that performs a catch for all standard exception types

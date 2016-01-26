@@ -422,7 +422,7 @@ cb_onChange_int( const utilib::ReadOnly_Property &prop )
    bounds.resize(nvars, INT_MIN);
    _int_lower_bounds = bounds;
 
-   bounds = int_upper_bounds;
+   bounds = int_upper_bounds.expose<int_domain_t>();
    bounds.resize(nvars, INT_MAX);
    _int_upper_bounds = bounds;
 

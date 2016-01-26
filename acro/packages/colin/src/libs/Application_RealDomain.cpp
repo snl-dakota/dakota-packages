@@ -372,7 +372,7 @@ cb_onChange_nvars( const utilib::ReadOnly_Property &prop )
    bounds.resize(nvars, real::negative_infinity);
    _real_lower_bounds = bounds;
 
-   bounds = real_upper_bounds;
+   bounds = real_upper_bounds.expose<domain_t>();
    bounds.resize(nvars, real::positive_infinity);
    _real_upper_bounds = bounds;
 

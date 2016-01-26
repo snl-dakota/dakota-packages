@@ -20,8 +20,6 @@
 
 #include <utilib/_math.h>
 
-using namespace std;
-
 namespace colin
 {
 
@@ -66,8 +64,10 @@ void GradientDescent::reset_GradientDescent()
    bc_flag = problem->enforcing_domain_bounds;
    if (bc_flag)
    {
-      rlower = problem->real_lower_bounds;
-      rupper = problem->real_upper_bounds;
+      utilib::TypeManager()->
+	lexical_cast(problem->real_lower_bounds.get(), rlower);
+      utilib::TypeManager()->
+	lexical_cast(problem->real_upper_bounds.get(), rupper);
    }
 }
 
@@ -154,7 +154,7 @@ void GradientDescent::optimize()
            }
 	 }
       if (!success) {
-	stringstream tmp;
+	std::stringstream tmp;
          tmp << "Unsuccessful line search: FinalStep=" << step;
          solver_status.termination_info = tmp.str();
 

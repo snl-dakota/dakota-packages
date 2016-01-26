@@ -1085,10 +1085,10 @@ public:
   // Parameter-related methods
    
   ///
-  virtual void write_usage_info(char* progName,std::ostream& os) const;
+  virtual void write_usage_info(char const* progName,std::ostream& os) const;
 
   ///
-  virtual void writeCommandUsage(char* progName,std::ostream& os) const;
+  virtual void writeCommandUsage(char const* progName,std::ostream& os) const;
 
   ///
   utilib::ParameterList plist;
@@ -1116,7 +1116,7 @@ public:
         }
 
   /// Check parameters for setup problems and perform debugging I/O
-  virtual bool checkParameters(char* progName = "");
+  virtual bool checkParameters(char const* progName = "");
 
   /// Sets up the problem from command line arguments.  Should return
   /// true if the setup worked, and false if something went wrong.

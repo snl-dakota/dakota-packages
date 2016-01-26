@@ -1820,7 +1820,7 @@ void branching::valLogFathomPrint()
 }
 
 
-bool branching::checkParameters(char* progName)
+bool branching::checkParameters(char const* progName)
 {
   if (version_flag) {
     ucout << endl << branching::version_info << endl << endl;
@@ -1847,7 +1847,7 @@ bool branching::checkParameters(char* progName)
 }
 
 
-void branching::write_usage_info(char* progName,std::ostream& os) const
+void branching::write_usage_info(char const* progName,std::ostream& os) const
 {
   writeCommandUsage(progName,os);
   os << endl;
@@ -1856,7 +1856,7 @@ void branching::write_usage_info(char* progName,std::ostream& os) const
 }
 
 
-void branching::writeCommandUsage(char* progName,std::ostream& os) const
+void branching::writeCommandUsage(char const* progName,std::ostream& os) const
 {
   os << "\nUsage: " << progName 
      << " { --parameter=value ... }";

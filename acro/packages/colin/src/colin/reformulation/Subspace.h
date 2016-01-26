@@ -25,6 +25,7 @@
 #include <colin/TinyXML.h>
 
 #include <utilib/MixedIntVars.h>
+#include <utilib/TypeManager.h>
 
 #include <boost/bimap.hpp>
 
@@ -206,8 +207,10 @@ struct SubspaceApplication_helper::Domain<ProblemTrait(reals)>
          
          num_r = p->num_real_vars;
          r_lbl = p->real_labels;
-         r_lower = p->real_lower_bounds;
-         r_upper = p->real_upper_bounds;
+	 utilib::TypeManager()->
+	   lexical_cast(p->real_lower_bounds.get(), r_lower);
+	 utilib::TypeManager()->
+	   lexical_cast(p->real_upper_bounds.get(), r_upper);
          r_lower_type = p->real_lower_bound_types;
          r_upper_type = p->real_upper_bound_types;
       }
@@ -218,8 +221,10 @@ struct SubspaceApplication_helper::Domain<ProblemTrait(reals)>
             <Problem<typename ProblemT::remote_mi_app_t> >();
          num_r = p->num_real_vars;
          r_lbl = p->real_labels;
-         r_lower = p->real_lower_bounds;
-         r_upper = p->real_upper_bounds;
+         utilib::TypeManager()->
+	   lexical_cast(p->real_lower_bounds.get(), r_lower);
+	 utilib::TypeManager()->
+	   lexical_cast(p->real_upper_bounds.get(), r_upper);
          r_lower_type = p->real_lower_bound_types;
          r_upper_type = p->real_upper_bound_types;
       }
@@ -282,8 +287,10 @@ struct SubspaceApplication_helper::Domain<ProblemTrait(integers)>
             <Problem<typename ProblemT::remote_mi_app_t> >();
          num_i = p->num_int_vars;
          i_lbl = p->int_labels;
-         i_lower = p->int_lower_bounds;
-         i_upper = p->int_upper_bounds;
+         utilib::TypeManager()->
+	   lexical_cast(p->int_lower_bounds.get(), i_lower);
+	 utilib::TypeManager()->
+	   lexical_cast(p->int_upper_bounds.get(), i_upper);
          i_lower_type = p->int_lower_bound_types;
          i_upper_type = p->int_upper_bound_types;
       }

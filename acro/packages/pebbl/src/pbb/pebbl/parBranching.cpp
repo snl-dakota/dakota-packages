@@ -744,6 +744,8 @@ double parallelBranching::parallelSearchFramework(parSPHandler* handler_)
 {
   DEBUGPR(300,ucout << "parallelSearchFramework invoked\n");
 
+  DEBUGPR(10,ucout << "Hub buffer size is " << hub->sizeOfBuffer() << endl);
+
   baseWallTime = WallClockSeconds();
 
   // Validation log file used to be opened here because preprocess

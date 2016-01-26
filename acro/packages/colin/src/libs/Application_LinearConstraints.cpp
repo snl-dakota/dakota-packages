@@ -358,7 +358,7 @@ cb_onChange_num( const utilib::ReadOnly_Property &prop )
    bounds.resize(num, real::negative_infinity);
    _linear_constraint_lower_bounds = bounds;
 
-   bounds = linear_constraint_upper_bounds;
+   bounds = linear_constraint_upper_bounds.expose<bound_t>();
    bounds.resize(num, real::positive_infinity);
    _linear_constraint_upper_bounds = bounds;
 

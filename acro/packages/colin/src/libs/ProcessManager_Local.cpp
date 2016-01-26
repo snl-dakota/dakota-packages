@@ -41,7 +41,7 @@ private:
 
       BufferedCommand(const std::string& cmd, TiXmlElement* params_)
          : command(cmd),
-           has_params(params != NULL)
+           has_params(params_ != NULL)
       {
          if ( has_params )
             params << (*params_);

@@ -273,7 +273,7 @@
                        
              ss << outputMainEffects (indexInput, numInputs, indexOutput, 
                     numOutputs, factor);          
-	     std::cout << ss << std::endl;
+	     std::cout << ss.str() << std::endl;
 
 
         }//for indexOutput

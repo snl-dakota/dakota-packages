@@ -587,6 +587,10 @@ void parallelBranching::workerCommunicateWithHub(bool rebalanceFlag)
 
   WORKERDEBUG(110,lastWorkerReport.dump(ucout,"sent to hub"));
 
+  WORKERDEBUG(10,ucout << "Worker about to send buffer of size " 
+              << workerOutBuffer->size() << ", limit is "
+              << hub->sizeOfBuffer() << endl);
+
 #ifdef ACRO_VALIDATING
   if (workerOutBuffer->size() > hub->sizeOfBuffer())
     EXCEPTION_MNGR(runtime_error,"Tried to send the hub a buffer of "

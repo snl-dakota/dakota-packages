@@ -264,8 +264,10 @@ ibest = 0;
 minsize3 = sqrt((double)dimen)/ratio/3.0;
    	
 if ( problem->enforcing_domain_bounds ) {
-   x_lower = problem->real_lower_bounds;
-   x_upper = problem->real_upper_bounds;
+  utilib::TypeManager()->
+    lexical_cast(problem->real_lower_bounds.get(), x_lower);
+  utilib::TypeManager()->
+    lexical_cast(problem->real_upper_bounds.get(), x_upper);
    range.resize(dimen);
    for (unsigned int i=0; i<dimen; i++)
      range[i] = x_upper[i]-x_lower[i];

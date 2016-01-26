@@ -18,8 +18,6 @@
 #include <colin/Application.h>
 #include <colin/SolverMngr.h>
 
-using namespace std;
-
 namespace colin
 {
 
@@ -67,10 +65,14 @@ void SimpleMILocalSearch::reset_SimpleMILocalSearch()
    bc_flag = problem->enforcing_domain_bounds;
    if (bc_flag)
    {
-      rlower = problem->real_lower_bounds;
-      rupper = problem->real_upper_bounds;
-      ilower = problem->int_lower_bounds;
-      iupper = problem->int_upper_bounds;
+     utilib::TypeManager()->
+       lexical_cast(problem->real_lower_bounds.get(), rlower);
+     utilib::TypeManager()->
+       lexical_cast(problem->real_upper_bounds.get(), rupper);
+     utilib::TypeManager()->
+       lexical_cast(problem->int_lower_bounds.get(), ilower);
+     utilib::TypeManager()->
+       lexical_cast(problem->int_upper_bounds.get(), iupper);
    }
    step_length = init_step_length;
 }

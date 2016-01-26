@@ -28,8 +28,8 @@ find_package(GSL REQUIRED) # Version 1.15 or newer?
 
 # Fake out includes with empty file
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/queso)
-execute_process(COMMAND "${CMAKE_COMMAND}" -E touch 
-  ${CMAKE_CURRENT_BINARY_DIR}/include/queso/config_queso.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config_queso.h.cmake.in 
+  ${CMAKE_CURRENT_BINARY_DIR}/include/queso/config_queso.h COPYONLY)
 
 # Set the defines we think are used from config_queso.h
 #add_definitions("-DQUESO_HAVE_BOOST")...
@@ -75,10 +75,7 @@ foreach(queso_subdir basic core misc stats gp surrogates)
   # Likely can eliminate...
   file(GLOB headers ${CMAKE_CURRENT_SOURCE_DIR}/src/${queso_subdir}/inc/*.h)
   foreach(h ${headers})
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E copy 
-      ${h} ${CMAKE_CURRENT_BINARY_DIR}/include/queso/
-      )
+    configure_file(${h} ${CMAKE_CURRENT_BINARY_DIR}/include/queso/ COPYONLY)
   endforeach()
 
   file(GLOB dir_sources RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} 

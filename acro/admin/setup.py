@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 import signal
+import glob
 
 admin_dir = os.path.dirname(os.path.abspath(__file__))
 packages=[('admin','acro-admin'), ('tpl','cxxtest','python'), ('packages','*','python')]
@@ -26,29 +27,20 @@ def run():
     trunk = (len(sys.argv) > 1 and '--trunk' in sys.argv)
     if trunk:
         sys.argv.remove('--trunk')
-    if '--site-packages' in sys.argv:
-        sys.stdout.write("Installing with Python site packages\n")
-        sys.argv.remove('--site-packages')
-        site_packages=['--site-packages']
-    else:
-        site_packages=[]
     rc=0
     if not os.path.exists('python'):
         cmd = [ sys.executable,
-            os.path.join('tpl','vpykit','bin','install_python'),
-            '--logfile',os.path.join('tpl','python.log'),
-            '-c', os.path.join(admin_dir,'vpy','dev.ini') ]
+            os.path.join('bin','pyomo_install'),
+            #'--logfile',os.path.join('tpl','python.log'),
+            '--config', os.path.join(admin_dir,'vpy','dev.ini'), '--venv', 'python' ]
         if trunk:
             sys.stdout.write("Installing Python from trunk\n")
             cmd.append('--trunk')
         else:
             sys.stdout.write("Installing Python from cached packages\n")
-            cmd.extend(['-z', os.path.join(admin_dir,'vpy','python.zip')])
-        cmd.extend(site_packages)
-        for package in packages:
-            cmd.extend(['-p', os.path.join('%s', *package)])
+            cmd.extend(['--zip', os.path.join(admin_dir,'vpy','python.zip')])
 
-        #print cmd
+        print cmd
         sys.stdout.flush()
         rc = subprocess.call(cmd)
     if rc != 0:
@@ -56,6 +48,14 @@ def run():
     rc = subprocess.call([os.path.join('.','bootstrap','bootstrap'), 'all'])
     if rc != 0:
         sys.exit(rc)
+    dir_ = os.getcwd()
+    abs_python = os.path.abspath( os.path.join('.', 'python', 'bin', 'python') )
+    for package in packages:
+        tmp_ = package
+        for pkg in glob.glob( os.path.join(*tmp_) ):
+            os.chdir(pkg)
+            rc = subprocess.call([ abs_python, 'setup.py', 'develop'])
+    os.chdir(dir_)
     if len(sys.argv) > 1:
         rc = subprocess.call([
                 os.path.join('.','python','bin','python'), 

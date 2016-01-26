@@ -163,7 +163,7 @@ void generate_stack_trace(std::ostringstream &os)
 
 
 /** Process an exception based on the exception manager mode. */
-void handle_exception( const ExceptionGenerator_base &exception, 
+void handle_exception( const ExceptionGenerator_base &egen, 
                        std::ostringstream& msg )
 {
 #ifdef UTILIB_HAVE_MPI
@@ -182,7 +182,7 @@ if ( stack_trace() )
    generate_stack_trace(msg);
 
 switch ( utilib::exception_mngr::mode() ) {
-  case Standard:
+  case utilib::exception_mngr::Standard:
         utilib::exception_mngr::exit_function();
 	//
 	// Note: if we simply throw msg.str().c_str(), then
@@ -195,9 +195,9 @@ switch ( utilib::exception_mngr::mode() ) {
         msg << std::endl;
         exception_message_buffer.resize
            (exception_message_buffer.size() - msg.str().size());
-        exception.throw_it( exception_message_buffer );
+        egen.throw_it( exception_message_buffer );
 
-  case Abort:
+  case utilib::exception_mngr::Abort:
         #ifdef UTILIB_HAVE_MPI
 	/*
         if (mpiActive)
@@ -210,7 +210,7 @@ switch ( utilib::exception_mngr::mode() ) {
         std::abort();
         break;
 
-  case Exit:
+  case utilib::exception_mngr::Exit:
         #ifdef UTILIB_HAVE_MPI
         if (mpiActive)
            MPI_Abort(MPI_COMM_WORLD,1);

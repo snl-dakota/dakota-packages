@@ -1,6 +1,6 @@
-3po     -r2761 https://software.sandia.gov/svn/public/tpl/3po/tags/1.0
-ampl    -r2761 https://software.sandia.gov/svn/public/tpl/ampl/trunk
+3po     -r2768 https://software.sandia.gov/svn/public/tpl/3po/tags/1.0
+ampl    -r2768 https://software.sandia.gov/svn/public/tpl/ampl/trunk
 cxxtest -r358 https://software.sandia.gov/svn/public/cxxtest/trunk
-momhlib -r2761 https://software.sandia.gov/svn/public/tpl/momhlib/tags/1.10b
-tinyxml -r2761 https://software.sandia.gov/svn/public/tpl/tinyxml/tags/2.5.2
-vpykit  -r2943 https://software.sandia.gov/svn/public/fast/vpykit/trunk
+momhlib -r2768 https://software.sandia.gov/svn/public/tpl/momhlib/tags/1.10b
+tinyxml -r2768 https://software.sandia.gov/svn/public/tpl/tinyxml/tags/2.5.2
+vpykit  -r2945 https://software.sandia.gov/svn/public/fast/vpykit/trunk
