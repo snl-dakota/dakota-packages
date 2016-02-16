@@ -34,6 +34,7 @@ setup(name='acro-admin',
             'Topic :: Software Development :: Libraries :: Python Modules'
         ],
       packages=['acro-admin'],
+      install_requires=['nose'],
       keywords=['utility'],
       scripts=scripts
       )

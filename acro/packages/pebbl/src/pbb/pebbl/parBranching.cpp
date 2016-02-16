@@ -1090,14 +1090,32 @@ bool parallelBranching::setup(int& argc, char**& argv)
   // The others just initialize timers and set up parameters.
 
   if (uMPI::iDoIO)
-    flag = (int)branching::setup(argc,argv);
+    {
+      try
+        {
+          flag = (int)branching::setup(argc,argv);
+        }
+      catch (const std::runtime_error& err) 
+        { 
+          std::cerr << "ERROR! Caught 'runtime_error' exception: " 
+                    << err.what() << std::endl << std::flush; 
+          flag = false;   // Probably don't need this, but just to be sure
+        }
+
+    }
   else
     {
       startTime = CPUSeconds();
       startWall = WallClockSeconds();
       // Don't check for errors here; the I/O processor will do that.
-      processParameters(argc,argv,min_num_required_args);
-      set_parameters(plist,false);
+      try
+        {
+          processParameters(argc,argv,min_num_required_args);
+          set_parameters(plist,false);
+        }
+      // If the above throws an error, do nothing, because presumably the
+      // I/O processor is already printing an error message.
+      catch (const std::runtime_error& err) { }
     }
 
   if (stallForDebug) 
@@ -1127,7 +1145,7 @@ bool parallelBranching::setup(int& argc, char**& argv)
   if (flag)
     broadcastProblem();
 
-  return (bool)flag;
+  return (bool) flag;
 }
 
 
@@ -1393,11 +1411,12 @@ void parallelBranching::rampUpSearch()
   rampUpBounds = subCount[bounded];
 
   if (uMPI::rank > 0)
-    {
-      probCounter = 0;
-      for(int i=0; i<numStates; i++)
-	subCount[i] = 0;
-    }
+    probCounter = 0;
+ 
+  if (!veryFirstWorker())
+    for(int i=0; i<numStates; i++)
+      subCount[i] = 0;
+
   DEBUGPR(10,ucout << "bounded=" << subCount[bounded] << endl);
 
   // Set initial loads correctly, and possibly dump them.
@@ -1408,10 +1427,10 @@ void parallelBranching::rampUpSearch()
   globalLoad.update();
   globalLoad.senseBusy();
   adjustReposStats(globalLoad);
-  DEBUGPR(20,clusterLoad.dump(ucout,"clusterLoad"));
-  DEBUGPR(20,globalLoad.dump(ucout,"globalLoad"));
   globalLoad.boundedSPs = rampUpBounds;
   clusterLoad.boundedSPs = rampUpBounds;
+  DEBUGPR(20,clusterLoad.dump(ucout,"clusterLoad"));
+  DEBUGPR(20,globalLoad.dump(ucout,"globalLoad"));
 
   if (iAmHub())
     {

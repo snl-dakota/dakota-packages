@@ -129,20 +129,8 @@ python.log: ../admin/vpy/python.zip
 	touch python.log
 
 python-zip: python.log
-	@if test -d ../python; then : ;\
-	else\
-	   PYTHON_PACKAGES=;\
-	   for x in $(top_srcdir)/packages/*/python; do \
-	      PYTHON_PACKAGES="$$PYTHON_PACKAGES -p %s/$$x"; \
-	   done;\
-	   $(top_srcdir)/tpl/vpykit/bin/install_python \
-		--src $(top_srcdir) --build $(abs_top_builddir) \
-		--logfile $(abs_top_builddir)/tpl/python.log \
-		-c $(top_srcdir)/admin/vpy/dev.ini \
-		-z $(top_srcdir)/admin/vpy/python.zip \
-		-p %s/admin/acro-admin \
-		-p %s/tpl/cxxtest/python \
-		$$PYTHON_PACKAGES ;\
+	@if test ! -d ../python; then \
+	   cd $(abs_top_builddir) && $(abs_top_srcdir)/setup; \
 	fi
 
 python: python-zip

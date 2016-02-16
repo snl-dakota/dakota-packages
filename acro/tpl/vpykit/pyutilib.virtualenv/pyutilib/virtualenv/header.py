@@ -15,12 +15,15 @@ import subprocess
 import re
 try:
     import urllib2
+    from urllib import pathname2url
 except ImportError:
     import urllib.request as urllib2
+    from urllib.request import pathname2url
 try:
     import StringIO
 except ImportError:
     import io as StringIO
+import string
 import zipfile
 import shutil
 import string
@@ -117,7 +120,20 @@ def parse_version(s):
 #   9.3.2
 #   8.28.rc1
 #
-def guess_release(svndir):
+def guess_release(versions):
+    latest = None
+    latest_str = None
+    for version in versions:
+        if version == '.':
+            continue
+        v = parse_version(version)
+        if latest is None or latest < v:
+            latest = v
+            latest_str = version
+    return latest_str
+
+
+def guess_svn_release(svndir):
     if using_subversion and not sys.platform.startswith('win'):
         output = subprocess.Popen(['svn','ls',svndir], stdout=subprocess.PIPE).communicate()[0]
         if sys.version_info[:2] >= (3,0):
@@ -147,15 +163,7 @@ def guess_release(svndir):
         versions = []
         for link in links:
             versions.append( re.split('>', link[:-5])[-1] )
-    latest = None
-    latest_str = None
-    for version in versions:
-        if version == '.':
-            continue
-        v = parse_version(version)
-        if latest is None or latest < v:
-            latest = v
-            latest_str = version
+    latest_str = guess_release(versions)
     if latest_str is None:
         return None
     if not latest_str[0] in '0123456789':
@@ -235,7 +243,7 @@ class Repository(object):
 
     def __init__(self, name, **kwds):
         class _TEMP_(object):
-            def __init__( self, root=None, trunk=None, github=None,
+            def __init__( self, root=None, trunk=None, 
                           release=None, tag=None, pyname=None, pypi=None, 
                           dev=False, username=None, install=True, rev=None, 
                           local=None, platform=None, version=None, 
@@ -338,7 +346,6 @@ class Repository(object):
         self.tag = None
         self.release_root = None
         #
-        self.github = config.github
         self.pypi = config.pypi
         self.local = config.local
         self.platform = config.platform
@@ -369,7 +376,10 @@ class Repository(object):
         self.install = config.install
 
     def guess_versions(self):
-        if not self.config.root is None:
+        if self.config.root is not None and '.git' in self.config.root:
+            self.trunk = self.config.root
+            self.release = 'release'
+        elif self.config.root is not None:
             if not self.offline:
                 if using_subversion and not sys.platform.startswith('win'):
                     rootdir_output = subprocess.Popen(['svn','ls',self.config.root], stdout=subprocess.PIPE).communicate()[0]
@@ -391,19 +401,21 @@ class Repository(object):
             try:
                 if self.offline or not 'releases' in rootdir_output:
                     raise IOError
-                self.release = guess_release(self.config.root+'/releases')
+                self.release = guess_svn_release(self.config.root+'/releases')
                 self.tag = None
                 self.release_root = self.release
             except (urllib2.HTTPError,IOError):
                 try:
                     if self.offline or not 'tags' in rootdir_output:
                         raise IOError
-                    self.release = guess_release(self.config.root+'/tags')
+                    self.release = guess_svn_release(self.config.root+'/tags')
                     self.tag = self.release
                     self.release_root = self.release
                 except (urllib2.HTTPError,IOError):
                     self.release = None
                     self.release_root = None
+        else:
+            self.trunk = self.config.root
         if not self.config.trunk is None:
             if self.trunk is None:
                 self.trunk = self.config.trunk
@@ -427,8 +439,6 @@ class Repository(object):
         print('[%s]' % config.name)
         if not config.root is None:
             print('root=%s' % config.root)
-        if not config.github is None:
-            print('github=%s' % config.github)
         if not config.trunk is None:
             print('trunk=%s' % config.trunk)
         if not config.tag is None:
@@ -510,21 +520,36 @@ class Repository(object):
         print("-----------------------------------------------------------------")
         print("  Installing branch")
         print("  Checking out source for package "+self.name)
+        #print("  %s %s" % (str(using_git), str(self.root)))
         if self.local:
             print("     Package dir: "+self.local)
+        elif using_git and not self.root is None and '.git' in self.root:
+            if '%23' in self.root:
+                self.root, self.branch = self.root.split('%23')
+            elif '#' in self.root:
+                self.root, self.branch = self.root.split('#')
+            else:
+                self.branch = None
+            print("     Git dir: %s%s" %
+                  ( self.root,
+                    ' (branch: %s)' % self.branch if self.branch else '' ) )
         else:
             print("     Subversion dir: "+self.pkgdir)
         if os.path.exists(dir):
             print("     No checkout required")
             print("-----------------------------------------------------------------")
-        elif using_git and not self.github is None:
+        elif using_git and not self.root is None and '.git' in self.root:
             print("-----------------------------------------------------------------")
             try:
-                self.run([self.git, 'clone', self.github, dir])
+                if self.branch is None:
+                    branch = []
+                else:
+                    branch= ['-b', self.branch]
+                self.run([self.git, 'clone'] + branch + [self.root, dir])
             except OSError:
                 err,tb = sys.exc_info()[1:3] # BUG?
                 print("")
-                print("Error checkout software %s with git at %s" % (self.name,self.github))
+                print("Error checkout software %s with git at %s" % (self.name,self.root))
                 print(str(err))
                 print("Traceback:")
                 import traceback
@@ -535,6 +560,19 @@ class Repository(object):
                     sys.exit(1)
                 print("Not aborting installer...")
                 return
+            if self.pkgdir == 'release':
+                _cwd = os.getcwd()
+                try:
+                    os.chdir(dir)
+                    versions = subprocess.Popen(
+                        [self.git, 'tag'], stdout=subprocess.PIPE
+                        ).communicate()[0].split()
+                    latest_version = guess_release(versions)
+                    print("Git switching %s to tag: %s" %
+                          ( self.name, latest_version ))
+                    self.run([ self.git, 'checkout', 'tags/'+latest_version ])
+                finally:
+                    os.chdir(_cwd)
         elif not using_subversion:
             print("")
             print("Error: Cannot checkout software %s with subversion." % self.name)
@@ -829,26 +867,33 @@ class Installer(object):
             dest='use_pythonpath',
             default=False)
 
-        # Historically, virtualenv used --no-site-packages, but
-        # recently, they moved to --system-site-packages /
-        # --no-site-packages.  Either way, they support the
-        # "--no-site-packages" option.  For portability, we will query
-        # that argument and set the default to the logical negation.
-        if not parser.has_option('--no-site-packages'):
-            raise RuntimeError(
-                "Internal VirtualEnv error: cannot determine the name of "
-                "the --no-site-packages option.  "
-                "Please report this to the PyUtilib Developers.")
-        site_packages_opt = parser.get_option('--no-site-packages')
-        if site_packages_opt.action == 'store_true':
-            parser.set_defaults(**dict([tuple([site_packages_opt.dest,False])]))
-        elif site_packages_opt.action == 'store_false':
-            parser.set_defaults(**dict([tuple([site_packages_opt.dest,True])]))
-        else:
-            raise RuntimeError(
-                "Internal VirtualEnv error: cannot determine the store "
-                "function for the --no-site-packages option.  "
-                "Please report this to the PyUtilib Developers.")
+        if False:
+            # WEH: Disabling the --no-site-packages logic.  This was useful
+            # when pyutilib.virtualenv was being used by many Pyomo users.
+            # But now, the only direct users are developers.
+            # The virtualenv --system-site-packages option is sufficient for 
+            # the vpy_install script.
+            
+            # Historically, virtualenv used --no-site-packages, but
+            # recently, they moved to --system-site-packages /
+            # --no-site-packages.  Either way, they support the
+            # "--no-site-packages" option.  For portability, we will query
+            # that argument and set the default to the logical negation.
+            if not parser.has_option('--no-site-packages'):
+                raise RuntimeError(
+                    "Internal VirtualEnv error: cannot determine the name of "
+                    "the --no-site-packages option.  "
+                    "Please report this to the PyUtilib Developers.")
+            site_packages_opt = parser.get_option('--no-site-packages')
+            if site_packages_opt.action == 'store_true':
+                parser.set_defaults(**dict([tuple([site_packages_opt.dest,False])]))
+            elif site_packages_opt.action == 'store_false':
+                parser.set_defaults(**dict([tuple([site_packages_opt.dest,True])]))
+            else:
+                raise RuntimeError(
+                    "Internal VirtualEnv error: cannot determine the store "
+                    "function for the --no-site-packages option.  "
+                    "Please report this to the PyUtilib Developers.")
 
         parser.add_option(
             '-a', '--add-package',
@@ -879,12 +924,6 @@ class Installer(object):
             help='Force localization of DOS scripts on Linux platforms',
             action='store_true',
             dest='localize',
-            default=False)
-
-        parser.add_option('--git',
-            help='Checkout with git if the github URL is provided',
-            action='store_true',
-            dest='using_git',
             default=False)
 
         parser.add_option('--pypi-url',
@@ -961,8 +1000,6 @@ class Installer(object):
         # Determine if the git command is available
         #
         global using_git
-        if not options.using_git:
-            using_git = False
         if using_git:
             try:
                 sys.stdout.flush()
@@ -1354,8 +1391,8 @@ class Installer(object):
         if not fp is None:
             parser.readfp(fp, '<default configuration>')
         elif not os.path.exists(file):
-            if not '/' in file and not self.config_file is None:
-                file = os.path.dirname(self.config_file)+"/"+file
+            if os.path.sep not in file and self.config_file is not None:
+                file = 'file:'+pathname2url(os.path.join(os.path.dirname(self.config_file),file))
             try:
                 if sys.version_info[:2] <= (2,5):
                     output = urllib2.urlopen(file).read()

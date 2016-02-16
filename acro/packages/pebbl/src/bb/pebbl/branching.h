@@ -1606,9 +1606,11 @@ void branchPool<SUB,LOAD>::clear()
 template <class B> bool runSerial(int argc,char** argv)
 {
   B instance;
+  utilib::exception_mngr::set_stack_trace(false);
   bool flag = instance.setup(argc,argv);
   if (flag)
     {
+      utilib::exception_mngr::set_stack_trace(true); 
       instance.reset();
       instance.solve();
     }

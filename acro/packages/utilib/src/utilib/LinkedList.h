@@ -210,6 +210,9 @@ public:
 
   ///
   typedef __LinkedList_iterator<_Tp,_Ref,_Ptr,_Node,_NodeOpClass> iterator;
+
+  ///
+  typedef __LinkedList_iterator<_Tp,const _Ref,const _Ptr,_Node,_NodeOpClass> const_iterator;
   #endif
 
   /// Constructor
@@ -219,6 +222,10 @@ public:
   /// Constructor
   __LinkedList_iterator(_Node* __x)
 	: __LinkedList_iterator_base<_Tp,_Ref,_Ptr,_Node,_NodeOpClass>(__x) {}
+
+  /// Copy constructor
+  __LinkedList_iterator(const iterator& __x)
+	: __LinkedList_iterator_base<_Tp,_Ref,_Ptr,_Node,_NodeOpClass>(__x._M_node) {}
 
   /// Copy operator
   iterator& operator=(const iterator& __x)
@@ -481,8 +488,8 @@ public:
 	validate_flag = list_.validate_flag;
 	mode = list_.mode;
 	clear();
-	const_iterator curr = list_.begin();
-	const_iterator end  = list_.end();
+	const_iterator curr = list_.first;
+	const_iterator end  = list_.last;
 	while (curr != end) {
 	  push_back(*curr);
 	  curr++;

@@ -1586,7 +1586,9 @@ template <class B,class PB> int driver(int argc, char** argv)
 	  CommonIO::setIOFlush(1);
 
 	  PB instance;
+          utilib::exception_mngr::set_stack_trace(false);
 	  flag = instance.setup(argc,argv);
+          utilib::exception_mngr::set_stack_trace(true);
 	  if (flag)
 	    {
 	      instance.reset();
@@ -1602,7 +1604,7 @@ template <class B,class PB> int driver(int argc, char** argv)
       uMPI::done();
     }
 
-  STD_CATCH(;)
+  STD_CATCH(CommonIO::end(); uMPI::done();)
 
   return !flag;
 }

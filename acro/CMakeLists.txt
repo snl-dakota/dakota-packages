@@ -40,10 +40,10 @@ if(ENABLE_TESTS)
     message(SEND_ERROR "Python interpreter required for ENABLE_TESTS")
   endif()
 
-  file(GLOB acro_python_packages packages/*/python)
-  foreach(x ${acro_python_packages})
-    list(APPEND PYTHON_PACKAGES " -p %s/${x}")
-  endforeach()
+  #file(GLOB acro_python_packages packages/*/python)
+  #foreach(x ${acro_python_packages})
+  #  list(APPEND PYTHON_PACKAGES " -p %s/${x}")
+  #endforeach()
 
   # TODO: OUTPUT python binary  OUTPUT python/bin/python
   add_custom_command(
@@ -51,20 +51,14 @@ if(ENABLE_TESTS)
            ${CMAKE_CURRENT_BINARY_DIR}/python.log
 	   ${CMAKE_CURRENT_BINARY_DIR}/python/bin/cxxtestgen
     MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/admin/vpy/python.zip
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tpl/vpykit/bin/install_python
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/bin/pyomo_install
+            ${CMAKE_CURRENT_SOURCE_DIR}/setup
+            ${CMAKE_CURRENT_SOURCE_DIR}/admin/setup.py
             ${CMAKE_CURRENT_SOURCE_DIR}/admin/vpy/dev.ini
     COMMAND ${CMAKE_COMMAND}
     ARGS -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/python
     COMMAND ${PYTHON_EXECUTABLE}
-    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/tpl/vpykit/bin/install_python
-         --src ${CMAKE_CURRENT_SOURCE_DIR}
-	 --build ${CMAKE_CURRENT_BINARY_DIR}
-	 --logfile ${CMAKE_CURRENT_BINARY_DIR}/python.log
-	 -c ${CMAKE_CURRENT_SOURCE_DIR}/admin/vpy/dev.ini
-	 -z ${CMAKE_CURRENT_SOURCE_DIR}/admin/vpy/python.zip
-	 -p %s/admin/acro-admin
-	 -p %s/tpl/cxxtest/python
-	 ${PYTHON_PACKAGES}
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/setup
   )
 
   add_custom_target(acro-python-env DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python)

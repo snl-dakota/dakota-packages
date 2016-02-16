@@ -263,7 +263,7 @@ void woa(long* x, long* s, long*w, long* oabound, long* ssdbound,
 void MsgExit(char*msg)
 {
 	fprintf(stderr,"\n");
-	fprintf(stderr,"%s",msg);
+	fprintf(stderr,msg);
 	fprintf(stderr,"\n");
 	exit(-1);
 }
