@@ -86,7 +86,7 @@ ThreadObj::RunStatus earlyOutputObj::handleMessage(double* controlParam)
       receivedSol->print(*outStreamP);
       global->closeSolutionFile(outStreamP);
       confirmEarlyOutput(receivedSol->value);
-      delete receivedSol;
+      receivedSol->dispose();
       return RunOK;
     }
 

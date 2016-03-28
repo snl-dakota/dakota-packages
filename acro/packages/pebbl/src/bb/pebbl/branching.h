@@ -602,7 +602,8 @@ class solution : public solutionIdentifier
   solution() : 
     typeId(0),
     hashValue(0),
-    hashComputed(false)
+    hashComputed(false),
+    refCounter(1)
     { };
 
   // Slightly more complicated one that sets the serial number and
@@ -618,23 +619,50 @@ class solution : public solutionIdentifier
 
   void creationStamp(branching* bGlobal, int typeId = 0);
 
-  // Virtual destructor, so that derived classes can be deleted properly
+  // Reference-counting-related stuff
 
-  virtual ~solution() { };
+  solution* incrementRefs() 
+  { 
+     refCounter++; 
+     return this;
+  };
+
+  void decrementRefs() 
+  {
+#ifdef ACRO_VALIDATING
+    if (refCounter == 0)
+        EXCEPTION_MNGR(runtime_error, 
+                       "Decrement of solution reference counter "
+                       "that is already zero");
+#endif
+    refCounter--;
+  };
+
+  // Use this instead of the delete method
+
+  void dispose()
+  {
+    decrementRefs();
+    if (refCounter == 0)
+      delete this;
+  };
+
+  // Virtual destructor, so that derived classes can be deleted properly
+  // Now also checks for reference counter problems
+
+  virtual ~solution() 
+  { 
+     if (refCounter != 0)
+        EXCEPTION_MNGR(runtime_error, 
+                       "Attempt to destruct a solution with refCounter=" 
+                       << refCounter << " -- use dispose() instead of delete");
+  };
 
   // Duplicate detection and hash values
 
   virtual size_type computeHashValue();
 
   virtual bool duplicateOf(solution& other);
-
-  void deleteIfNotLocal() 
-  {
-#ifdef ACRO_HAVE_MPI
-    if (owningProcessor != uMPI::rank)
-      delete this;
-#endif
-  };
 
   // Parallel-environment methods
 
@@ -658,6 +686,7 @@ class solution : public solutionIdentifier
 protected:
 
   size_type sequenceCursor;
+  size_type refCounter;
 
   virtual size_type sequenceLength() { return 0; };
 
@@ -765,7 +794,7 @@ public:
       parameters_registered(false),
       min_num_required_args(0)
     {
-      version_info = "PEBBL 1.5";
+      version_info = "PEBBL 1.6";
     }
 
   double absGap(double boundValue) 
@@ -796,6 +825,8 @@ public:
   void foundSolution(solution* sol,syncType sync=notSynchronous);
 
   void resetIncumbent();
+
+  void setIncumbent(solution* sol);
 
   virtual void signalIncumbent() 
     {
@@ -889,8 +920,9 @@ public:
   virtual void solve();
 
   /// Return a pointer to the incumbent after solving
-  virtual solution* getSolution(int /*whichProcessor*/ = allProcessors)
+  virtual solution* getSolution(int whichProcessor = allProcessors)
   {
+    incumbent->incrementRefs();
     return incumbent;
   };
 
@@ -1018,6 +1050,14 @@ public:
 
  protected:
 
+  void reposOrDrop(solution* sol, syncType sync = notSynchronous)
+  {
+     if (enumerating)
+        offerToRepository(sol,sync);
+     else
+        sol->dispose();
+  }
+
   reposSolHeap reposHeap;
 
   BasicArray< LinkedList<solution*> > reposTable;
@@ -1043,7 +1083,7 @@ public:
 
   double worstReposValue();
 
-  virtual bool offerToRepository(solution* sol, syncType sync=notSynchronous);
+  virtual void offerToRepository(solution* sol, syncType sync=notSynchronous);
 
   bool localReposOffer(solution* sol);
 
@@ -1054,8 +1094,6 @@ public:
   void clearRepository();
 
   solution* removeWorstInRepos();
-
-  void deleteSolution(solution* sol);
 
   // Creat a sorted list of solution*'s from the repository, best
   // solution first.

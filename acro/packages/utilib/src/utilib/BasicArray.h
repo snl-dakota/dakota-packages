@@ -107,15 +107,6 @@ class __normal_iterator
                         typename iterator_traits<_Iterator>::pointer,
                         typename iterator_traits<_Iterator>::reference>
 {
-   // JDS: I would like to make it so that only the const_iterator is
-   // friends with the nonconst iterator (needed so that a nonconst
-   // iterator can implicitly cast to a const iterator), but that
-   // doesn't seem possible.  So, instead, we will make all iterators
-   // firends with each other and let the compiler type checker catch
-   // errors (usually when compiling the constructor)
-   template<typename A, typename B> 
-   friend class __normal_iterator;
-
 public:
 
   ///makes Difference_type an int type
@@ -153,10 +144,11 @@ public:
    * _M_begin, * _M_end and _M_array. So the Iterator knows where the array 
    * stops and begins
    */
-   template<typename Iter_, typename Cont_>
-   __normal_iterator(const __normal_iterator<Iter_, Cont_>& __i)
-        : _M_current(__i._M_current), _M_begin(__i._M_begin), 
-          _M_end(__i._M_end), _M_array(__i._M_array) { }
+  template<typename _Iter>
+  inline __normal_iterator(const __normal_iterator<_Iter, _Container>& __i)
+        : _M_current(__i.current), _M_begin(__i.begin), _M_end(__i.end), 
+	  _M_array(__i._M_array) { }
+
 
   /**
    * Return the reference value. Enforce correctness here, checking to see 
@@ -335,11 +327,11 @@ public:
   typedef const value_type*                             const_pointer;
 
   typedef typename __normal_iterator<pointer, vector_type>::reference reference;
-  typedef typename __normal_iterator<const_pointer, const_vector_type>::const_reference const_reference;
+  typedef typename __normal_iterator<const_pointer, vector_type>::const_reference const_reference;
   typedef __normal_iterator<pointer, vector_type>       iterator;
   typedef __normal_iterator<const_pointer, const_vector_type> const_iterator;
   friend class __normal_iterator<pointer, vector_type>;
-  friend class __normal_iterator<const_pointer, const_vector_type>;
+  friend class __normal_iterator<const_pointer, vector_type>;
   #endif
 
   /// Empty constructor.

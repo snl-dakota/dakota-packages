@@ -298,7 +298,10 @@ public:
 
   binaryKnapsack(); 
                 
-  ~binaryKnapsack() { };
+  ~binaryKnapsack() 
+  { 
+    workingSol.decrementRefs();  // binKnapSolution is derived from solution,
+  };                             // so it's reference-counted.
 
   bool setupProblem(int& argc,char**& argv);
 

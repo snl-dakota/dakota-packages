@@ -95,7 +95,7 @@ public:
     binaryKnapsack(),
     incumbQueueTargetSize(100),
     incumbQueueMaxSize(1000),
-    firstInIncQueue(0),
+    firstInIncQueue(0), 
     lastInIncQueue(0),
     incQueueSize(0)
     {
@@ -133,7 +133,16 @@ public:
       parallelBranching::printSolution(header,footer,outStream);
     }
 
-  ~parallelBinaryKnapsack() { };
+  ~parallelBinaryKnapsack() 
+    { 
+       incumbQueueItem* iqi = firstInIncQueue;
+       while (iqi)
+         {
+            incumbQueueItem* nextItem = iqi->next;
+            iqi->dispose();
+            iqi = nextItem;
+         }
+    };
 
   /// Note: use VB flag?
   void reset(bool VBflag=true)

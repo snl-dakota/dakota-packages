@@ -57,6 +57,7 @@ void gRandomReSeed(seed_t seed,
       for (int i=0; i<numTwiddles; i++)
         rng->asLong();
       seed = (seed_t) rng->asLong();
+      delete rng;
     }
 #endif
   gRandomLCG.set_seed(std::max(seed,static_cast<utilib::seed_t>(1)));

@@ -544,7 +544,7 @@ bool parallelBranching::shouldCommunicateWithHub(int triggerCount)
 
 
 //  Method for worker to talk to its (remote) hub.  Format:
-//  [1,token ]*,0,{1,load,tranCount}{0},k,(k times)[spAckAddress,spAckBound]
+//  [1,token]*,0,{1,load,tranCount}{0},k,(k times)[spAckAddress,spAckBound]
 
 void parallelBranching::workerCommunicateWithHub(bool rebalanceFlag)
 {  
@@ -552,7 +552,7 @@ void parallelBranching::workerCommunicateWithHub(bool rebalanceFlag)
 #ifdef MEMUTIL_PRESENT
   lastWorkerReport.setMemory();
 #endif
-  boundKnownToHub  = lastWorkerReport.aggregateBound;
+  boundKnownToHub = lastWorkerReport.aggregateBound;
 
   // Took this out since I think it shouldn't be needed and it messes
   // up quality balancing.

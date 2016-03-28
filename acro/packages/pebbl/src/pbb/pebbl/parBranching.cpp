@@ -28,8 +28,8 @@ using namespace std;
 namespace pebbl {
 
 
-int spToken::packedSize = -1;   // Negative forces token size computation 
-
+int spToken::packedSize = -10000;    // Garbage -- this is now initialized in
+                                     // parallelBranching::reset()
 CHUNK_ALLOCATOR_DEF(spToken,100);
 
 
@@ -40,6 +40,10 @@ void parallelBranching::reset(bool VBFlag)
   // Reset underlying serial class
 
   branching::reset(VBFlag);
+
+  // Make sure we know how big a token is
+
+  spToken::computePackSize();
 
   // Ramp-up control
 
@@ -916,7 +920,7 @@ void parallelBranching::clearRegisteredSolutions()
 {
   DEBUGPR(5,ucout << "Clearing registered solutions\n");
   for (size_type i=0; i<numRefSols; i++)
-    delete refSolArray[i];
+    refSolArray[i]->dispose();
   numRefSols = 0;
 }
 
@@ -1242,6 +1246,9 @@ void parallelBranching::rampUpIncumbentSync()
   
   incumbentValue  = bestIncumbent;
   incumbentSource = lowestRank;
+
+  if (uMPI::rank != incumbentSource)
+     resetIncumbent();
 
   DEBUGPR(100,ucout << "Leaving rampUpIncumbentSync(): value=" 
 	  << incumbentValue << ", source=" << incumbentSource << endl);

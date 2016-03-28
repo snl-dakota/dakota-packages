@@ -1896,7 +1896,7 @@ namespace pebblMonom {
   maxMonomSub::~maxMonomSub() 
   {
     DEBUGPR(10,ucout << "Destroying " << this << endl);
-    if (_assocSoln != NULL) delete _assocSoln;
+    if (_assocSoln != NULL) _assocSoln->dispose();
     childrenVecType::iterator iter = _children.begin();
     for(; iter != _children.end(); iter++) 
       if (*iter != NULL)

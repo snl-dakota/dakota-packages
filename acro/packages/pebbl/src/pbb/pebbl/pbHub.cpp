@@ -49,7 +49,7 @@ int parallelBranching::lowerLoadWorker(int w1, int w2)
 
 int parallelBranching::worseQualityWorker(int w1, int w2)
 {
-  if ( sense*(workerBound(w1) - workerBound(w2)) > 0)
+  if ( sense*(workerBound(w1) - workerBound(w2)) > 0 )
     return -1;
   else
     return 1;

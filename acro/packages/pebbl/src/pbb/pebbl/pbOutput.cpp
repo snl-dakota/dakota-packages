@@ -57,7 +57,8 @@ solution* parallelBranching::getSolution(int whichProcessor)
   if (uMPI::rank == incumbentSource)
     {
       if (whichProcessor == uMPI::rank)
-	return incumbent;
+         return incumbent->incrementRefs();
+
       PackBuffer solBuf;
       incumbent->pack(solBuf);
       DEBUGPR(120,ucout << "Packed solution size: " << solBuf.size() << endl);
@@ -69,14 +70,17 @@ solution* parallelBranching::getSolution(int whichProcessor)
 			  bytes,
 			  MPI_PACKED,
 			  uMPI::rank);
+          return incumbent->incrementRefs();
 	}
       else
-	uMPI::send((void *) solBuf.buf(),
-		   solBuf.size(),
-		   MPI_PACKED,
-		   whichProcessor,
-		   printSolutionTag);
-      return incumbent;
+        {
+	  uMPI::send((void *) solBuf.buf(),
+		     solBuf.size(),
+		     MPI_PACKED,
+		     whichProcessor,
+		     printSolutionTag);
+          return NULL;
+        }
     }
   else
     {
@@ -141,7 +145,7 @@ void parallelBranching::printSolution(const char* header,
 	  outStream.precision(statusLinePrecision);
 	  outStream << header;
 	  solPtr->print(outStream);
-	  solPtr->deleteIfNotLocal();
+	  solPtr->dispose();
 	  outStream << footer;
 	  outStream.precision(oldPrecision);
 	}

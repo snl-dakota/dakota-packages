@@ -13,7 +13,7 @@
  * \file earlyOutputThread.h
  * \author Jonathan Eckstein
  *
- * Auxiliary thread used to orchetrate early output of incumbent solutions
+ * Auxiliary thread used to orchestrate early output of incumbent solutions
  * from the parallel layer.
  */
 

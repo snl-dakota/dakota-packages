@@ -159,10 +159,10 @@ void parallelBinaryKnapsack::parallelIncumbentHeuristic(double* controlParam)
 	  insertInIncQueue(s);  // If we get a new incumbent, keep it around.
 	}
       else if (incQueueSize < incumbQueueTargetSize)
-	insertInIncQueue(s);
+	insertInIncQueue(s); 
       else
 	{
-	  delete s;
+	  s->dispose();  // Since incumbQueueItem derived from "solution"
 	  DEBUGPR(25,ucout << "Dropped from queue.\n");
 	}
     }

@@ -847,11 +847,8 @@ class Any
      *
      *  See Any::extract() for details on type resolution.
      */
-
-     /*  JE  made a version of this which is not called expose() */
-
     template<typename TYPE>
-    const TYPE& exposeconst() const
+    const TYPE& expose() const
       {
       if ( m_data == NULL )
         { EXCEPTION_MNGR(utilib::bad_any_cast, "Any::expose() - NULL data"); }
@@ -865,14 +862,6 @@ class Any
         }
 
       return static_cast<TypedContainer<TYPE>*>(m_data)->cast();
-      }
-
-    //  J E the const version of expose calls the thang above
-
-    template<typename TYPE>
-    const TYPE& expose() const
-      {
-         return exposeconst<TYPE>();
       }
 
     /// Exposes a non-const reference to the "cargo" data from this Any object
@@ -897,13 +886,9 @@ class Any
      *    _is_ important, but we shouldn't limit the API of Any's to const's
      *    while waiting for explicit const management.
      */
-
-    // JE messed with this to call exposeconst rather than expose, so it can't
-    // call itself
-
     template<typename TYPE>
     TYPE& expose()
-      {return const_cast<TYPE&>(const_cast<Any*>(this)->exposeconst<TYPE>());}
+      {return const_cast<TYPE&>(const_cast<const Any*>(this)->expose<TYPE>());}
 
     /// Verifies the type of the stored value.
     /** This will return true if the stored type (EXACTLY) matches the

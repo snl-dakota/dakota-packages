@@ -50,7 +50,7 @@ namespace pebbl {
   // guaranteed to be executing the same call with an identical
   // solution.  After ramp-up, it has no meaning and is ignored.
 
-  bool parallelBranching::offerToRepository(solution* sol,syncType sync)
+  void parallelBranching::offerToRepository(solution* sol,syncType sync)
   {
     solsOffered++;
 
@@ -74,8 +74,8 @@ namespace pebbl {
 	    if (sol == incumbent)
 	      incumbentSource = owner;
 	    solsOffered--;              // Compensate for overcounting
-	    deleteSolution(sol);
-	    return false;
+	    sol->dispose();
+	    return;
 	  }
 
 	// Make space in the queue for the solution, if necessary
@@ -90,14 +90,17 @@ namespace pebbl {
 
 	rampUpSolQ[rampUpSolsPending++] = sol;
 
-	return true;
+	return;
       }
 
     // OK, we're not ramping up.  If we own the solution, handle it
     // locally.
 
     if (iAmOwner)
-      return processOwnedSolution(sol);
+      {
+        processOwnedSolution(sol);
+        return;
+      }
 
     // We don't own the solution.  If flow control is enabled, make a
     // packed solution out of it and try to send it on its way.
@@ -111,7 +114,8 @@ namespace pebbl {
 	packedSolution* psol 
 	  = new packedSolution(owner,sense*(sol->value),sol);
 	routePackedSolution(psol);
-	return disposeSolution(sol);
+        sol->dispose();
+	return;
       }
 
     // Flow control is disabled.  Send the solution directly to the
@@ -125,7 +129,8 @@ namespace pebbl {
     solHashQ.send(outBuf,owner,repositoryTag);
     recordMessageSent(currentThread);
 
-    return disposeSolution(sol);
+    sol->dispose();
+    return;
   }
 
 
@@ -143,23 +148,6 @@ namespace pebbl {
     if (accepted && (enumCount > 1))
       needReposMerge = true;
     return accepted;
-  }
-
-
-  // Standard code for getting rid of a solution that might also be
-  // the incumbent
-
-  bool parallelBranching::disposeSolution(solution* sol)
-  {
-    DEBUGPR(100,ucout << "Disposing of solution " << sol << endl);
-
-    if (sol == incumbent)
-      return true;
-
-    DEBUGPR(100,ucout << "Deleting\n");
-
-    deleteSolution(sol);
-    return false;
   }
 
 
@@ -803,8 +791,7 @@ namespace pebbl {
 	    DEBUGPR(150,ucout << "Buffer for " << owner << " now "
 		    << hashBuffer[owner].curr() << " bytes, my max size now "
 		    << myMaxBufSize << endl);
-	    if (sol != incumbent)
-	      deleteSolution(sol);
+	    sol->dispose();
 	  }
       }
 
@@ -938,7 +925,7 @@ namespace pebbl {
     rampUpMessages += numReceived;
 	
     // Phew!  Now the repositories are all hashed correctly.  Now make
-    // sure we have cut-off correct everywhere if enumCount is active,
+    // sure we have the cut-off correct everywhere if enumCount is active,
     // and correct statistics in processor 0 in all cases.  
 
     if (enumCount > 1)
@@ -1106,16 +1093,15 @@ namespace pebbl {
 					  int whichProcessor)
   {
     int nSols = startRepositoryScan();
-    bool returningAnything = 
-      (whichProcessor == allProcessors) ||
-      (whichProcessor == uMPI::rank);
+    bool returningAnything = (whichProcessor == allProcessors) ||
+                             (whichProcessor == uMPI::rank);
     if (returningAnything)
       solArray.resize(nSols);
     for (int i=0; i<nSols; i++)
       {
 	solution* solPtr = nextRepositoryMember(whichProcessor);
 	if (returningAnything)
-	  solArray[i] = solPtr;
+	  solArray[i] = solPtr; 
       }
   }
 
@@ -1123,6 +1109,9 @@ namespace pebbl {
   int parallelBranching::startRepositoryScan()
   {
     DEBUGPR(100,ucout << "In parallelBranching::startRepositoryScan:\n");
+
+    if (!enumerating)
+       return (int) haveIncumbent();
 
     finalReposSync();
     sortRepository(solPtrArray);
@@ -1137,13 +1126,16 @@ namespace pebbl {
     DEBUGPR(100,ucout << "In parallelBranching::nextRepositoryMember, dest="
 	    << whichProcessor << endl);
 
+    if (!enumerating)
+       return getSolution(whichProcessor);
+
     int sourceProcessor = treeReposArray[reposArrayCursor++].owningProcessor;
 
     DEBUGPR(100,ucout << "Owner is " << sourceProcessor << endl);
 
     // If we own the next solution, then either
-    //   1. Return it directly
-    //   2. Broadcast and return it
+    //   1. Return it directly and increment reference count
+    //   2. Broadcast and return it (incrementing references for the local processor)
     //   3. Send it where needed and return NULL
 
     if (sourceProcessor == uMPI::rank)
@@ -1153,6 +1145,7 @@ namespace pebbl {
 	if (whichProcessor == uMPI::rank)
 	  {
 	    DEBUGPR(100,ucout << "Local delivery\n");
+            solPtr->incrementRefs();
 	    return solPtr;
 	  }
 	PackBuffer outBuf;
@@ -1166,6 +1159,7 @@ namespace pebbl {
 			    bufSize,
 			    MPI_PACKED,
 			    sourceProcessor);
+            solPtr->incrementRefs();
 	    return solPtr;
 	  }
 	else
@@ -1226,6 +1220,8 @@ namespace pebbl {
 
     solution* solPtr = unpackSolution(inBuf);
     DEBUGPR(100,ucout << "Got " << solPtr << endl);
+    // Here we do not increment the references, since it should be set
+    // to 1 by the unpackSolution, and we don't need to use it for anything else.
     return solPtr;
   }
 
@@ -1256,7 +1252,7 @@ namespace pebbl {
 	  {
 	    *outStreamP << "\n\n******** Solution " << i+1 << " ********\n";
 	    solPtr->print(*outStreamP);
-	    solPtr->deleteIfNotLocal();
+	    solPtr->dispose();           // Will delete if nonlocal
 	  }
       }
   }

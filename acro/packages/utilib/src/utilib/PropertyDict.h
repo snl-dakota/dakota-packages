@@ -126,8 +126,7 @@ public:
       iterator_template(_base_ptr _x)
          : it(_x), ref(it) {}
 
-      template<typename A, typename B, typename C>
-      iterator_template(const iterator_template<A,B,C>& rhs)
+      iterator_template(const iterator_template& rhs)
          : it(rhs.it), ref(it) {}
 
       iterator_template&
@@ -191,15 +190,6 @@ public:
    private:
       _base_ptr it;
       value_type ref;
-
-      // JDS: I would like to make it so that only the const_iterator is
-      // friends with the nonconst iterator (needed so that a nonconst
-      // iterator can implicitly cast to a const iterator), but that
-      // doesn't seem possible.  So, instead, we will make all iterators
-      // firends with each other and let the compiler type checker catch
-      // errors (usually when compiling the constructor)
-      template<typename A, typename B, typename C> 
-      friend struct iterator_template;
    };
 
    typedef 

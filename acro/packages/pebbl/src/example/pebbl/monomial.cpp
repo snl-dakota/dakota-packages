@@ -255,6 +255,7 @@ int main(int argc,char** argv)
 #endif
 #endif
 	  objectiveBeta = lp.getColSolution()[instance->obsNum()];
+	  sl->dispose();
 	}
       delete instance;
 #ifdef ACRO_HAVE_MPI    

@@ -122,8 +122,8 @@ XMLify(const string& str)
       ++it;
       special.pop_front();
    }
-   if ( it != itEnd )
-      s.append(it, itEnd);
+   if ( it != str.end() )
+      s.append(it, str.end());
    return s;
 }
 

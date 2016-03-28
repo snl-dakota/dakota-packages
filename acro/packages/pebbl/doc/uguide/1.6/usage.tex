@@ -451,6 +451,20 @@ object describing the problem instance (for example,
 \texttt{\emph{myBranching}}).  Typically, this is handled by passing a
 \texttt{branching*} pointer to the \texttt{solution} constructor.
 
+Starting with PEBBL 1.6, the \texttt{solution} class includes a reference
+counter, and its destructor will throw an exception if activated when this
+counter is nonzero.  One should not directly invoke the destructors of
+\texttt{solution}-derived objects by using the
+\texttt{delete} operator, but instead use the \texttt{dispose()} method of the
+\texttt{solution} class.  This method decrements the reference counter and then
+call the destructor if the counter is zero.  The reference counter may also be
+incremented or decremented by the \texttt{incrementRefs()} and
+\texttt{decrementRefs()} methods, respectively.  If a
+\texttt{solution}-derived object is allocated on the stack by direct
+declaration, rather than by using the \texttt{new} operator, one should call
+its \texttt{decrementRefs()} method before it passes out of scope; otherwise
+its destructor will trigger an exception.
+
 The template \texttt{arraySolution<\emph{T}>} is a ready-made PEBBL-supplied
 class that represents a solution as a one-dimensional array (that is,
 a vector) of some type \texttt{\emph{T}} which may be implicitly converted to
@@ -538,7 +552,9 @@ automatically cast to a base class pointer of type
 \texttt{branching*}. 
 
 \boxheader{Destructor}
-A destructor should be provided to avoid memory leaks.
+A destructor should be provided.  However, as noted above, it should not be
+invoked directly through \texttt{delete}, but through the \texttt{solution}
+class' \texttt{dispose()} method.
 
 \method{const char* typeDescription() const} Returns a \texttt{const
   char*} describing the type of solution, for example
@@ -618,8 +634,20 @@ first ascertain whether \texttt{*sol} is a better solution than the
 incumbent, or, when enumerating multiple solutions, whether it is
 eligible to enter the repository.  PEBBL will determine whether the
 solution is useful, and otherwise delete it.  Note that calling
-\texttt{foundSolution(sol)} cedes memory ownership of \texttt{*sol}
-to PEBBL.
+\texttt{foundSolution(sol)} cedes memory ownership of one reference to
+\texttt{*sol} to PEBBL.  If the caller would like to continue using
+\texttt{*sol} after calling \texttt{foundSolution(sol)}, the following apply:
+\begin{itemize}
+\item The caller should invoke \texttt{sol->incrementRefs()} before calling 
+\texttt{foundSolution(sol)}
+\item The caller should not alter the contents of \texttt{*sol}
+solution after calling \texttt{foundSolution(sol)}, since doing so could cause
+internal errors or unpredictable behavior in PEBBL
+\item Once it no longer needs \texttt{*sol}, the caller should invoke
+\texttt{sol->dispose()}.
+\end{itemize}
+If the caller does not have further need of \texttt{*sol} after calling
+\texttt{foundSolution(sol)}, no action is necessary.
 
 It is safe to call \texttt{foundSolution} at any point within the
 branch-and-bound tree exploration, for example, from within the
@@ -734,10 +762,13 @@ and then derive \texttt{\emph{myBranching}} from both
 \texttt{branching} and \texttt{\emph{myParams}}.  Parameter creation
 statements should usually reside in constructors and have the general
 form
+% The following null command stops sublime text from  miscoloring 
+% the rest of the file
+\newcommand{\nothing}{}  
 \begin{codeblock}
 create\_categorized\_parameter(\="\textrm{\emph{commandLineName}}",\\
 \>\textrm{\emph{internalName}},\\
-\>"<\textrm{\emph{datatype}}>",\\
+\>"\nothing<\textrm{\emph{datatype}}>",\\
 \>"\textrm{\emph{defaultValue}}",\\
 \>"\textrm{\emph{text description}}",\\
 \>"\textrm{\emph{category}}"\textrm{[},\textrm{]}\\
@@ -987,6 +1018,14 @@ repository.  One may then call \texttt{nextRepositoryMember()} up to
 $n$ times: each time, it will return a different member of the
 repository.  Again, solutions are returned in objective value order,
 starting with the best values.
+
+For any solution pointer \emph{\texttt{sol}} returned by \texttt{getSolution},
+\texttt{getAllSolutions}, or \texttt{next\-Repos\-itory\-Member}, the application
+should call \texttt{\emph{sol}->dispose()} when it no longer needs the
+corresponding solution object.  As discussed in
+Section~\ref{sec:solclassdetails}, one should never directly use
+\texttt{delete} on \texttt{solution}-derived objects, because they are
+reference-counted.
 
 \subsubsection{Debugging outputs}
 In the process of debugging a PEBBL application, it may be necessary
@@ -1487,9 +1526,12 @@ identifier corresponding to its type (this should happen
 automatically, for instance, if you create all new solutions by
 applying \texttt{blankClone} to the corresponding reference solution).
 
-
 Note that calling \texttt{registerFirstSolution} or
-\texttt{registerSolution} cedes ownership of the argument to PEBBL.
+\texttt{registerSolution} cedes ownership of one reference to the argument to
+PEBBL.  Therefore it is not typically necessary to call the \texttt{dispose()}
+method of the registered solutions.  PEBBL will do this automatically upon
+descruction or reset of a \texttt{branching}-derived object, or a call to
+\texttt{clearRegisteredSolutions()}.
 
 In the parallel setting, you still make PEBBL aware of new solutions
 using the same \texttt{initialGuess}, \texttt{extractSolution}, and
@@ -1868,19 +1910,17 @@ iterator-like methods \texttt{startRepositoryScan} and
 \texttt{nextRepositoryMember}, so that the entire repository need not
 reside simultaneously within a single processor.  
 
-To avoid memory leaks and unnecessary duplication of solutions, any
-code that loops over repository members should call the
-\texttt{solution} class method \texttt{deleteIfNotLocal} as soon as it
-is finished processing each particular solution.  This method will
-delete solutions that are ``owned'' by other processors, but preserve
-the integrity of the repository by not deleting solutions whose
-``master'' repository member resides on the current processor.
+As in the serial case, when a solution returned by \texttt{getSolution},
+\texttt{getAllSolutions}, or
+\texttt{nextRepositoryMember} is no longer needed, one should call its
+\texttt{dispose()} method in order to enable proper reference counting and
+avoid memory leaks.
 
 As an example, assuming that \texttt{\emph{instance}} is an object
-wose type is derived from the \texttt{parallelBranching} class, and
+whose type is derived from the \texttt{parallelBranching} class, and
 that the \texttt{search()} method has already run to completion, the
 code in Figure~\ref{fig:parreposscan} sends every solution in the
-repository to processor $0$, which prints their objective values:
+repository to processor $0$, which prints their objective values.
 
 \begin{figure}[tbp]
 \begin{center}
@@ -1895,7 +1935,7 @@ for\= (int i=0; i<nSols; i++) \\
    \>\>if \=(uMPI::rank == 0) \\
    \>\>\>\{~~\=\\
    \>\>\>\>ucout << solPtr->value << endl; \\
-   \>\>\>\>solPtr->deleteIfNotLocal(); \\
+   \>\>\>\>solPtr->dispose(); \\
    \>\>\>\}\\
    \>\}
 \end{codeblock}

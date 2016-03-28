@@ -841,21 +841,6 @@ template<>
 Privileged_Property::
 Privileged_Property(Privileged_Property& rhs);
 
-/// Special case: compilers pick up this template when copy constructing
-template<>
-Property::
-Property(const Property& rhs);
-
-/// Special case: compilers pick up this template when copy constructing
-template<>
-Property::
-Property(const Privileged_Property& rhs);
-
-/// Special case: compilers pick up this template when copy constructing
-template<>
-Privileged_Property::
-Privileged_Property(const Privileged_Property& rhs);
-
 
 /// Special case: compilers pick up this template when comparing properties
 template<>

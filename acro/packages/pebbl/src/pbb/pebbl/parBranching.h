@@ -870,12 +870,11 @@ protected:
 
   void assignId(solution* sol);
 
-  bool offerToRepository(solution* sol, syncType sync=notSynchronous);
+  void offerToRepository(solution* sol, syncType sync=notSynchronous);
 
   void pruneRepository();
 
   bool processOwnedSolution(solution* sol);
-  bool disposeSolution(solution* sol);
   void routePackedSolution(packedSolution* psol);
   void sendPackedSolution(packedSolution* psol,int link);
 
@@ -1357,12 +1356,7 @@ public:
   void unpack(UnPackBuffer& inBuffer);
   static void packEmpty(PackBuffer& buff);
 
-  static int packSize()
-  { 
-    if (packedSize < 0)
-      computePackSize();
-    return packedSize; 
-  };
+  static int packSize() { return packedSize; };
 
   static void computePackSize()
   {

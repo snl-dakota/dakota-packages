@@ -713,64 +713,59 @@ double branching::fathomValue()
 }
 
 
-// Change the incumbent solution; assumes ownership of "sol" If "sol"
-// is a null pointer, then do nothing.  The "sync" flag *only* applies
+// Change the incumbent solution; assumes ownership of one reference to "sol".
+// If "sol" is a null pointer, then do nothing.  The "sync" flag *only* applies
 // during ramp-up in the parallel layer, and may be ignored here.
 
-void branching::foundSolution(solution* sol,syncType sync)
+void branching::foundSolution(solution* sol, syncType sync)
 {
   DEBUGPR(200,ucout << "branching::foundSolution\n");
   if (sol)
+  {
+    DEBUGPR(200,ucout << "branching::foundSolution:(" << (void *) sol << ")\n");
+    DEBUGPR(4,ucout << "branching::foundSolution: value = " << sol->value 
+                    << ", hash = " << sol->computeHashValue() 
+                    << ':' << (sol->computeHashValue() % enumHashSize) << endl);
+    DEBUGPR(250,sol->print(ucout));
+    if (sense*(sol->value - incumbentValue) < 0)
     {
-      DEBUGPR(200,ucout << "branching::foundSolution:(" 
-	      << (void *) sol << ")\n");
-      DEBUGPR(4,ucout << "branching::foundSolution: value = " << sol->value 
-	      << ", hash = " << sol->computeHashValue() 
-	      << ':' << (sol->computeHashValue() % enumHashSize) << endl);
-      DEBUGPR(250,sol->print(ucout));
-      if (canFathom(sol))
-	{
-	  DEBUGPR(10,ucout << "Fathomed.\n");
-	  deleteSolution(sol);
-	}
-      else 
-	{
-	  DEBUGPR(20,ucout << "Cannot be fathomed\n");
-	  if (sense*(sol->value - incumbentValue) < 0)
-	    {
-	      DEBUGPR(10,ucout << "Improves incumbentValue=" << incumbentValue 
-		      << endl);
-	      DEBUGPR(1,ucout << "Found improved incumbent, value = "
-		      << sol->value << endl);
-	      resetIncumbent();
-	      if (sol->serial < 0)           // Stamp it if the user forgot
-		sol->creationStamp(this);
-	      incumbent = sol;
-	      incumbentValue = sol->value;
-	      signalIncumbent();
-	      newIncumbentEffect(incumbentValue);
-	    }
-	  if (enumerating)
-	    offerToRepository(sol,sync);
-	}
+       DEBUGPR(10,ucout << "Improves incumbentValue=" << incumbentValue 
+                        << endl);
+       DEBUGPR(1,ucout << "Found improved incumbent, value = "
+                       << sol->value << endl);
+       if (sol->serial < 0)           // Stamp it if the user forgot
+          sol->creationStamp(this);
+      setIncumbent(sol);
+      signalIncumbent();
+      newIncumbentEffect(incumbentValue);
     }
+    reposOrDrop(sol,sync);
+  }
 }
 
 
-// Wipe out the previous incumbent solution.  Note that if we are
-// enumerating, the incumbent will be in the repository, so we should
-// let the repository reclaim the memory.  If not enumerating, then
-// reclaim the memory here.
+
+// Wipe out the previous incumbent solution.  
 
 void branching::resetIncumbent()
 {
   if (incumbent)
     {
-      if (!enumerating)
-	delete incumbent;
-      incumbent = NULL;
-    };
+       incumbent->dispose();
+       incumbent = NULL;
+    }
 } 
+
+
+//  Set a new incumbent solution, possibly replacing the old one
+
+void branching::setIncumbent(solution* sol)
+{
+    resetIncumbent();
+    incumbent = sol;
+    incumbentValue = sol->value;
+    sol->incrementRefs();  
+}
 
 
 // Default (and typical) implementation of makeRoot operation.
@@ -987,10 +982,8 @@ double branching::searchFramework(spHandler* handler_)
       DEBUGPR(4,ucout << "Initial guess solution: value = " << guessSol->value 
 	      << ", hash = " << guessSol->computeHashValue() 
 	      << ':' << (guessSol->computeHashValue() % enumHashSize) << endl);
-      if (enumerating)
-	offerToRepository(guessSol);
-      incumbent = guessSol;
-      incumbentValue = incumbent->value;
+      setIncumbent(guessSol);
+      reposOrDrop(guessSol);
     }
 
   MEMORY_BASELINE;
@@ -2051,7 +2044,8 @@ solution::solution(branching* bGlobal) :
   solutionIdentifier(bGlobal),
   typeId(0),
   hashValue(0),
-  hashComputed(false)
+  hashComputed(false),
+  refCounter(1)
 {
   serial = ++(bGlobal->solSerialCounter);
 };
@@ -2163,7 +2157,8 @@ void solution::print(ostream& s)
 }
 
 
-solution::solution(solution* toCopy)
+solution::solution(solution* toCopy) :
+refCounter(1)
 {
   copy(toCopy);
 }
@@ -2253,7 +2248,7 @@ bool branching::localReposOffer(solution* sol)
   if (canFathom(sol->value))
     {
       DEBUGPR(20,"branching::localReposOffer: solution fathomed\n");
-      delete sol;
+      sol->dispose();
       return false;
     }
 
@@ -2287,7 +2282,7 @@ bool branching::localReposOffer(solution* sol)
 	{
 	  DEBUGPR(20,ucout << "localReposOffer: duplicate of "
 		  << cursorSol << endl);
-	  delete sol;
+	  sol->dispose();
 	  return false;
 	}
 
@@ -2324,7 +2319,7 @@ bool branching::localReposOffer(solution* sol)
       DEBUGPR(10,ucout << "Pushes out " << oldTopSol << endl);
       size_type oldWhichList = oldTopSol->hashValue % enumHashSize;
       reposTable[oldWhichList].remove(oldTopSol->hashItem);
-      deleteSolution(oldTopSol);
+      oldTopSol->dispose();
       delete oldTop;
     }
   else
@@ -2346,7 +2341,7 @@ bool branching::localReposOffer(solution* sol)
 // therefore it is used only in the overridden parallel version of this
 // routine.
 
-bool branching::offerToRepository(solution* sol,syncType sync)
+void branching::offerToRepository(solution* sol,syncType sync)
 {
   DEBUGPR(20, ucout << "branching::offerToRepository " << sol << endl);
 
@@ -2362,7 +2357,7 @@ bool branching::offerToRepository(solution* sol,syncType sync)
 	needPruning = true;
     }
 
-  return accepted;
+  return;
 }
 
 
@@ -2374,7 +2369,7 @@ void branching::pruneRepository()
 {
   DEBUGPR(10,ucout << "Pruning repository\n");
   while((repositorySize() > 0) && canFathomFromRepository(worstReposSol()))
-    deleteSolution(removeWorstInRepos());
+    removeWorstInRepos()->dispose();
 }
 
 
@@ -2384,23 +2379,8 @@ void branching::clearRepository()
 {
   DEBUGPR(50,ucout << "Emptying repository\n");
   while(repositorySize() > 0)
-    deleteSolution(removeWorstInRepos());
+    removeWorstInRepos()->dispose();
 }
-
-
-// Delete a single solution.  In some unusual situations, it might
-// also be the incumbent.  In that case, set the incumbent to a null
-// pointer to prevent double deletion.
-
-void branching::deleteSolution(solution* sol)
-{
-  DEBUGPR(100,ucout << "Deleting solution " << sol
-	  << ((sol == incumbent) ? " and setting incumbent=NULL" : "")
-	  << endl);
-  if (sol == incumbent)
-    incumbent = NULL;
-  delete sol;
-};
 
 
 // Similar to fathoming function, but for solutions in the repository.
@@ -2479,7 +2459,7 @@ bool branching::updateLastSolId(solutionIdentifier* sol)
 
 
 // Create a sorted array of solution pointers from the repository,
-// best solution first.
+// best solution first.  This is a strictly local/serial method.
 
 void branching::sortRepository(BasicArray<solution*>& solArray)
 {
@@ -2553,7 +2533,7 @@ void branching::sortReposIds(BasicArray<solutionIdentifier>& result)
 //  Return all solutions; whichProcessor argument ignored in serial
 
 void branching::getAllSolutions(BasicArray<solution*>& solArray,
-				int /*whichProcessor*/)
+				int whichProcessor /*ignored in serial*/)
 {
   if (enumerating)
     sortRepository(solArray);
@@ -2563,10 +2543,13 @@ void branching::getAllSolutions(BasicArray<solution*>& solArray,
 	{
 	  solArray.resize(1);
 	  solArray[0] = incumbent;
-	}
+ 	}
       else
 	solArray.resize(0);
     }
+  // Increment references for all solutions passed out to caller
+  for (size_type i=0; i < solArray.size(); i++)
+      solArray[i]->incrementRefs();
 }
 
 
@@ -2575,7 +2558,7 @@ void branching::getAllSolutions(BasicArray<solution*>& solArray,
 
 int branching::startRepositoryScan()
 {
-  getAllSolutions(solPtrArray);
+  sortRepository(solPtrArray);
   solPtrCursor = 0;
   return solPtrArray.size();
 }
@@ -2585,7 +2568,9 @@ int branching::startRepositoryScan()
 
 solution* branching::nextRepositoryMember(int /*whichProcessor*/)
 {
-  return solPtrArray[solPtrCursor++];
+  solution* sol = solPtrArray[solPtrCursor++];
+  sol->incrementRefs();
+  return sol;
 }
 
 

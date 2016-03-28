@@ -610,6 +610,8 @@ void binKnapSolution::squeezeInGreedy()
 	    }
 	  copy(&temp);
 	}
+
+      temp.decrementRefs();    // To avoid reference-counting errors
       
     }
 

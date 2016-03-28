@@ -41,7 +41,7 @@ messageTriggeredPBThread(global_,
 { 
   // Override buffer size if specified in run parameters
   // This is done here instead of in computeBufferSize(...) because
-  // we don't wanted expanded by "packSlop" in the messageTriggeredPBThread
+  // we don't want it expanded by "packSlop" in the messageTriggeredPBThread
   // constructor.
 
   if (global_->parameter_initialized("spReceiveBuf"))
