@@ -37,6 +37,8 @@ add_library(dakota_sciplot
   XCC.c 
   )
 
+target_link_libraries(dakota_sciplot ${DAKOTA_X_LIBRARIES})
+
 #EXTRA_DIST = darkstipple.bm \
 #	     lightstipple.bm \
 #	     wheel0.pm \
