@@ -16,7 +16,7 @@ using namespace std;
 
 //****************************************************************************80
 
-int dream_main ( )
+int dream_main ( void (*chain_callback)(const double* const z) )
 
 //****************************************************************************80
 //
@@ -264,6 +264,10 @@ int dream_main ( )
   {
     chain_write ( chain_filename, chain_num, fit, gen_num, par_num, z );
   }
+
+// BMA 20160411: added chain callback to save data
+  if (chain_callback) chain_callback(z);
+
 //
 //  Free memory.
 //

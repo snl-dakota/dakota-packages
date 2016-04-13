@@ -1,7 +1,9 @@
 #ifndef DREAM_DREAM_HPP
 #define DREAM_DREAM_HPP
 
-int dream_main ( );
+/// BMA 20160411: added callback for chain storage (using a callback
+/// to avoid copying the whole chain out)
+int dream_main ( void (*chain_callback)(const double* const z) = NULL );
 
 namespace dream {
 
