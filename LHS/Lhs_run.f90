@@ -239,13 +239,13 @@ cc          This is used in most cases when the ranks are not pre-specified
 cc          This is used in the case where one is sampling incrementally 
 cc          and has predefined ranks            
             IF ((RFLAG .EQ. 1).OR.(RFLAG .EQ. 3)) THEN
-              WRITE (*,*) 'We are in the loop'
+cc            WRITE (*,*) 'We are in the loop'
  
               DO 280 J=1,NV
                 DO 270 I=1,N
                   RXV(I)=RMATX(J,I)
                   X(LOC(I,J))=RXV(I)
-                  WRITE (*,*) 'RXV(I) ', RXV(I), 'I ', I, 'J ', J
+cc                WRITE (*,*) 'RXV(I) ', RXV(I), 'I ', I, 'J ', J
   270           CONTINUE
   280         CONTINUE
               DO 290 J=1,NV
