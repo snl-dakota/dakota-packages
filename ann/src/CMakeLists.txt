@@ -16,7 +16,7 @@ set(ANN_SOURCES
 
 set(ANN_HEADERS
   kd_tree.h kd_split.h kd_util.h kd_search.h
-  kd_pr_search.h kd_fix_rad_search.h perf.h pr_queue.h pr_queue_k.h
+  kd_pr_search.h kd_fix_rad_search.h pr_queue.h pr_queue_k.h
   )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
