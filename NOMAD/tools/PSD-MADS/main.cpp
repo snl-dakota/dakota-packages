@@ -65,6 +65,11 @@ int main ( int argc , char ** argv ) {
 
     // read the parameters file:
     p.read ( argv[1] );
+      
+      
+    // Force anisotropy(false) to have a single mesh_index (XMesh)
+    p.set_ANISOTROPIC_MESH ( false );
+      
 
     // check the parameters:
     p.check();

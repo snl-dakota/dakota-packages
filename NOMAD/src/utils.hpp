@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -196,6 +196,13 @@ namespace NOMAD {
   */
   bool dir_is_orthomads ( NOMAD::direction_type dt );
 
+	/// If a NOMAD::direction_type variable corresponds to a Ortho-MADS direction using XMesh.
+	/**
+     \param dt The NOMAD::direction_type -- \b IN.
+     \return   A boolean equal to \c true if \c dt corresponds to a Ortho-MADS direction using XMesh.
+	 */	
+	bool dir_is_orthomads_xmesh ( NOMAD::direction_type dt );	
+	
   /// Check if a set of directions include Ortho-MADS direction.
   /**
      \param dir_types Set of direction types -- \b IN.
@@ -205,7 +212,17 @@ namespace NOMAD {
   */
   bool dirs_have_orthomads ( const std::set<NOMAD::direction_type> & dir_types );
 
-	/// Check if a set of directions include Ortho-MADS N+1 direction.
+	/// Check if a set of directions include Ortho-MADS direction using XMesh.
+	/**
+     \param dir_types Set of direction types -- \b IN.
+     \return A boolean equal to \c true if at
+     least one direction in the set is
+     of type Ortho-MADS+XMesh.
+	 */
+	bool dirs_have_orthomads_xmesh ( const std::set<NOMAD::direction_type> & dir_types );	
+	
+	
+	/// Check if a set of direction types include Ortho-MADS N+1 direction.
 	/**
      \param dir_types Set of direction types -- \b IN.
      \return A boolean equal to \c true if at
@@ -213,8 +230,7 @@ namespace NOMAD {
      of type Ortho-MADS N+1.
 	 */
 	bool dirs_have_orthomads_np1 ( const std::set<NOMAD::direction_type> & dir_types );	
-
-
+	
 	
   /// Construct the n first prime numbers.
   /**
@@ -269,6 +285,15 @@ namespace NOMAD {
   */
   std::string itos ( int i );
 
+    
+    /// Transform a unsigned long (size_t) into a string.
+    /**
+     \param i The unsigned long -- \b IN.
+     \return  The string.
+     */
+    std::string itos ( size_t i );
+
+    
   /// Put a string into upper cases.
   /**
      \param s The string -- \b IN/OUT.
@@ -353,8 +378,8 @@ namespace NOMAD {
      \return The rank>0 if the decomposition worked else 0.
 	 */	
 	int get_rank(double **M,
-				 int m,
-				 int n);
+				 size_t m,
+				 size_t n);
 	
 	
 }

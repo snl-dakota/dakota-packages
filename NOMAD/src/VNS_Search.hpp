@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -55,15 +55,8 @@ namespace NOMAD {
 
     int                           _k; ///< VNS neighborhood parameter.
     int                       _k_max; ///< Maximum value of \c _k.
-    int                _halton_index; ///< Halton index used for shaking directions.
     const NOMAD::Eval_Point * _old_x; ///< Previous reference point (updates \c _k).
     
-    /// Search frequency.
-    /**
-       \c _nb_performed[ell] corresponds to the number of times that
-       the VNS search has been performed on a mesh of a size \c ell.
-    */
-    int _nb_performed [NOMAD::L_LIMITS+1];
 
   public:
 
@@ -75,7 +68,6 @@ namespace NOMAD {
       : NOMAD::Search ( p , NOMAD::VNS_SEARCH     ) ,
 	_k            ( 1                         ) ,
 	_k_max        ( 1                         ) ,
-	_halton_index ( NOMAD::VNS_HALTON_INDEX_0 ) ,
 	_old_x        ( NULL                      )   {}
     
     /// Destructor.
@@ -104,16 +96,7 @@ namespace NOMAD {
 			  bool                     & count_search   ,
 			  const NOMAD::Eval_Point *& new_feas_inc   ,
 			  const NOMAD::Eval_Point *& new_infeas_inc   );
-  
-    /// Access to the search frequency.
-    /**
-       \param ell The mesh index -- \b IN.
-       \return Number of times that the VNS search has been performed on a given mesh.
-    */
-    int get_nb_performed ( int ell ) const
-    {
-      return ( ell < 0 ) ? 0 : _nb_performed[ell];
-    }
+
   };
 }
 

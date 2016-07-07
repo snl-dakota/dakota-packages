@@ -47,10 +47,8 @@ int main ( int argc , char ** argv ) {
     p.set_DISPLAY_DEGREE ( NO_DISPLAY );
     p.set_DISPLAY_STATS ( "process #" + itos(rank) + " BBE OBJ" );
     p.set_SEED ( get_pid() );
-
-    // these Halton seeds are valid for up to 1000 variables:
-    if ( rank != 0 )
-      p.set_HALTON_SEED ( 7999 + 99*rank );
+      
+    p.set_ANISOTROPIC_MESH(false);
 
     // cache search:
     p.set_CACHE_SEARCH               ( USE_CACHE_SEARCH    );

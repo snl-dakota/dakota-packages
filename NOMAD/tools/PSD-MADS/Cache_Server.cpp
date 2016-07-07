@@ -237,10 +237,11 @@ void Cache_Server::process_ep_signal ( int source ) const {
     itab[0] = n;
     itab[1] = m;
     itab[2] = ( x->is_eval_ok() ) ? 1 : 0;
-    const int * ell = x->get_mesh_index();
-    if ( ell ) {
-      itab[3] = 1;
-      itab[4] = *ell;
+
+    if ( x->get_signature() && (x->get_signature()->get_mesh()->get_mesh_indices())[0].is_defined() )
+    {
+        itab[3]=1;
+        itab[4]=static_cast<int>((x->get_signature()->get_mesh()->get_mesh_indices())[0].value());
     }
     else
       itab[3] = itab[4] = 0;
@@ -540,9 +541,6 @@ void Cache_Server::process_insert_signal ( int source ) {
   
   x->set_eval_status ( ( itab[2] == 1 ) ? EVAL_OK : EVAL_FAIL );
   
-  if ( itab[3] == 1 )
-    x->set_mesh_index ( &itab[4] );
-
   // Eval_Point insertion in cache and multiple_evals detection:
   const Eval_Point * cache_x = Cache::find ( *x );
   if ( cache_x ) {
@@ -579,11 +577,12 @@ void Cache_Server::insert ( const NOMAD::Eval_Point & x ) {
   itab[0] = n;
   itab[1] = m;
   itab[2] = ( x.is_eval_ok() ) ? 1 : 0;
-  const int * ell = x.get_mesh_index();
-  if ( ell ) {
-    itab[3] = 1;
-    itab[4] = *ell;
-  }
+    
+  if ( x.get_signature() && (x.get_signature()->get_mesh()->get_mesh_indices())[0].is_defined() )
+    {
+        itab[3]=1;
+        itab[4]=static_cast<int>((x.get_signature()->get_mesh()->get_mesh_indices())[0].value());
+    }
   else
     itab[3] = itab[4] = 0;
 
@@ -692,9 +691,6 @@ const Eval_Point * Cache_Server::get_and_remove_extern_point ( void ) const {
   
   x->set_eval_status ( ( itab[2] == 1 ) ? EVAL_OK : EVAL_FAIL );
   
-  if ( itab[3] == 1 )
-    x->set_mesh_index ( &itab[4] );
-
   // insert the point in local cache:
   const Eval_Point * cache_x = Cache::find ( *x );
   if ( cache_x ) {

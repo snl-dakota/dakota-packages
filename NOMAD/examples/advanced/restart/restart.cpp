@@ -11,31 +11,13 @@ using namespace NOMAD;
 class My_Evaluator : public Evaluator {
 private:
 
-  double _mesh_update_basis;
-  int    _initial_mesh_index;
-  int    _mesh_index;
-  Point  _initial_mesh_size;
-
 public:
-  My_Evaluator  ( const Parameters & p ) :
-    Evaluator           ( p                                 ) ,
-    _mesh_update_basis  ( p.get_mesh_update_basis().value() ) ,
-    _initial_mesh_index ( p.get_initial_mesh_index()        ) ,
-    _mesh_index         ( _initial_mesh_index               ) ,
-    _initial_mesh_size  ( p.get_initial_mesh_size()         )   {}
+    
+    My_Evaluator  ( const Parameters & p ) : Evaluator ( p ) { }
 
+    
+    
   ~My_Evaluator ( void ) {}
-
-  int get_mesh_index ( void ) const { return _mesh_index; }
-
-  void get_mesh_size ( Point & mesh_size ) const
-  {
-    Mesh::get_delta_m ( mesh_size           ,
-			_initial_mesh_size  ,
-			_mesh_update_basis  ,
-			_initial_mesh_index ,
-			_mesh_index           );
-  }
 
   virtual bool eval_x ( Eval_Point   & x          ,
 			const Double & h_max      ,
@@ -82,7 +64,7 @@ void My_Evaluator::update_iteration ( success_type              success      ,
 				      const Pareto_Front      & pareto_front ,
 				      bool                    & stop           )
 {
-  _mesh_index = Mesh::get_mesh_index();
+    
   if ( success == UNSUCCESSFUL )
     stop = true;
 }
@@ -112,7 +94,7 @@ int main ( int argc , char ** argv )
     bbot[2] = EB;
     p.set_BB_OUTPUT_TYPE ( bbot );
 
-    // p.set_DISPLAY_DEGREE ( FULL_DISPLAY );
+    p.set_DISPLAY_DEGREE ( 2 );
 
     p.set_DISPLAY_STATS ( "bbe ( sol ) obj" );
 
@@ -127,9 +109,13 @@ int main ( int argc , char ** argv )
 
     p.set_MAX_BB_EVAL (100); // the algorithm terminates after
                              // 100 black-box evaluations
+     
 
+      
     // parameters validation:
     p.check();
+      
+    OrthogonalMesh * oMesh=p.get_signature()->get_mesh();
 
     // custom evaluator creation:
     My_Evaluator ev ( p );
@@ -140,8 +126,10 @@ int main ( int argc , char ** argv )
     // algorithm creation:
     Mads mads ( p , &ev );
 
+    
     // successive runs:
-    for ( int i = 0 ; i < 5 ; ++i ) {
+    for ( int i = 0 ; i < 5 ; ++i )
+    {
 
       out << endl << open_block ( "MADS run #" + NOMAD::itos(i) );
 
@@ -161,18 +149,21 @@ int main ( int argc , char ** argv )
 			else
 				p.set_LH_SEARCH(0,0);
 			
-			
-			// initial mesh:
-			p.set_INITIAL_MESH_INDEX ( ev.get_mesh_index() );
-			Point initial_mesh_size;
-			ev.get_mesh_size ( initial_mesh_size );
-			p.set_INITIAL_MESH_SIZE ( initial_mesh_size );
-			
-			// parameters validation:
+            // Update the mesh for an unsuccessful iteration and put current
+            // mesh and poll sizes as initial mesh and poll sizes for the next start.
+            oMesh->update(UNSUCCESSFUL);
+            Point delta_0, Delta_0;
+            oMesh->get_delta(delta_0);
+            oMesh->set_delta_0(delta_0);
+            oMesh->get_Delta(Delta_0);
+            oMesh->set_Delta_0(Delta_0);
+
+            // parameters validation:
 			p.check();
 			
 			// reset the Mads object:
 			mads.reset ( true , true );
+            
 		}
 
       // the run:

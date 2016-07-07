@@ -100,6 +100,29 @@ void My_Search::search ( Mads              & mads           ,
   tk->set_signature  ( signature );
 
   (*tk)[0] = static_cast<int>(ceil(1.0/xk)) * xk - 1.0;
+    
+    
+    // Projection maybe needed
+    //    const NOMAD::Display & out= _p.out();
+    //    NOMAD::dd_type display_degree = out.get_search_dd();
+    //  if ( display_degree == NOMAD::FULL_DISPLAY )
+    //  {
+    //		out << "candidate";
+    //        out << " (before projection)";
+    //		out << ": ( " << *tk << " )" << std::endl;
+    //  }
+    //
+    //  // Project to the mesh
+    //  tk->project_to_mesh(*feas_inc,signature->get_mesh()->get_delta(),signature->get_lb(),signature->get_ub() );
+    //
+    //    if ( display_degree == NOMAD::FULL_DISPLAY )
+    //    {
+    //		out << "candidate";
+    //        out << " (after projection)";
+    //		out << ": ( " << *tk << " )" << std::endl;
+    //    }
+    
+    
 
   // Evaluator_Control:
   Evaluator_Control & ev_control = mads.get_evaluator_control();

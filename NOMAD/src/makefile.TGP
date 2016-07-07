@@ -1,16 +1,16 @@
 EXE                    = ../bin/nomad
 LIB                    = ../lib/nomad.a
 COMPILATOR             = g++
-COMPILATOR_OPTIONS     = -O2 -ansi -pedantic -Wall -DUSE_TGP
-LIB_TGP                = $(TGP_HOME)/src-x86_64/tgp.so
+COMPILATOR_OPTIONS     = -O2 -pedantic -Wall -DUSE_TGP
+LIB_TGP                = $(TGP_HOME)/tgp.so
 LIBS                   = $(LIB_TGP) -lm
-INCLUDE                = -I$(TGP_HOME)/src-x86_64/ -I.
+INCLUDE                = -I$(TGP_HOME) -I.
 COMPILE                = $(COMPILATOR) $(COMPILATOR_OPTIONS) $(INCLUDE) -c
 OBJS_LIB               = Barrier.o Cache.o Cache_File_Point.o Cache_Point.o \
                          Cache_Search.o Clock.o Direction.o Directions.o Display.o \
                          Double.o Eval_Point.o Evaluator.o Evaluator_Control.o \
                          Exception.o Extended_Poll.o L_Curve.o LH_Search.o Mads.o \
-                         Mesh.o Model_Sorted_Point.o Model_Stats.o Multi_Obj_Evaluator.o \
+                         OrthogonalMesh.o XMesh.o SMesh.o Model_Sorted_Point.o Model_Stats.o Multi_Obj_Evaluator.o \
                          Parameters.o Parameter_Entries.o Parameter_Entry.o \
                          Pareto_Front.o Pareto_Point.o Phase_One_Evaluator.o \
                          Phase_One_Search.o Point.o Priority_Eval_Point.o Quad_Model.o \
@@ -61,7 +61,7 @@ Clock.o: Clock.cpp Clock.hpp
 Direction.o: Direction.cpp Direction.hpp Point.o
 	$(COMPILE) Direction.cpp
 
-Directions.o: Directions.cpp Directions.hpp Direction.o Mesh.o Random_Pickup.o RNG.o
+Directions.o: Directions.cpp Directions.hpp Direction.o Random_Pickup.o RNG.o
 	$(COMPILE) Directions.cpp
 
 Display.o: Display.cpp Display.hpp utils.o
@@ -105,8 +105,14 @@ Mads.o: Mads.cpp Mads.hpp Evaluator_Control.o L_Curve.o \
         Phase_One_Search.cpp Phase_One_Search.hpp
 	$(COMPILE) Mads.cpp
 
-Mesh.o: Mesh.cpp Mesh.hpp Point.o
-	$(COMPILE) Mesh.cpp
+OrthogonalMesh.o: OrthogonalMesh.hpp
+	$(COMPILE) OrthogonalMesh.cpp -o $@
+
+SMesh.o: SMesh.cpp SMesh.hpp OrthogonalMesh.cpp OrthogonalMesh.hpp
+	$(COMPILE) SMesh.cpp -o $@
+
+XMesh.o: XMesh.cpp XMesh.hpp OrthogonalMesh.cpp OrthogonalMesh.hpp
+	$(COMPILE) XMesh.cpp -o $@
 
 Multi_Obj_Evaluator.o: Multi_Obj_Evaluator.cpp Multi_Obj_Evaluator.hpp \
                        Phase_One_Evaluator.o

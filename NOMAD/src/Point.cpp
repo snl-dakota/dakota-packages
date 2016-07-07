@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -62,7 +62,8 @@ NOMAD::Point::Point ( int n , const NOMAD::Double & d ) : _n (n) , _coords (NULL
 	if ( NOMAD::Point::_cardinality > NOMAD::Point::_max_cardinality )
 		++NOMAD::Point::_max_cardinality;
 #endif
-	if (_n > 0) {
+	if (_n > 0)
+    {
 		_coords = new NOMAD::Double [_n];  
 		if ( d.is_defined() )
 			std::fill ( _coords , _coords+_n , d );
@@ -81,7 +82,8 @@ NOMAD::Point::Point ( const NOMAD::Point & p ) : _n (p._n) , _coords (NULL)
 	if ( NOMAD::Point::_cardinality >= NOMAD::Point::_max_cardinality )
 		++NOMAD::Point::_max_cardinality;
 #endif
-	if ( _n > 0 ) {
+	if ( _n > 0 )
+    {
 		NOMAD::Double       * p1 =   _coords = new NOMAD::Double [_n];
 		const NOMAD::Double * p2 = p._coords;
 		for ( int k = 0 ; k < _n ; ++k , ++p1 , ++p2 )
@@ -106,13 +108,16 @@ NOMAD::Point::~Point ( void )
 /*-----------------------------------------------*/
 void NOMAD::Point::reset ( int n , const NOMAD::Double & d )
 {
-	if ( n <= 0 ) {
+	if ( n <= 0 )
+    {
 		_n = 0; 
 		delete [] _coords;
 		_coords = NULL;
 	}
-	else {
-		if ( _n != n ) {
+	else
+    {
+		if ( _n != n )
+        {
 			delete [] _coords;
 			_n      = n;
 			_coords = new NOMAD::Double [_n];
@@ -129,15 +134,17 @@ void NOMAD::Point::resize ( int n )
 {
 	if ( n == _n )
 		return;
-	if ( n <= 0 ) {
+    
+	if ( n <= 0 )
+    {
 		_n = 0; 
 		delete [] _coords;
 		_coords = NULL;
 		return;
 	}
 	NOMAD::Double * new_coords = new NOMAD::Double [n];
-	if ( _coords ) {
-		
+	if ( _coords )
+    {
 		int min = ( n < _n ) ? n : _n;
 		
 		NOMAD::Double       * p1 = new_coords;
@@ -188,7 +195,8 @@ const NOMAD::Point & NOMAD::Point::operator = ( const NOMAD::Point & p )
 	if ( this == &p )
 		return *this;
 	
-	if ( _n != p._n ) {
+	if ( _n != p._n )
+    {
 		delete [] _coords;
 		_n = p._n;
 		if (_n > 0)
@@ -306,7 +314,8 @@ void NOMAD::Point::set ( int n , const NOMAD::Double * a )
 	if ( n <= 0 || !a )
 		return;
 	
-	if ( _n != n ) {
+	if ( _n != n )
+    {
 		delete [] _coords;
 		_n      = n;
 		_coords = new NOMAD::Double [_n];
@@ -475,7 +484,8 @@ bool NOMAD::Point::operator < ( const NOMAD::Point & p ) const
 	const NOMAD::Double * p1 =   _coords;
 	const NOMAD::Double * p2 = p._coords;
 	
-	for ( int k = 0 ; k < _n ; ++k , ++p1 , ++p2 ) {
+	for ( int k = 0 ; k < _n ; ++k , ++p1 , ++p2 )
+    {
 		
 		if ( *p1 < *p2 )
 			return true;
@@ -505,8 +515,8 @@ bool NOMAD::Point::comp_with_undef ( const NOMAD::Point & p ) const
 	
 	bool p1d , p2d;
 	
-	for ( int k = 0 ; k < _n ; ++k , ++p1 , ++p2 ) {
-		
+	for ( int k = 0 ; k < _n ; ++k , ++p1 , ++p2 )
+    {
 		p1d = p1->is_defined();
 		p2d = p2->is_defined();
 		
@@ -560,7 +570,8 @@ const NOMAD::Double NOMAD::Point::get_angle ( const NOMAD::Point & x ) const
 	const NOMAD::Double * p1 =   _coords;
 	const NOMAD::Double * p2 = x._coords;
 	
-	for ( int i = 0 ; i < _n ; ++i , ++p1 , ++p2 ) {
+	for ( int i = 0 ; i < _n ; ++i , ++p1 , ++p2 )
+    {
 		norm_1        += *p1 * *p1;
 		norm_2        += *p2 * *p2;
 		inner_product += *p1 * *p2;

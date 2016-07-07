@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -205,14 +205,12 @@ namespace NOMAD {
        \param x              The point coordinates               -- \b IN.
        \param signature      Signature                           -- \b IN.
        \param incumbent      The incumbent                       -- \b IN.
-       \param mesh_index     Mesh index                          -- \b IN.
        \param display_degree Display degree                      -- \b IN.
        \param ev_control     The NOMAD::Evaluator_Control object -- \b IN/OUT.
     */
     void register_point ( NOMAD::Point               x              ,
 			  NOMAD::Signature         & signature      ,
-			  const NOMAD::Point       & incumbent      ,
-			  int                        mesh_index     ,
+			  const NOMAD::Point       & incumbent      ,,
 			  NOMAD::dd_type             display_degree ,
 			  NOMAD::Evaluator_Control & ev_control       ) const;
 

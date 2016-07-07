@@ -1,9 +1,9 @@
 EXE                    = ../bin/nomad
-EXE_MPI		           = ../bin/nomad.MPI
+EXE_MPI		       = ../bin/nomad.MPI
 LIB                    = ../lib/nomad.a
 LIB_MPI                = ../lib/nomad.MPI.a
 COMPILATOR             = g++
-COMPILATOR_MPI = mpic++
+COMPILATOR_MPI         = mpic++
 SUNAME = $(shell uname)
 OSS=$(findstring MINGW32,$(SUNAME)) 
 ifneq "$(strip $(OSS))" ""
@@ -12,15 +12,17 @@ EXE                    = ../bin/nomad.exe
 EXE_MPI		           = ../bin/nomad.MPI.exe
 endif
 
-BUILD_DIR_NO_MPI = ../builds/ObjsNoMPI 
-BUILD_DIR_MPI = ../builds/ObjsMPI
+BUILD_DIR_NO_MPI       = ../builds/ObjsNoMPI 
+BUILD_DIR_MPI          = ../builds/ObjsMPI
 BUILD_DIR = 
-# COMPILATOR_OPTIONS     = -O2 -ansi -Wall
-COMPILATOR_OPTIONS = -g -ansi -Wall 
+
+
+COMPILATOR_OPTIONS     = -O2 -ansi -Wall
+# COMPILATOR_OPTIONS   = -g -ansi -Wall  
 # COMPILATOR_OPTIONS_MPI  = $(COMPILATOR_OPTIONS) -DUSE_MPI
 COMPILATOR_OPTIONS_MPI = $(COMPILATOR_OPTIONS) -DUSE_MPI # -DMPICH_IGNORE_CXX_SEEK -DMPICH_SKIP_MPICXX
 LIBS                   = -lm
-LIBS_MPI               = $(LIBS) -lmpich
+LIBS_MPI               = $(LIBS) -lmpi
 INCLUDE                = -I.
 COMPILE                = 
 COMPILE_NO_MPI         = $(COMPILATOR) $(COMPILATOR_OPTIONS) $(INCLUDE) -c
@@ -29,13 +31,13 @@ OBJS_LIB               = $(BUILD_DIR)/Barrier.o $(BUILD_DIR)/Cache.o $(BUILD_DIR
                          $(BUILD_DIR)/Cache_Search.o $(BUILD_DIR)/Clock.o $(BUILD_DIR)/Direction.o $(BUILD_DIR)/Directions.o $(BUILD_DIR)/Display.o \
                          $(BUILD_DIR)/Double.o $(BUILD_DIR)/Eval_Point.o $(BUILD_DIR)/Evaluator.o $(BUILD_DIR)/Evaluator_Control.o \
                          $(BUILD_DIR)/Exception.o $(BUILD_DIR)/Extended_Poll.o $(BUILD_DIR)/L_Curve.o $(BUILD_DIR)/LH_Search.o $(BUILD_DIR)/Mads.o \
-                         $(BUILD_DIR)/Mesh.o $(BUILD_DIR)/Model_Sorted_Point.o $(BUILD_DIR)/Model_Stats.o $(BUILD_DIR)/Multi_Obj_Evaluator.o \
+                         $(BUILD_DIR)/OrthogonalMesh.o $(BUILD_DIR)/SMesh.o $(BUILD_DIR)/XMesh.o $(BUILD_DIR)/Model_Sorted_Point.o $(BUILD_DIR)/Model_Stats.o $(BUILD_DIR)/Multi_Obj_Evaluator.o \
                          $(BUILD_DIR)/Parameters.o $(BUILD_DIR)/Parameter_Entries.o $(BUILD_DIR)/Parameter_Entry.o \
                          $(BUILD_DIR)/Pareto_Front.o $(BUILD_DIR)/Pareto_Point.o $(BUILD_DIR)/Phase_One_Evaluator.o \
                          $(BUILD_DIR)/Phase_One_Search.o $(BUILD_DIR)/Point.o $(BUILD_DIR)/Priority_Eval_Point.o $(BUILD_DIR)/Quad_Model.o \
                          $(BUILD_DIR)/Quad_Model_Evaluator.o $(BUILD_DIR)/Quad_Model_Search.o $(BUILD_DIR)/Random_Pickup.o \
                          $(BUILD_DIR)/RNG.o $(BUILD_DIR)/Signature.o $(BUILD_DIR)/Slave.o $(BUILD_DIR)/Speculative_Search.o $(BUILD_DIR)/Stats.o \
-                         $(BUILD_DIR)/utils.o $(BUILD_DIR)/Variable_Group.o $(BUILD_DIR)/VNS_Search.o
+                         $(BUILD_DIR)/utils.o $(BUILD_DIR)/Variable_Group.o $(BUILD_DIR)/VNS_Search.o 
                          
 OBJS                   = $(BUILD_DIR)/nomad.o $(OBJS_LIB)
 
@@ -115,7 +117,7 @@ $(BUILD_DIR)/Clock.o: Clock.cpp Clock.hpp
 $(BUILD_DIR)/Direction.o: Direction.cpp Direction.hpp Point.hpp
 	$(COMPILE) Direction.cpp -o $@
 
-$(BUILD_DIR)/Directions.o: Directions.cpp Directions.hpp Mesh.hpp Random_Pickup.hpp RNG.hpp
+$(BUILD_DIR)/Directions.o: Directions.cpp Directions.hpp OrthogonalMesh.hpp Random_Pickup.hpp RNG.hpp
 	$(COMPILE) Directions.cpp -o $@
 
 $(BUILD_DIR)/Display.o: Display.cpp Display.hpp utils.hpp
@@ -158,8 +160,14 @@ $(BUILD_DIR)/Mads.o: Mads.cpp Mads.hpp Evaluator_Control.hpp L_Curve.hpp \
         Phase_One_Search.cpp Phase_One_Search.hpp
 	$(COMPILE) Mads.cpp -o $@
 
-$(BUILD_DIR)/Mesh.o: Mesh.cpp Mesh.hpp Point.hpp
-	$(COMPILE) Mesh.cpp -o $@
+$(BUILD_DIR)/OrthogonalMesh.o: OrthogonalMesh.hpp
+	$(COMPILE) OrthogonalMesh.cpp -o $@
+
+$(BUILD_DIR)/SMesh.o: SMesh.cpp SMesh.hpp OrthogonalMesh.cpp OrthogonalMesh.hpp
+	$(COMPILE) SMesh.cpp -o $@
+
+$(BUILD_DIR)/XMesh.o: XMesh.cpp XMesh.hpp OrthogonalMesh.cpp OrthogonalMesh.hpp
+	$(COMPILE) XMesh.cpp -o $@
 
 $(BUILD_DIR)/Multi_Obj_Evaluator.o: Multi_Obj_Evaluator.cpp Multi_Obj_Evaluator.hpp Phase_One_Evaluator.hpp
 	$(COMPILE) Multi_Obj_Evaluator.cpp -o $@
@@ -232,20 +240,6 @@ $(BUILD_DIR)/Speculative_Search.o: Speculative_Search.cpp Speculative_Search.hpp
 $(BUILD_DIR)/Stats.o: Stats.cpp Stats.hpp  Clock.hpp Double.hpp Model_Stats.hpp
 	$(COMPILE) Stats.cpp -o $@
 
-TGP_Model.o: TGP_Model.cpp TGP_Model.hpp TGP_Output_Model.hpp Cache.hpp Model_Sorted_Point.hpp
-	$(COMPILE) TGP_Model.cpp
-
-TGP_Model_Evaluator.o: TGP_Model_Evaluator.cpp TGP_Model_Evaluator.hpp \
-                       Evaluator.hpp Search.hpp
-	$(COMPILE) TGP_Model_Evaluator.cpp
-
-TGP_Model_Search.o: TGP_Model_Search.cpp TGP_Model_Search.hpp \
-                    LH_Search.hpp TGP_Model_Evaluator.hpp
-	$(COMPILE) TGP_Model_Search.cpp
-
-TGP_Output_Model.o: TGP_Output_Model.cpp TGP_Output_Model.hpp Eval_Point.o $(LIB_TGP)
-	$(COMPILE) TGP_Output_Model.cpp
-
 $(BUILD_DIR)/utils.o: utils.cpp utils.hpp defines.hpp 
 	$(COMPILE) utils.cpp -o $@
 
@@ -254,5 +248,4 @@ $(BUILD_DIR)/Variable_Group.o: Variable_Group.cpp Variable_Group.hpp  Directions
 
 $(BUILD_DIR)/VNS_Search.o: VNS_Search.cpp VNS_Search.hpp Search.hpp Evaluator_Control.hpp
 	$(COMPILE) VNS_Search.cpp -o $@
-
 

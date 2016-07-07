@@ -46,10 +46,6 @@ class My_Evaluator : public Multi_Obj_Evaluator {
 public:
   My_Evaluator  ( const Parameters & p ) :
     Multi_Obj_Evaluator ( p ) {
-	
-	
-	
-	
 	}
 
   ~My_Evaluator ( void ) {}
@@ -263,12 +259,10 @@ My_Extended_Poll::My_Extended_Poll ( Parameters & p )
   bbit_1[0] = bbit_1[1] = CATEGORICAL;
   bbit_1[2] = CONTINUOUS;
   
-  const Point & d0_1 = p.get_initial_mesh_size();
+  const Point & d0_1 = p.get_initial_poll_size();
   const Point & lb_1 = p.get_lb();
   const Point & ub_1 = p.get_ub();
 
-  int halton_seed = p.get_halton_seed();
-  
   _s1 = new Signature ( 3                          ,
  			bbit_1                     ,
  			d0_1                       ,
@@ -276,7 +270,6 @@ My_Extended_Poll::My_Extended_Poll ( Parameters & p )
  			ub_1                       ,
  			p.get_direction_types   () ,
  			p.get_sec_poll_dir_types() ,
-  		        halton_seed++              ,
 			_p.out()                     );
 
   // signature for 2 assets:
@@ -302,7 +295,6 @@ My_Extended_Poll::My_Extended_Poll ( Parameters & p )
 			  ub_2                       ,
 			  p.get_direction_types   () ,
 			  p.get_sec_poll_dir_types() ,
-			  halton_seed++              ,
 			  _p.out()                     );
   }
 
@@ -329,7 +321,6 @@ My_Extended_Poll::My_Extended_Poll ( Parameters & p )
 			  ub_3                       ,
 			  p.get_direction_types   () ,
 			  p.get_sec_poll_dir_types() ,
-			  halton_seed                ,
 			  _p.out()                     );
   }
 }

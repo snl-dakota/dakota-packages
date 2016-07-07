@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -85,8 +85,8 @@ namespace NOMAD {
        \param x              The point coordinates               -- \b IN.
        \param model          The model                           -- \b IN.
        \param signature      Signature                           -- \b IN.
-       \param mesh_index     Mesh index                          -- \b IN.
-       \param delta_m        Mesh size parameter                 -- \b IN.
+       \param mesh_indices   Mesh indic                          -- \b IN.
+       \param delta			 Mesh size parameter                 -- \b IN.
        \param display_degree Display degree                      -- \b IN.
        \param out            The NOMAD::Display object           -- \b IN.
     */
@@ -95,11 +95,11 @@ namespace NOMAD {
       NOMAD::Point               x              ,
       const NOMAD::Quad_Model  & model          ,
       NOMAD::Signature         & signature      ,
-      int                        mesh_index     ,
-      const NOMAD::Point       & delta_m        ,
+	  const NOMAD::Point        & mesh_indices  ,
+      const NOMAD::Point       & delta          ,
       NOMAD::dd_type             display_degree ,
       const NOMAD::Display     & out              );
-
+      
     /*----------------------------------------------------------------------*/
 
   public:

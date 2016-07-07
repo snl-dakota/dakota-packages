@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -52,7 +52,7 @@ int TGP_OUTPUT_MODEL_DUMMY; // avoids that TGP_Output_Model.o has no symbols wit
 /*---------------------------------------------------------*/
 /*  NOMAD-TGP callback function (called regularly by TGP)  */
 /*---------------------------------------------------------*/
-// SLD -- 2012-09-04
+// SLD -- 2014-09-04
 // void NOMAD::TGP_callback ( bool & TGP_interrupt )
 // {
 //   if ( NOMAD::TGP_Output_Model::get_force_quit() )
@@ -225,7 +225,7 @@ void NOMAD::TGP_Output_Model::compute ( double ** X              ,
 		     NULL       ); // dhier=NULL
 
   // set the NOMAD-TGP callback function:
-  // _tgp_model->set_callback ( NOMAD::TGP_callback ); // SLD -- 2012-09-04
+  // _tgp_model->set_callback ( NOMAD::TGP_callback ); // SLD -- 2014-09-04
 
   // TGP verbim (display):
 #ifdef TGP_DEBUG

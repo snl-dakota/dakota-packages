@@ -79,8 +79,8 @@ int main ( int argc , char ** argv ) {
       in.close();
     }
   }
-
-  cout << g1 << " " << g2 << " " << f << endl;
+  cout.precision(18);
+  cout <<  g1 << " " << g2 << " " << f << endl;
 
   return 0;
 }

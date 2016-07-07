@@ -18,10 +18,11 @@ set(nomad_SOURCES
   L_Curve.cpp
   LH_Search.cpp
   Mads.cpp
-  Mesh.cpp
   Model_Sorted_Point.cpp
   Model_Stats.cpp
   Multi_Obj_Evaluator.cpp
+  nomad.cpp
+  OrthogonalMesh.cpp
   Parameter_Entries.cpp
   Parameter_Entry.cpp
   Parameters.cpp
@@ -38,6 +39,7 @@ set(nomad_SOURCES
   RNG.cpp
   Signature.cpp
   Slave.cpp
+  SMesh.cpp
   Speculative_Search.cpp
   Stats.cpp
   TGP_Model.cpp
@@ -47,6 +49,7 @@ set(nomad_SOURCES
   utils.cpp
   Variable_Group.cpp
   VNS_Search.cpp
+  XMesh.cpp
 )
 
 ## Set the NOMAD library name.

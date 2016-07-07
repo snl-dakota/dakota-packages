@@ -1,9 +1,7 @@
 
 MAX_CACHE_MEMORY 750
 
-seed none
-
-#initial_mesh_size r0.1
+initial_mesh_size r0.1
 
 opportunistic_eval no
 

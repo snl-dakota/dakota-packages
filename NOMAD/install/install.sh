@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #-------------------------------------------------------------------------------------*/
-#  NOMAD - Nonsmooth Optimization by Mesh Adaptive Direct search - version 3.5.1      */
+#  NOMAD - Nonsmooth Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 #                                                                                     */
-#  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+#  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 #                           Charles Audet        - Ecole Polytechnique, Montreal      */
 #                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 #                           John Dennis          - Rice University, Houston           */
@@ -38,7 +38,7 @@
 #
 
 echo "*****************************************************"
-echo "            NOMAD 3.6.0 Installation Script          "
+echo "            NOMAD 3.7.2 Installation Script          "
 echo " usage: ./install.sh [nparallel]                     "
 echo "       - nparallel : number of parallel process to make " 
 echo "*****************************************************"
@@ -56,16 +56,27 @@ echo "Testing gcc and mpi libraries"
 
 cd ${BASEDIR}/../src
 
-VersionGCC=(`g++ -v 2>&1 | awk '$2 ~ /version/ {print $3}' | awk -F . '{print $1; print $2;print $3}'`)
+VersionGCC=(`g++ -v 2>&1 | awk '$1 ~ /gcc/ && $2 ~ /version/ {print $3}' | awk -F . '{print $1; print $2;print $3}'`)
 if [ ${#VersionGCC[@]} -eq 0 ]; then
-	echo "======> gcc not installed. Failure of NOMAD installation "
-	exit 1;
-fi
-
-if [ ${VersionGCC[0]} -gt 3 ]; then
-	echo "=======> gcc Version ${VersionGCC[0]}.${VersionGCC[1]}.${VersionGCC[2]} ---> ok"
+	echo "======> gcc not installed."
+	
+	VersionCLANG=(`g++ -v 2>&1 | awk '$1 ~ /Apple/ && $2 ~ /LLVM/  && $3 ~ /version/ {print $4}' | awk -F . '{print $1; print $2}'`)
+	if [ ${#VersionCLANG[@]} -eq 0 ]; then
+		echo "======> CLANG not installed. No supported compiler is available."
+		exit 1
+	else
+		if [ ${VersionCLANG[0]} -gt 4 ]; then
+			echo "=======> CLANG Version ${VersionCLANG[0]}.${VersionCLANG[1]} ---> ok"
+		else
+			echo "=======> CLANG Version ${VersionCLANG[0]}.${VersionCLANG[1]} ---> Version of CLANG < 5 has not been tested for Nomad! Let us try to compile anyway."
+		fi
+	fi
 else
-	echo "=======> gcc Version ${VersionGCC[0]}.${VersionGCC[1]}.${VersionGCC[2]} ---> Version of gcc < 4 has not been tested for Nomad! Let us try to compile anyway."
+	if [ ${VersionGCC[0]} -gt 3 ]; then
+		echo "=======> gcc Version ${VersionGCC[0]}.${VersionGCC[1]}.${VersionGCC[2]} ---> ok"
+	else
+		echo "=======> gcc Version ${VersionGCC[0]}.${VersionGCC[1]}.${VersionGCC[2]} ---> Version of gcc < 4 has not been tested for Nomad! Let us try to compile anyway."
+	fi
 fi
 
 
@@ -73,19 +84,32 @@ fi
 echo "Testing mpic++ "
 VersionMPICPP=(`mpic++ -v 2>&1 | awk '$2 ~ /version/ {print $3}' | awk -F . '{print $1; print $2;print $3}'`)
 if [ ${#VersionMPICPP[@]} -eq 0 ]; then
-	echo "======> mpic++ wrapper not available."
-	echo "Testing if MPI header available"
-	mpiHeaderAvailable=(`g++ -c nomad.cpp -DUSE_MPI 2>&1 | awk 'BEGIN{FS=":"} /mpi.h/ || /fatal error/ {Success=1;exit} END{print Success}' Success=0`)
-	if [ ${mpiHeaderAvailable} -eq 1 ]; then
-		echo "======> mpi.h not available. NOMAD Parallel version will not be compiled."
-		makeMPI=1
+	echo "======> mpic++ (gcc) wrapper not available."
+
+	VersionMPICLANG=(`mpic++ -v 2>&1 | awk '$1 ~ /Apple/ && $2 ~ /LLVM/  && $3 ~ /version/ {print $4}' | awk -F . '{print $1; print $2}'`)
+	if [ ${#VersionMPICLANG[@]} -eq 0 ]; then
+		echo "======> MPI wrapper for CLANG not installed."
+		echo "Testing if MPI header available"
+		mpiHeaderAvailable=(`g++ -c nomad.cpp -DUSE_MPI 2>&1 | awk 'BEGIN{FS=":"} /mpi.h/ || /fatal error/ {Success=1;exit} END{print Success}' Success=0`)
+		if [ ${mpiHeaderAvailable} -eq 1 ]; then
+			echo "======> mpi.h not available. NOMAD Parallel version will not be compiled."
+			makeMPI=1
+		else
+			echo "======> mpi.h is present. Proper installation of MPI is supposed available and NOMAD parallel version will be compiled."
+			makeMPI=0
+			COMPILATOR_MPI="g++"
+		fi
 	else
-		echo "======> mpi.h is present. Proper installation of MPI is supposed available and NOMAD parallel version will be compiled."
+		if [ ${VersionMPICLANG[0]} -gt 4 ]; then
+			echo "=======> MPI wrapper for CLANG Version ${VersionCLANG[0]}.${VersionCLANG[1]} ---> ok"
+		else
+			echo "=======> MPI wrapper for CLANG Version ${VersionCLANG[0]}.${VersionCLANG[1]} ---> Version of CLANG < 5 has not been tested for Nomad! Let us try to compile anyway."
+		fi
 		makeMPI=0
-		COMPILATOR_MPI="g++"
+		COMPILATOR_MPI="mpic++"
 	fi	
 else
-	echo "=======> mpicc++ Version ${VersionMPICPP[0]}.${VersionMPICPP[1]}.${VersionMPICPP[2]} ---> ok"
+	echo "=======> mpicc++ wrapper for gcc version ${VersionMPICPP[0]}.${VersionMPICPP[1]}.${VersionMPICPP[2]} ---> ok"
 	makeMPI=0
 	COMPILATOR_MPI="mpic++"
 fi

@@ -23,4 +23,4 @@ Compile with the C wrapper 'bb.c' by running the script 'compile'
 The black-box executable 'bb.exe' should be created.
 
 You can test it with the command 'bb.exe x0.txt', and run nomad with the command
-'nomad.exe parameters.txt'.
+'nomad.exe param.txt'.

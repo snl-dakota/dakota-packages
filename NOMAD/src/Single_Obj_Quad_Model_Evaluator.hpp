@@ -1,8 +1,8 @@
 
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version (3.5.1).7.2        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -38,7 +38,7 @@
  \file   Single_Obj_Quad_Model_Evaluator.hpp
  \brief  NOMAD::Evaluator subclass for quadratic model optimization (headers)
  \author Christophe Tribes 
- \date   2012-06-19
+ \date   2014-06-19
  \see    Single_Obj_Quad_Model_Evaluator.cpp
  */
 #ifndef __SINGLE_OBJ_QUAD_MODEL_EVALUATOR__
@@ -60,10 +60,11 @@ namespace NOMAD {
 		 \param model Model      -- \b IN.
 		 */
 		Single_Obj_Quad_Model_Evaluator ( const NOMAD::Parameters & p     ,
-										 const NOMAD::Quad_Model & model   ) : NOMAD::Quad_Model_Evaluator(p,model),NOMAD::Evaluator(p){;}
+										 const NOMAD::Quad_Model & model   ) : NOMAD::Quad_Model_Evaluator(p,model),NOMAD::Evaluator(p){_is_model_evaluator=true;}
 		
 		/// Destructor.
 		virtual ~Single_Obj_Quad_Model_Evaluator ( void ){;}
+		
 		
 		///  Evaluate the blackboxes quad model at a given trial point
 		/**
@@ -75,6 +76,7 @@ namespace NOMAD {
 							 const NOMAD::Double & h_max      ,
 							 bool                & count_eval   ) const {return Quad_Model_Evaluator::eval_x(x,h_max,count_eval);}
 		
+				
 		
 	};
 }

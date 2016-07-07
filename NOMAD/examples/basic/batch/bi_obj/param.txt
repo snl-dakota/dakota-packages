@@ -17,7 +17,7 @@ upper_bound * 1.0
 MULTI_OVERALL_BB_EVAL 500
 
 # ADD_SEED_TO_FILE_NAMES no
-# STATS_FILE front.txt OBJ
+STATS_FILE front.txt OBJ
 # HISTORY_FILE history.txt
 DISPLAY_STATS BBE ( SOL ) OBJ
 

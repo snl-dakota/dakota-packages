@@ -20,10 +20,6 @@ private:
   Parameters            & _p; // parameters
   bool                _debug; // debug display flag
 
-  Point   _initial_mesh_size; // used for mesh sizes computations
-  double  _mesh_update_basis;
-  int    _initial_mesh_index;
-
   static const int  TAG_SIGNAL;
   static const int  TAG_I1;
   static const int  TAG_I2;
@@ -83,10 +79,7 @@ public:
       _bbe                ( bbe                               ) ,
       _ns                 ( ns                                ) ,
       _p                  ( p                                 ) ,
-      _debug              ( debug                             ) ,
-      _initial_mesh_size  ( p.get_initial_mesh_size()         ) ,
-      _mesh_update_basis  ( p.get_mesh_update_basis().value() ) ,
-      _initial_mesh_index ( p.get_initial_mesh_index()        )   {}
+    _debug              ( debug                             ) {}
 
   // Destructor:
   virtual ~Master_Slaves ( void ) {}

@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -202,10 +202,8 @@ void NOMAD::TGP_Model_Search::search ( NOMAD::Mads              & mads          
   count_search = true;
   _one_search_stats.add_MS_nb_searches();
 
-  // mesh:
-  int          mesh_index = NOMAD::Mesh::get_mesh_index();
-  NOMAD::Point delta_m;
-  signature->get_mesh().get_delta_m ( delta_m , mesh_index );
+      NOMAD::Point delta_m;
+    signature->get_mesh()->get_delta(delta_m);
 
   // initial displays:
   if ( display_degree == NOMAD::FULL_DISPLAY ) {
@@ -214,7 +212,6 @@ void NOMAD::TGP_Model_Search::search ( NOMAD::Mads              & mads          
 	<< _p.get_seed() << std::endl;
 #endif
     out << "number of cache points: "   << cache.size()    << std::endl
-	<< "mesh index            : "   << mesh_index      << std::endl
 	<< "mesh size parameter   : ( " << delta_m << " )" << std::endl
 	<< "incumbent             : ( ";
     incumbent->NOMAD::Point::display
@@ -320,7 +317,6 @@ void NOMAD::TGP_Model_Search::search ( NOMAD::Mads              & mads          
     register_point ( *trial_pts[i]  ,
 		     *signature     ,
 		     *incumbent     ,
-		     mesh_index     ,
 		     display_degree ,
 		     ev_control       );
 
@@ -1203,7 +1199,6 @@ void NOMAD::TGP_Model_Search::register_point
 ( NOMAD::Point               x              ,
   NOMAD::Signature         & signature      ,
   const NOMAD::Point       & incumbent      ,
-  int                        mesh_index     ,
   NOMAD::dd_type             display_degree ,
   NOMAD::Evaluator_Control & ev_control       ) const
 {
@@ -1220,8 +1215,7 @@ void NOMAD::TGP_Model_Search::register_point
   }
 
   tk->set_signature  ( &signature  );
-  tk->set_mesh_index ( &mesh_index );
-  tk->Point::operator = ( x );
+    tk->Point::operator = ( x );
 
   // add the new point to the list of search trial points:
   ev_control.add_eval_point ( tk                      ,
@@ -1457,17 +1451,12 @@ bool NOMAD::TGP_Model_Search::optimize_model
   // parameters creation:
   NOMAD::Parameters model_param ( out );
   
-  // random seed:
-  model_param.set_SEED ( _p.get_seed() + 10 * _all_searches_stats.get_MS_nb_searches() );
 
   // number of variables:
   model_param.set_DIMENSION ( n );
   
   // blackbox outputs:
   model_param.set_BB_OUTPUT_TYPE ( _p.get_bb_output_type() );
-
-  // blackbox inputs:
-  model_param.set_BB_INPUT_TYPE ( _p.get_bb_input_type() );
 
   // barrier parameters:
   model_param.set_H_MIN  ( _p.get_h_min () );
@@ -1501,30 +1490,19 @@ bool NOMAD::TGP_Model_Search::optimize_model
     else
       model_param.set_DISPLAY_STATS ( "bbe obj" );
   }
-
-  // mesh:
-  int mesh_index       = NOMAD::Mesh::get_mesh_index();
-  int min_mesh_index   = NOMAD::Mesh::get_min_mesh_index();
-  int max_mesh_index   = NOMAD::Mesh::get_max_mesh_index();
-  int max_halton_index = NOMAD::Mesh::get_max_halton_index();
-
-  NOMAD::Mesh::init ( 4.0 , 1 , -1 , 0 );
-
-  // searches:
-  // model_param.set_LH_SEARCH ( 1000 , 100 );
-  // model_param.set_OPPORTUNISTIC_LH ( true );
-  // model_param.set_VNS_SEARCH ( true );
+	// mesh: use isotropic mesh
+	model_param.set_ANISOTROPIC_MESH ( false );
+	model_param.set_MESH_UPDATE_BASIS ( 4.0 );
+	model_param.set_MESH_COARSENING_EXPONENT ( 1 );
+	model_param.set_MESH_REFINING_EXPONENT ( -1 );
+	model_param.set_INITIAL_MESH_INDEX ( 0 );
+	
 
   // maximum number of evaluations (2000 or 10000):
   model_param.set_MAX_BB_EVAL
     ( ( _p.get_model_tgp_mode() == NOMAD::TGP_PRECISE ) ? 10000 : 2000 );
 
-  // min mesh size:
-  // model_param.set_MAX_MESH_INDEX ( 30 );
-  // model_param.set_MIN_MESH_SIZE ( NOMAD::Double ( 1e-8 ) , false );
-
   model_param.set_SNAP_TO_BOUNDS ( true );
-  // model_param.set_SNAP_TO_BOUNDS ( false );
 
   // disable user calls:
   model_param.set_USER_CALLS_ENABLED ( false );
@@ -1599,18 +1577,6 @@ bool NOMAD::TGP_Model_Search::optimize_model
   NOMAD::Mads::set_flag_reset_mesh     ( flag_reset_mesh     );
   NOMAD::Mads::set_flag_reset_barriers ( flag_reset_barriers );
   NOMAD::Mads::set_flag_p1_active      ( flag_p1_active      );
-
-  // reset mesh to what it was before:
-  NOMAD::Mesh::init ( _p.get_mesh_update_basis().value() ,
- 		      _p.get_mesh_coarsening_exponent()  , 
- 		      _p.get_mesh_refining_exponent()    ,
- 		      _p.get_initial_mesh_index()          );
-
-  NOMAD::Mesh::set_max_halton_index ( max_halton_index );
-
-  NOMAD::Mesh::set_mesh_index ( min_mesh_index );
-  NOMAD::Mesh::set_mesh_index ( max_mesh_index );
-  NOMAD::Mesh::set_mesh_index ( mesh_index );
 
   // close display block:
   if ( display_degree == NOMAD::FULL_DISPLAY ) {

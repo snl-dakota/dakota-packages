@@ -5,10 +5,9 @@
 #######################################################################################
 #                                                                                     #
 #            NOMAD - Nonsmooth Optimization by Mesh Adaptive Direct search            #
-#            V 3.6.1                                                                  #
-#            2013/05                                                                  #
+#            V 3.7.2                                                                  #
 #                                                                                     #
-#	Copyright (C) 2001-2013                                                       #
+#	Copyright (C) 2001-2015                                                       #
 #                                                                                     #
 #                           Mark Abramson	 - the Boeing Company, Seattle        #
 #                           Charles Audet	 - Ecole Polytechnique, Montreal      #

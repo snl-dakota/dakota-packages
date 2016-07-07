@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -82,10 +82,8 @@ namespace NOMAD {
        \param p  Parameters                -- \b IN.
        \param ev A pointer to an evaluator -- \b IN.
     */
-    Slave ( const NOMAD::Parameters & p ,
-	    NOMAD::Evaluator        * ev )
-      : _p  ( &p  ) ,
-	_ev ( ev  )   { init(); } 
+    Slave ( const NOMAD::Parameters & p , NOMAD::Evaluator * ev )
+      { _p=&p; _ev=ev; init(); }
 
     /// Destructor.
     virtual ~Slave ( void ) {}

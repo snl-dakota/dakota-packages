@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonsmooth Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2010  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -39,38 +39,79 @@
  */
 
 #include "RNG.hpp"
+#include <math.h>
+
+//** Default values for the provided number seed  */
+int NOMAD::RNG::_s = 0;
 
 
-//** Default values for the random number seed  */
-uint32_t NOMAD::RNG::x = 123456789;
-uint32_t NOMAD::RNG::y = 362436069;
-uint32_t NOMAD::RNG::z = 521288629; 
+uint32_t NOMAD::RNG::x_def = 123456789;
+uint32_t NOMAD::RNG::y_def = 362436069;
+uint32_t NOMAD::RNG::z_def = 521288629;
+uint32_t NOMAD::RNG::_x = x_def;
+uint32_t NOMAD::RNG::_y = y_def;
+uint32_t NOMAD::RNG::_z = z_def;
 
 
-bool NOMAD::RNG::set_seed(unsigned long s)
+void NOMAD::RNG::set_seed(int s)
 {
-	if(s<=UINT32_MAX)
-	{
-		x=s;
-		return true;
-	}
-	else 
-		return false;
+    
+	if( s<=INT_MAX && s>=0 )
+		_s=s;
+	else
+        throw NOMAD::Exception ( "RNG.cpp" , __LINE__ ,
+                                "NOMAD::RNG::set_seed(): invalid seed. Seed should be in [0,INT_MAX]" );
+   
+    reset_seed_to_default();
+    for ( int i=0 ; i<_s ; i++)
+       NOMAD::RNG::rand();
+
+
 }
 
 uint32_t NOMAD::RNG::rand ( void )
-{ //period 2^96-1
+{
+    // http://madrabbit.org/~ray/code/xorshf96.c //period 2^96-1
 
  	uint32_t t;
- 	x ^= x << 16;
- 	x ^= x >> 5;
- 	x ^= x << 1;
+ 	_x ^= _x << 16;
+ 	_x ^= _x >> 5;
+ 	_x ^= _x << 1;
  	
- 	t = x;
-	x = y;
-	y = z;
-	z = t ^ x ^ y;      
+ 	t = _x;
+	_x = _y;
+	_y = _z;
+	_z = t ^ _x ^ _y;
 	
-	return z;
+	return _z;
 }
 
+
+/*----------------------------------------*/
+/*          normal random generators       */
+/*----------------------------------------*/
+double NOMAD::RNG::normal_rand( double mean , double var )
+{
+    // Box-Muller transformation~\cite{BoMu58}
+    
+    double x1 , x2 , w;
+    
+    do
+    {
+        x1 = NOMAD::RNG::rand(-1.0,1.0);
+        x2 = NOMAD::RNG::rand(-1.0,1.0);
+        w  = x1 * x1 + x2 * x2;
+    } while ( w >= 1.0 );
+    
+    w = sqrt( (-2.0 * log( w ) ) / w );
+    
+    return pow ( var,0.5) * x1 * w + mean;
+}
+double NOMAD::RNG::normal_rand_mean_0 ( double Var , int Nsample )
+{
+	double sum = 0.0;
+	double a=pow( 3.0*Var,0.5 );
+	for ( int i=0 ; i<Nsample ; i++ )
+		sum+=NOMAD::RNG::rand(-a,a);
+	return sum / pow( Nsample,0.5 );
+}

@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -69,6 +69,7 @@ namespace NOMAD {
     int           _sgte_eval;        ///< Number of surrogate evaluations.
     int           _sgte_cost;        ///< Surrogate cost.
     int           _bb_eval;          ///< Number of blackbox evaluations.
+		int           _block_eval;    ///< Number of block of evaluations.  
     int           _failed_eval;      ///< Number of failed evaluations.
     int           _cache_hits;       ///< Number of cache hits.
     int           _interrupted_eval; ///< Number of interrupted sequence of evaluations.
@@ -150,6 +151,7 @@ public:
 	 _sgte_eval            ( s._sgte_eval            ) ,
 	 _sgte_cost            ( s._sgte_cost            ) ,
 	 _bb_eval              ( s._bb_eval              ) ,
+		_block_eval        ( s._block_eval        ) , 
 	 _failed_eval          ( s._failed_eval          ) ,
 	 _cache_hits           ( s._cache_hits           ) ,
 	 _interrupted_eval     ( s._interrupted_eval     ) ,
@@ -239,10 +241,19 @@ public:
 
     /// Add \c 1 to stat \c _sgte_eval.
     void add_sgte_eval ( void ) { ++_sgte_eval; }
-
+	  
+	  /// Add \c count_eval to stat \c _sgte_eval.
+	  void add_sgte_eval ( int count_eval ) { _sgte_eval+=count_eval; } 
+	  
     /// Add \c 1 to stat \c _bb_eval.
     void add_bb_eval ( void ) { ++_bb_eval; }
 
+		/// Add \c 1 to stat \c _block_eval.
+		void add_one_block_eval ( void ) { ++_block_eval; }  
+		
+	  /// Add \c count_eval to stat \c _bb_eval.
+	  void add_bb_eval ( int count_eval ) { _bb_eval+=count_eval; } 
+	  
     /// Add \c 1 to stat \c _failed_eval.
     void add_failed_eval ( void ) { ++_failed_eval; }
 
@@ -475,6 +486,16 @@ public:
       return ( _sgte_cost > 0 ) ? _bb_eval + _sgte_eval / _sgte_cost : _bb_eval;
     }
 
+		
+		/// Access to the number of block of evaluations (includes bb and surrogates).
+		/**
+		 \return The number of blackbox evaluations.
+		 */
+		int get_block_eval ( void ) const
+		{
+			return _block_eval;
+		}
+		
     /// Access to the \c sum stat.
     /**
        \return The \c sum stat.

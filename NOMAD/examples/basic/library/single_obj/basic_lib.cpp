@@ -52,9 +52,6 @@ int main ( int argc , char ** argv ) {
     // NOMAD initializations:
     NOMAD::begin ( argc , argv );
 
-    NOMAD::RNG::set_seed(12345);
-	  
-
     // parameters creation:
     NOMAD::Parameters p ( out );
 
@@ -66,7 +63,7 @@ int main ( int argc , char ** argv ) {
     bbot[2] = NOMAD::EB;
     p.set_BB_OUTPUT_TYPE ( bbot );
 
-    //p.set_DISPLAY_ALL_EVAL(true);   // displays all evaluations.
+//    p.set_DISPLAY_ALL_EVAL(true);   // displays all evaluations.
     p.set_DISPLAY_STATS ( "bbe ( sol ) obj" );
 
     p.set_X0 ( NOMAD::Point(5,0.0) );  // starting point
@@ -80,8 +77,8 @@ int main ( int argc , char ** argv ) {
 
     p.set_MAX_BB_EVAL (100);     // the algorithm terminates after
                                  // 100 black-box evaluations
-	  
-    // p.set_TMP_DIR ("/tmp");   // directory for temporary files
+    p.set_DISPLAY_DEGREE(2);
+    p.set_SOLUTION_FILE("sol.txt");
 
     // parameters validation:
     p.check();

@@ -332,7 +332,6 @@ void create_new_parameters ( const NOMAD::Parameters & p0                ,
   p.set_ADD_SEED_TO_FILE_NAMES       ( p0.get_add_seed_to_file_names()       );
   p.set_DIRECTION_TYPE               ( p0.get_direction_types()              );
   p.set_SEC_POLL_DIR_TYPE            ( p0.get_sec_poll_dir_types()           );
-  p.set_HALTON_SEED                  ( p0.get_halton_seed()                  );
   p.set_OPPORTUNISTIC_EVAL           ( p0.get_opportunistic_eval()           );
   p.set_OPPORTUNISTIC_MIN_NB_SUCCESS ( p0.get_opportunistic_min_nb_success() );
   p.set_OPPORTUNISTIC_MIN_EVAL       ( p0.get_opportunistic_min_eval()       );

@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------*/
-/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.6.1        */
+/*  NOMAD - Nonlinear Optimization by Mesh Adaptive Direct search - version 3.7.2      */
 /*                                                                                     */
-/*  Copyright (C) 2001-2012  Mark Abramson        - the Boeing Company, Seattle        */
+/*  Copyright (C) 2001-2015  Mark Abramson        - the Boeing Company, Seattle        */
 /*                           Charles Audet        - Ecole Polytechnique, Montreal      */
 /*                           Gilles Couture       - Ecole Polytechnique, Montreal      */
 /*                           John Dennis          - Rice University, Houston           */
@@ -60,6 +60,7 @@ namespace NOMAD {
 		NOMAD::Double _h_model;            ///< Feasibility model value.
 		NOMAD::Double _angle_success_dir;  ///< Angle with last successful direction.
 		NOMAD::Double _angle_simplex_grad; ///< Angle with simplex gradient.
+		static bool	  _lexicographic_order; ///< Use lexicographic order for comparison 
 		
 		/// Affectation operator.
 		/**
@@ -213,6 +214,12 @@ namespace NOMAD {
 		 \param h The feasibility model value -- \b IN.
 		 */
 		void set_h_model ( const NOMAD::Double & h ) { _h_model = h; }
+		
+		/// Set the lexicographic order for sorting.
+		/**
+		 */
+		static void set_lexicographic_order ( bool order ) { _lexicographic_order = order; }
+		
 		
 	};
 }
