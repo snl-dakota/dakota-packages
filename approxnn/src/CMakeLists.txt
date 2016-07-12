@@ -20,7 +20,16 @@ set(ApproxNN_HEADERS
   )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include)
+
+# When building the library, dllexport the symbols BMA: Would prefer
+# to use target properties, but we build static by default, so we just
+# add the definition.  This approach is only safe because no other
+# sources in this directory or below import the header to use the
+# library.
+add_definitions(-DDLL_EXPORTS)
 add_library(approxnn ${ApproxNN_SOURCES})
+#set_target_properties(approxnn PROPERTIES DEFINE_SYMBOL DLL_EXPORTS)
+#set_target_properties(approxnn PROPERTIES COMPILE_DEFINITIONS ...)
 
 install(TARGETS approxnn EXPORT ${ExportTarget} DESTINATION lib)
 install(FILES ${ApproxNN_HEADERS} DESTINATION include)

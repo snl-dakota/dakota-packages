@@ -76,7 +76,14 @@
   #ifdef DLL_EXPORTS
 	 #define DLL_API __declspec(dllexport)
   #else
-	#define DLL_API __declspec(dllimport)
+// BMA: This results in link warnings about local Dakota symbols
+// hiding those from the library (when building static libs)
+//	#define DLL_API __declspec(dllimport)
+// BMA: This doesn't help at all:
+//	#define DLL_API extern
+// BMA TODO: Dakota builds static libraries, so this works for our use
+// case, but may need to make this conditional if migrating to DLL:
+	#define DLL_API
   #endif
   //----------------------------------------------------------------------
   // DLL_API is ignored for all other systems
