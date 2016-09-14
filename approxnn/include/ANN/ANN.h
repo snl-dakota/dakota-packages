@@ -125,6 +125,13 @@
   const double ANN_DBL_MAX = DBL_MAX;
 #endif
 
+
+// -----
+// Runtime norm selector; see included header
+// -----
+//#define ANN_NORM_SELECT 1
+#include "ANNnormselect.h"
+
 #define ANNversion 		"1.1.2"			// ANN version and information
 #define ANNversionCmt	""
 #define ANNcopyright	"David M. Mount and Sunil Arya"
@@ -337,6 +344,15 @@ const ANNbool	ANN_ALLOW_SELF_MATCH	= ANNtrue;
 //		uncomment the appropriate set of macros below.
 //----------------------------------------------------------------------
 
+#ifdef ANN_NORM_SELECT
+
+#define ANN_POW(v)	(approxnn::normSelector::instance().pow((v)))
+#define ANN_ROOT(x)	approxnn::normSelector::instance().root((x))
+#define ANN_SUM(x,y)	(approxnn::normSelector::instance().sum((x),(y)))
+#define ANN_DIFF(x,y)   (approxnn::normSelector::instance().diff((x),(y)))
+
+#else
+
 //----------------------------------------------------------------------
 //	Use the following for the Euclidean norm
 //----------------------------------------------------------------------
@@ -368,6 +384,8 @@ const ANNbool	ANN_ALLOW_SELF_MATCH	= ANNtrue;
 // #define ANN_ROOT(x)		(x)
 // #define ANN_SUM(x,y)		((x) > (y) ? (x) : (y))
 // #define ANN_DIFF(x,y)	(y)
+
+#endif  // DAKOTA_ANN_NORM_SELECTOR
 
 //----------------------------------------------------------------------
 //	Array types
