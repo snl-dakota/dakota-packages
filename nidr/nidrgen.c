@@ -4829,8 +4829,9 @@ Output(StrList *headers, StrList *nsname, int hwant, const char *kname, int libm
 		putchar('\n');
 		nslist(nsname, "namespace %s {\n" /*}*/);
 		}
-	printf("\n/** %d distinct keywords (plus %d aliases) **/\n\nstatic %sKeyWord%s\n",
-		lastagroup, nalias, guikeywds ? "Gui" : "", libmode ? "x" : "");
+	/* BMA (20160923): Suppress keyword count summary to avoid merge conflicts */
+	//printf("\n/** %d distinct keywords (plus %d aliases) **/\n", lastagroup, nalias);
+	printf("\nstatic %sKeyWord%s\n", guikeywds ? "Gui" : "", libmode ? "x" : "");
 	kwtop = kwbot = KWStack;
 	*kwtop = &KWbase;
 	if (libmode) {
