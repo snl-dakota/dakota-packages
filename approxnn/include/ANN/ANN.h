@@ -129,7 +129,7 @@
 // -----
 // Runtime norm selector; see included header
 // -----
-//#define ANN_NORM_SELECT 1
+#define ANN_NORM_SELECT 1
 #include "ANNnormselect.h"
 
 #define ANNversion 		"1.1.2"			// ANN version and information
