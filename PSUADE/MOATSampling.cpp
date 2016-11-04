@@ -195,7 +195,7 @@ int MOATSampling::initialize(sData &sdata)
    // ----------------------------------------------------------------
 
    delete [] ranges;
-   for (ii = 0;  ii < nSamples_; ii++) delete [] BS[ii];
+   for (ii = 0;  ii < maxSamples; ii++) delete [] BS[ii];
    delete [] BS;
    return 0;
 }
