@@ -975,6 +975,9 @@ int OptBCNewtonLike::updateConstraints(int step_type)
     }
     *optout << "\n ";
   }
+
+  delete [] new_active;
+
   return ret_flag;
 }
 

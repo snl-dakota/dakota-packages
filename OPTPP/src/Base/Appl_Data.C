@@ -27,15 +27,23 @@ namespace OPTPP {
 //------------------------------------------------------------------------
 // Constructor 
 //------------------------------------------------------------------------
-Appl_Data::Appl_Data()
-{
-  reset();
-}
+Appl_Data::Appl_Data():
+  xparm(NULL), gradient(NULL), Hessian(NULL),
+  constraint_value(NULL), constraint_gradient(NULL), constraint_Hessian(NULL),
+  lsq_residuals(NULL), lsq_jacobian(NULL),
+  function_current(false), gradient_current(false), Hessian_current(false)
+{  /* empty ctor */  }
 
 //------------------------------------------------------------------------
 // destructor 
 //------------------------------------------------------------------------
 Appl_Data::~Appl_Data()
+{
+  // free memory
+  reset();
+}
+
+void Appl_Data::reset()
 {
   if (xparm        != NULL) delete xparm;
   if (gradient     != NULL) delete gradient;
@@ -45,14 +53,12 @@ Appl_Data::~Appl_Data()
   if (constraint_Hessian  != NULL) delete constraint_Hessian;
   if (lsq_residuals       != NULL) delete lsq_residuals;
   if (lsq_jacobian        != NULL) delete lsq_jacobian;
-}
 
-void Appl_Data::reset()
-{
-  xparm = gradient = NULL; Hessian = NULL;
-  constraint_value = NULL; constraint_gradient = NULL; 
+  xparm = NULL;  gradient = NULL;  Hessian = NULL;
+  constraint_value = NULL;  constraint_gradient = NULL; 
   constraint_Hessian = NULL;
   lsq_residuals = NULL;    lsq_jacobian = NULL; 
+
   function_current = gradient_current = Hessian_current = false;
 }
 
