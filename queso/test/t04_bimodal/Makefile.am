@@ -1,8 +1,6 @@
-if GIT_CLONE
-BUILT_SOURCES = .license.stamp
-endif
+BUILT_SOURCES =
 
-AM_CPPFLAGS =
+AM_CPPFLAGS = $(QUESO_CPPFLAGS)
 AM_CPPFLAGS += -I.
 AM_CPPFLAGS += -I$(top_builddir)/inc
 AM_CPPFLAGS +=  $(BOOST_CPPFLAGS) $(GSL_CFLAGS) $(ANN_CFLAGS)
@@ -41,12 +39,12 @@ if CODE_COVERAGE_ENABLED
   CLEANFILES = *.gcda *.gcno
 endif
 
-if GIT_CLONE
+if QUESO_LICENSESTAMPEXISTS
+BUILT_SOURCES += .license.stamp
 .license.stamp: $(top_srcdir)/LICENSE
 	$(top_srcdir)/src/common/lic_utils/update_license.pl $(top_srcdir)/LICENSE $(QUESO_STAMPED_FILES)
 	echo 'updated source license headers' >$@
 endif
 
 dist-hook:
-	rm -rf `find $(distdir)/ -name .svn`
 	rm -rf `find $(distdir)/ -name .deps`

@@ -51,7 +51,6 @@ GslVector::GslVector(const BaseEnvironment& env, const Map& map)
   //          << "\n  map.NumMyElements()     = " << map.NumMyElements()
   //          << std::endl;
 
-  //std::cout << "Leaving GslVector::constructor(1)" << std::endl;
 }
 
 GslVector::GslVector(const BaseEnvironment& env, const Map& map, double value)
@@ -872,7 +871,7 @@ GslVector::subReadContents(
     // Read '=' sign
     *filePtrSet.ifsVar >> tmpString;
     //std::cout << "Just read '" << tmpString << "'" << std::endl;
-    queso_require_equal_to_msg(tmpString, "=", "string should be the '=' sign");
+    queso_require_equal_to_msg(tmpString, std::string("="), std::string("string should be the '=' sign"));
 
     // Read 'zeros(n_positions,n_params)' string
     *filePtrSet.ifsVar >> tmpString;
@@ -940,7 +939,7 @@ GslVector::subReadContents(
     // Read '=' sign
     *filePtrSet.ifsVar >> tmpString;
     //std::cout << "Core 0 just read '" << tmpString << "'" << std::endl;
-    queso_require_equal_to_msg(tmpString, "=", "in core 0, string should be the '=' sign");
+    queso_require_equal_to_msg(tmpString, std::string("="), std::string("in core 0, string should be the '=' sign"));
 
     // Take into account the ' [' portion
     std::streampos tmpPos = filePtrSet.ifsVar->tellg();
@@ -1091,7 +1090,6 @@ GslVector::abs() const
     }
 
   return abs_of_this_vec;
-
 }
 
 std::ostream&
