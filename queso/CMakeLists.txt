@@ -48,9 +48,21 @@ set(QUESO_HAVE_BOOST 1)
 # Check for include files
 include(CheckIncludeFile)
 check_include_file("dlfcn.h" QUESO_HAVE_DLFCN_H)
+check_include_file("inttypes.h" QUESO_HAVE_INTTYPES_H)
+check_include_file("memory.h" QUESO_HAVE_MEMORY_H)
 check_include_file("stdint.h" QUESO_HAVE_STDINT_H)
+check_include_file("stdlib.h" QUESO_HAVE_STDLIB_H)
+check_include_file("strings.h" QUESO_HAVE_STRINGS_H)
+check_include_file("string.h" QUESO_HAVE_STRING_H)
+check_include_file("sys/stat.h" QUESO_HAVE_SYS_STAT_H)
+check_include_file("sys/types.h" QUESO_HAVE_SYS_TYPES_H)
+check_include_file("unistd.h" QUESO_HAVE_UNISTD_H)
 
 # TODO: Add other include files from config_queso.h.cmake.in
+# There is a stub for QUESO_STDC_HEADERS but not sure what specific header(s)
+# to key off of.  Should it be a bool AND of some of the above along
+# with additional ones? The macro does not appear in the pruned Queso
+# source.  RWH
 
 
 # -----
@@ -58,8 +70,7 @@ check_include_file("stdint.h" QUESO_HAVE_STDINT_H)
 # Definitions used by queso.h.in and config_queso.h.cmake.in
 # -----
 
-# TODO: see if we can get upstream to consolidate the two configured
-# header files
+# TODO: see if we can get upstream to consolidate the two configured header files
 
 set(GENERIC_MAJOR_VERSION 0)
 set(GENERIC_MINOR_VERSION 56)
@@ -69,20 +80,42 @@ set(BUILD_USER "anonymous")
 set(BUILD_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 #set(BUILD_HOST "${CMAKE_SYSTEM_NAME}")
 set(BUILD_HOST "unknown")
-# this deviates from QUEOS, which uses a static build date in queso.h,
+# this deviates from QUESO, which uses a static build date in queso.h,
 # but dynamic in config_queso.h; need to embed the quotes for macro
 # expansion
 # TODO: embed date when using CMake 2.8.12 or newer
 #set(BUILD_DATE "YYYY-MM-DD HH:MM")
 set(BUILD_DATE "\"__DATE__ \" \"__TIME__\"")
-# TODO: short SHA1 from upstream queso git repo:
-set(BUILD_VERSION "N/A")
+
+if( EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION )
+  file( STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION Queso_GIT_REV )
+  set(BUILD_VERSION ${Queso_GIT_REV})
+else()
+  find_package(Git)
+  if(GIT_FOUND)
+    get_filename_component(abs_source_dir ${Dakota_SOURCE_DIR} REALPATH)
+    # Get the abbreviated SHA1 of the most recent commit
+    execute_process(COMMAND ${GIT_EXECUTABLE} log --pretty=format:%h -1 
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      OUTPUT_VARIABLE Queso_GIT_ABBREV_SHA1)
+    # Get the date and time of the most recent commit
+    execute_process(COMMAND ${GIT_EXECUTABLE} log --pretty=format:%ci -1 
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      OUTPUT_VARIABLE Queso_GIT_DATETIME)
+    # Extract the date
+    string(SUBSTRING "${Queso_GIT_DATETIME}" 0 10 Queso_GIT_DATE)
+    # Build revision string
+    string(CONFIGURE "Dakota packages/external @Queso_GIT_ABBREV_SHA1@ (@Queso_GIT_DATE@)" Queso_GIT_REV)
+  endif(GIT_FOUND) # GIT_FOUND
+
+  set(BUILD_VERSION ${Queso_GIT_REV})
+endif( EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION )
+
 set(VERSION 
   "${GENERIC_MAJOR_VERSION}.${GENERIC_MINOR_VERSION}.${GENERIC_MICRO_VERSION}")
 set(BUILD_DEVSTATUS "Development Build")
 set(CXX "${CMAKE_CXX_COMPILER}")
-# TODO: Following should depend on build type
-set(CXXFLAGS "${CMAKE_CXX_FLAGS}")
+set(CXXFLAGS "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
 
 
 # -----
