@@ -44,6 +44,18 @@ set(QUESO_HAVE_BOOST 1)
 
 # TODO: Check for C++11 support once using CMake 3.x (CXX_STANDARD)
 
+# For now, a user can force use of C++11 features in QUESO by setting
+# these variables: CMAKE_CXX_STANDARD=11, CMAKE_STANDARD_REQUIRED. And
+# setting any necessary flags in CMAKE_CXX_FLAGS, e.g., -std=c++11
+#
+# We assume:
+#  * If the standard is set and isn't C++98, that it's C++11 or newer
+#  * That CMake didn't fall back to C++98 in its configuration
+#    (CXX_STANDARD_REQUIRED).
+#  * That all needed features are working if the standard is 11
+if(CMAKE_CXX_STANDARD AND NOT CMAKE_CXX_STANDARD EQUAL 98)
+  set(QUESO_HAVE_CXX11 1)
+endif()
 
 # Check for include files
 include(CheckIncludeFile)

@@ -50,19 +50,27 @@
 #define QUESO_HAVE_BOOST_SHARED_PTR_HPP @QUESO_HAVE_BOOST@
 
 /* define if the compiler supports basic C++11 syntax */
-// QUESO_HAVE_CXX11
+#cmakedefine QUESO_HAVE_CXX11
 
 /* Flag indicating whether compiler supports std::isfinite; */
-// QUESO_HAVE_CXX11_ISFINITE
+#ifdef QUESO_HAVE_CXX11
+#define QUESO_HAVE_CXX11_ISFINITE @QUESO_HAVE_CXX11@
+#endif
 
 /* Flag indicating whether compiler supports std::isnan; */
-// QUESO_HAVE_CXX11_ISNAN
+#ifdef QUESO_HAVE_CXX11
+#define QUESO_HAVE_CXX11_ISNAN @QUESO_HAVE_CXX11@
+#endif
 
 /* Flag indicating whether compiler supports std::shared_ptr */
-// QUESO_HAVE_CXX11_SHARED_PTR
+#ifdef QUESO_HAVE_CXX11
+#define QUESO_HAVE_CXX11_SHARED_PTR @QUESO_HAVE_CXX11@
+#endif
 
 /* Flag indicating whether compiler supports std::unique_ptr */
-// QUESO_HAVE_CXX11_UNIQUE_PTR
+#ifdef QUESO_HAVE_CXX11
+#define QUESO_HAVE_CXX11_UNIQUE_PTR @QUESO_HAVE_CXX11@
+#endif
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #cmakedefine QUESO_HAVE_DLFCN_H
