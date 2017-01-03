@@ -90,14 +90,10 @@ set(GENERIC_MICRO_VERSION 0)
 
 set(BUILD_USER "anonymous")
 set(BUILD_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
-#set(BUILD_HOST "${CMAKE_SYSTEM_NAME}")
-set(BUILD_HOST "unknown")
-# this deviates from QUESO, which uses a static build date in queso.h,
-# but dynamic in config_queso.h; need to embed the quotes for macro
-# expansion
-# TODO: embed date when using CMake 2.8.12 or newer
-#set(BUILD_DATE "YYYY-MM-DD HH:MM")
-set(BUILD_DATE "\"__DATE__ \" \"__TIME__\"")
+# set BUILD_HOST
+cmake_host_system_information(RESULT BUILD_HOST QUERY HOSTNAME)
+# queso.h is going away; for now set BUILD_DATE:
+string(TIMESTAMP BUILD_DATE "%Y-%m-%d %H:%M:%S")
 
 if( EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION )
   file( STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION Queso_GIT_REV )
