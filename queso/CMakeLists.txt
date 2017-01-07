@@ -179,6 +179,9 @@ foreach(queso_subdir basic core misc stats gp surrogates)
 
 endforeach()
 
+# Vagaries of file globbing: version.C has a main()
+list(REMOVE_ITEM queso_sources "src/core/src/version.C")
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/getpot/getpot.h 
   ${CMAKE_CURRENT_BINARY_DIR}/include/queso/ COPYONLY)
 
