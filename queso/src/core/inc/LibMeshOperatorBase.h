@@ -4,7 +4,7 @@
 // QUESO - a library to support the Quantification of Uncertainty
 // for Estimation, Simulation and Optimization
 //
-// Copyright (C) 2008-2015 The PECOS Development Team
+// Copyright (C) 2008-2017 The PECOS Development Team
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the Version 2.1 GNU Lesser General
@@ -112,11 +112,11 @@ public:
    *  where the lambda are eigenvalues of the precision operator, \c this, and
    *  the \phi(x) are eigenfunctions of the precision operator, \c this
    */
-  virtual typename SharedPtr<FunctionBase>::Type
+  virtual SharedPtr<FunctionBase>::Type
   inverse_kl_transform(std::vector<double> & xi, double alpha) const;
 
 protected:
-  typename SharedPtr<libMesh::EquationSystems>::Type equation_systems;
+  SharedPtr<libMesh::EquationSystems>::Type equation_systems;
 
   const FunctionOperatorBuilder & builder;
 

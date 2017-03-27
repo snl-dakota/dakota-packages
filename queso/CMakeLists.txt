@@ -132,8 +132,8 @@ set(CXXFLAGS "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/queso)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/core/inc/queso.h.in
-  ${CMAKE_CURRENT_BINARY_DIR}/include/queso/queso.h)
+#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/core/inc/queso.h.in
+#  ${CMAKE_CURRENT_BINARY_DIR}/include/queso/queso.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config_queso.h.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/include/queso/config_queso.h)
 

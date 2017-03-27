@@ -4,7 +4,7 @@
 // QUESO - a library to support the Quantification of Uncertainty
 // for Estimation, Simulation and Optimization
 //
-// Copyright (C) 2008-2015 The PECOS Development Team
+// Copyright (C) 2008-2017 The PECOS Development Team
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the Version 2.1 GNU Lesser General
@@ -57,7 +57,7 @@ LibMeshNegativeLaplacianOperator::LibMeshNegativeLaplacianOperator(
     const FunctionOperatorBuilder & builder, libMesh::MeshBase & m)
   : LibMeshOperatorBase(builder, m)
 {
-  typename SharedPtr<libMesh::EquationSystems>::Type es(this->equation_systems);
+  SharedPtr<libMesh::EquationSystems>::Type es(this->equation_systems);
 
   // Give the system a pointer to the matrix assembly
   // function defined below.
@@ -142,7 +142,7 @@ void LibMeshNegativeLaplacianOperator::assemble()
 {
 #ifdef LIBMESH_HAVE_SLEPC
 
-  typename SharedPtr<libMesh::EquationSystems>::Type es(this->equation_systems);
+  SharedPtr<libMesh::EquationSystems>::Type es(this->equation_systems);
 
   // Get a constant reference to the mesh object.
   const libMesh::MeshBase& mesh = es->get_mesh();

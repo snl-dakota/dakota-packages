@@ -4,7 +4,7 @@
 // QUESO - a library to support the Quantification of Uncertainty
 // for Estimation, Simulation and Optimization
 //
-// Copyright (C) 2008-2015 The PECOS Development Team
+// Copyright (C) 2008-2017 The PECOS Development Team
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the Version 2.1 GNU Lesser General
@@ -98,15 +98,15 @@ public:
    * identically zero (by copying \c this) everywhere and return a boost shared
    * pointer to it
    */
-  virtual typename SharedPtr<FunctionBase>::Type zero_clone() const;
+  virtual SharedPtr<FunctionBase>::Type zero_clone() const;
 
   //! Return the internal libmesh equation systems object
-  virtual typename SharedPtr<libMesh::EquationSystems>::Type get_equation_systems() const;
+  virtual SharedPtr<libMesh::EquationSystems>::Type get_equation_systems() const;
 
 private:
   const FunctionOperatorBuilder & builder;
 
-  typename SharedPtr<libMesh::EquationSystems>::Type equation_systems;
+  SharedPtr<libMesh::EquationSystems>::Type equation_systems;
 };
 
 }  // End namespace QUESO

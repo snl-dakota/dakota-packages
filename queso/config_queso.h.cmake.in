@@ -75,14 +75,14 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #cmakedefine QUESO_HAVE_DLFCN_H
 
-/* Define if GLPK is available */
-// QUESO_HAVE_GLPK
+/* GLPK info - required for now */
+#define QUESO_GLPK_DIR "N/A"
 
-/* Define if GRVY is available */
-// QUESO_HAVE_GRVY
+/* GRVY info - required for now */
+#define QUESO_GRVY_DIR "N/A"
 
-/* Define if HDF5 is available */
-// QUESO_HAVE_HDF5
+/* HDF5 info - required for now */
+#define QUESO_HDF5_DIR "N/A"
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine QUESO_HAVE_INTTYPES_H
@@ -123,6 +123,12 @@
 /* Define to 1 if you have the <Trilinos_version.h> header file. */
 // QUESO_HAVE_TRILINOS_VERSION_H
 
+/* Need to satisfy this: TODO - propagate info from Dakota */
+#define QUESO_TRILINOS_DIR "N/A"
+
+/* GSL info - required for now */
+#define QUESO_GSL_DIR "@GSL_PATH@"
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine QUESO_HAVE_UNISTD_H
 
@@ -153,6 +159,12 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 // QUESO_STDC_HEADERS
+
+/* C++ Compiler */
+#define QUESO_CXX "@CXX@"
+
+/* C++ Compiler flags */
+#define QUESO_CXXFLAGS "@CXX_FLAGS@"
 
 /* Version number of package */
 #define QUESO_VERSION "@VERSION@"
