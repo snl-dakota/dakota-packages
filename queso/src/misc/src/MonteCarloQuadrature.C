@@ -41,7 +41,9 @@ namespace QUESO
 
     const BaseVectorRealizer< V, M > & realizer = uniform_rv.realizer();
 
-    this->m_positions.resize((long unsigned)n_samples);//,NULL);
+    // This line would not compile with gcc 4.8.3 - RWH
+    //this->m_positions.resize(n_samples,NULL);
+    this->m_positions.resize((long unsigned)n_samples);
 
     for( unsigned int i = 0; i < n_samples; i++ )
       {

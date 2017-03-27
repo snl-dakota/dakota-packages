@@ -50,7 +50,8 @@ namespace QUESO
         total_n_q_points *= q_rules[i]->positions().size();
       }
 
-    this->m_positions.resize((long unsigned int)total_n_q_points);//,NULL);
+    // This line would not compile with gcc 4.8.3 - RWH
+    //this->m_positions.resize(total_n_q_points,NULL);
     this->m_weights.resize(total_n_q_points);
 
     // The positions are just a tensor product of the positions for each of the 1-D rules.
