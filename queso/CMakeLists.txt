@@ -16,7 +16,9 @@ project(Queso CXX)
 # and non-system-provided Boost.  Probably need to change all
 # invocations to Boost_FOUND instead of Boost_DIR.
 if(NOT Boost_FOUND)
-  find_package(Boost 1.44 REQUIRED COMPONENTS program_options)
+  # We no longer use Boost program options, instead Getpot
+  ##find_package(Boost 1.44 REQUIRED COMPONENTS program_options)
+  find_package(Boost 1.44 REQUIRED)
 endif()
 
 find_package(GSL REQUIRED) # Version 1.15 or newer?
