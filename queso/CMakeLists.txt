@@ -16,7 +16,9 @@ project(Queso CXX)
 # and non-system-provided Boost.  Probably need to change all
 # invocations to Boost_FOUND instead of Boost_DIR.
 if(NOT Boost_FOUND)
-  find_package(Boost 1.44 REQUIRED COMPONENTS program_options)
+  # We no longer use Boost program options, instead Getpot
+  ##find_package(Boost 1.44 REQUIRED COMPONENTS program_options)
+  find_package(Boost 1.44 REQUIRED)
 endif()
 
 find_package(GSL REQUIRED) # Version 1.15 or newer?
@@ -132,8 +134,8 @@ set(CXXFLAGS "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/queso)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/core/inc/queso.h.in
-  ${CMAKE_CURRENT_BINARY_DIR}/include/queso/queso.h)
+#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/core/inc/queso.h.in
+#  ${CMAKE_CURRENT_BINARY_DIR}/include/queso/queso.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config_queso.h.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/include/queso/config_queso.h)
 
@@ -178,6 +180,9 @@ foreach(queso_subdir basic core misc stats gp surrogates)
   #target_link_libraries(queso_${queso_subdir} ${Boost_LIBRARIES})
 
 endforeach()
+
+# Vagaries of file globbing: version.C has a main()
+list(REMOVE_ITEM queso_sources "src/core/src/version.C")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/getpot/getpot.h 
   ${CMAKE_CURRENT_BINARY_DIR}/include/queso/ COPYONLY)

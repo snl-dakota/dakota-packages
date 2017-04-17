@@ -4,7 +4,7 @@
 // QUESO - a library to support the Quantification of Uncertainty
 // for Estimation, Simulation and Optimization
 //
-// Copyright (C) 2008-2015 The PECOS Development Team
+// Copyright (C) 2008-2017 The PECOS Development Team
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the Version 2.1 GNU Lesser General
@@ -69,9 +69,6 @@ public:
   //! Actual value of the PDF (scalar function).
   virtual double actualValue                    (const V& domainVector, const V* domainDirection, V* gradVector, M* hessianMatrix, V* hessianEffect) const = 0;
 
-  //! Logarithm of the value of the function.
-  virtual double lnValue                        (const V& domainVector, const V* domainDirection, V* gradVector, M* hessianMatrix, V* hessianEffect) const = 0;
-
   /*! Mean value of the underlying random variable.
    * Not implemented in base class, but not pure virtual for backwards
    * compatibility reasons.
@@ -84,7 +81,16 @@ public:
    */
   virtual void   distributionVariance           (M & covMatrix) const;
 
-  //! Sets a value to be used in the normalization style (stored in the protected attribute m_normalizationStyle.)
+  //! Sets a value to be used in the normalization style.  Default value is
+  //! zero.
+  /*!
+   * The value is stored in m_normalizationStyle.
+   *
+   * If the normalization style is zero, one should compute analytical
+   * normalization constants in lnValue and actualValue.  It doesn't appear
+   * to be used in many of of the computeLogOfNormalizationFactor methods in
+   * derived classes.
+   */
   virtual void   setNormalizationStyle          (unsigned int value) const;
 
   //! Sets a logarithmic value to be used in the normalization factor (stored in the protected attribute m_normalizationStyle.)
@@ -110,6 +116,8 @@ protected:
   using BaseScalarFunction<V,M>::m_prefix;
   using BaseScalarFunction<V,M>::m_domainSet;
 
+  //! Flag to decide which style of normalisation to use.  The constructor sets
+  //! this to zero in the initialisation list.
   mutable unsigned int m_normalizationStyle;
   mutable double       m_logOfNormalizationFactor;
 

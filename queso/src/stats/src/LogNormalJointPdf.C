@@ -4,7 +4,7 @@
 // QUESO - a library to support the Quantification of Uncertainty
 // for Estimation, Simulation and Optimization
 //
-// Copyright (C) 2008-2015 The PECOS Development Team
+// Copyright (C) 2008-2017 The PECOS Development Team
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the Version 2.1 GNU Lesser General
@@ -186,9 +186,10 @@ LogNormalJointPdf<V,M>::lnValue(
       returnValue = ((diffVec*diffVec)/this->lawVarVector()).sumOfComponents();
       returnValue *= -0.5;
 
-      if (m_normalizationStyle == 0) {
-        for (unsigned int i = 0; i < domainVector.sizeLocal(); ++i) {
-          returnValue -= std::log(domainVector[i] * std::sqrt(2. * M_PI * this->lawVarVector()[i])); // Contribution of 1/(x\sqrt{2\pi\sigma^2})
+      for (unsigned int i = 0; i < domainVector.sizeLocal(); ++i) {
+        returnValue -= std::log(domainVector[i]);
+        if (m_normalizationStyle == 0) {
+          returnValue -= std::log(std::sqrt(2. * M_PI * this->lawVarVector()[i])); // Contribution of 1/(x\sqrt{2\pi\sigma^2})
         }
       }
     }
