@@ -1426,6 +1426,18 @@ GPMSAFactory<V, M>::setUpHyperpriors()
   this->totalMins->cwSet(0);
   this->totalMaxs->cwSet(1);
 
+  // BMA: This hack should be removed once we update to QUESO newer
+  // than 0.57.x.  It only works because we know Dakota passed a
+  // BoxSubset as the parameterDomain (imageSet of the RV). {
+  const VectorSet<V,M> & prior_image_set = this->m_parameterPrior.imageSet();
+  const BoxSubset<V,M> & box_space =
+    dynamic_cast< const BoxSubset<V,M>& >(prior_image_set);
+  for (unsigned int i=0; i<dimParameter; ++i) {
+    (*(this->totalMins))[i] = box_space.minValues()[i];
+    (*(this->totalMaxs))[i] = box_space.maxValues()[i];
+  }
+  // } BMA: End hack
+
   // Min emulator precision
   (*(this->totalMins))[dimParameter] = 0.3;
   // Max emulator precision
