@@ -139,7 +139,7 @@ Version Information
 #endif
 
 #define JEGA_VERSION "2.7.0"
-#define JEGA_PACKAGE "JEGA v"JEGA_VERSION
+#define JEGA_PACKAGE "JEGA v" JEGA_VERSION
 
 
 /*

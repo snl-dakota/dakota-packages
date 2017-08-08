@@ -77,7 +77,7 @@ Version Information
 #define EDDY_THREADS_VERSION "1.0.0"
 
 /// The name of the project complete with version number.
-#define EDDY_THREADS_PACKAGE "Eddy Threadsafe Project v"EDDY_THREADS_VERSION
+#define EDDY_THREADS_PACKAGE "Eddy Threadsafe Project v" EDDY_THREADS_VERSION
 
 
 
