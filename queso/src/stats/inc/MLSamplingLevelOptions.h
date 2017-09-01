@@ -30,10 +30,12 @@
 #include <queso/Environment.h>
 #include <queso/SequenceStatisticalOptions.h>
 
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 #include <queso/BoostInputOptionsParser.h>
 #else
+#define GETPOT_NAMESPACE QUESO // So we don't clash with other getpots
 #include <queso/getpot.h>
+#undef GETPOT_NAMESPACE
 #endif
 
 #define UQ_ML_SAMPLING_L_FILENAME_FOR_NO_FILE "."
@@ -377,9 +379,9 @@ private:
 
   const BaseEnvironment&        m_env;
 
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
   BoostInputOptionsParser * m_parser;
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 
   std::string                   m_option_help;
 

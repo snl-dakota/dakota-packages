@@ -30,7 +30,7 @@ namespace QUESO {
 
 template <class V, class M>
 GPMSAEmulator<V, M>::GPMSAEmulator(
-    const VectorSet<V, M> & domain,
+    const VectorSet<V, M> & /* domain */,
     const VectorSpace<V, M> & m_scenarioSpace,
     const VectorSpace<V, M> & m_parameterSpace,
     const VectorSpace<V, M> & m_simulationOutputSpace,
@@ -76,13 +76,6 @@ GPMSAEmulator<V, M>::GPMSAEmulator(
 
   queso_assert_equal_to
     (m_simulationOutputs[0]->map().Comm().NumProc(), 1);
-
-  const unsigned int numOutputs =
-    this->m_experimentOutputSpace.dimLocal();
-
-  this->num_svd_terms = this->m_opts.m_maxEmulatorBasisVectors ?
-    std::min((unsigned int)(this->m_opts.m_maxEmulatorBasisVectors), numOutputs) :
-    numOutputs;
 }
 
 template <class V, class M>
@@ -117,11 +110,12 @@ GPMSAEmulator<V, M>::lnValue(const V & domainVector,
   // discrepancy_precision(1)     // = "lambda_delta" in scalar case,
   //                              //   "lambda_{v i}" in vector
   // ...
-  // discrepancy_precision(F)     // FIXME: F = 1, |G_1| = p_delta, for now.
+  // discrepancy_precision(F)     // FIXME: F = p_delta, |G_1| = 1, for now.
   // discrepancy_corr_strength(1) // = "rho_{delta k}" in scalar case,
   // ...                          //   "rho_{v i}" in vector
-  // discrepancy_corr_strength(dimScenario)
-  // emulator_data_precision(1)   // = "small white noise", "small ridge"
+  // discrepancy_corr_strength(F*dimScenario)  // FIXME: F = numOutputs, for now
+  // emulator_data_precision(1)   // = "small white noise",
+                                  // "small ridge", "nugget"
   // observation_error_precision  // = "lambda_y", iff user-requested
 
   // Other variables:
@@ -140,8 +134,8 @@ GPMSAEmulator<V, M>::lnValue(const V & domainVector,
   // covMatrix                    // = "Sigma_D" in scalar case,
   //                                   "Sigma_zhat" in vector
   // m_discrepancyMatrices        // = "D_i"
-  // m_observationErrorMatrices   // = "W_i"
-  // m_observationErrorMatrix     // = "W_y"
+  // m_observationErrorMatrices   // = "W_i^{-1}"
+  // m_observationErrorMatrix     // = "W_y^{-1}"
   // m_BMatrix                    // = "B"
   // num_discrepancy_groups       // = "F"
   // m_emulatorPrecisionShapeVec          // = "a_eta"
@@ -156,6 +150,7 @@ GPMSAEmulator<V, M>::lnValue(const V & domainVector,
   const unsigned int num_discrepancy_bases = m_discrepancyBases.size();
   const unsigned int residualSize = (numOutputs == 1) ?  totalOutputs :
     totalRuns * num_svd_terms + m_numExperiments * num_discrepancy_bases;
+  const unsigned int num_discrepancy_groups = numOutputs;
 
   double prodScenario = 1.0;
   double prodParameter = 1.0;
@@ -164,15 +159,15 @@ GPMSAEmulator<V, M>::lnValue(const V & domainVector,
   unsigned int dimParameter = (this->m_parameterSpace).dimLocal();
 
   // Length of prior+hyperprior inputs
-  unsigned int dimSum = 2 +
-                        (this->num_svd_terms < numOutputs) +
-                        (numOutputs > 1) +
+  unsigned int dimSum = 1 +
+                        (this->num_svd_terms < num_nonzero_eigenvalues) +
                         m_opts.m_calibrateObservationalPrecision +
                         num_svd_terms +
                         dimParameter +
                         dimParameter +
                         dimScenario +
-                        dimScenario;  // yum
+                        num_discrepancy_groups +
+                        (num_discrepancy_groups * dimScenario);  // yum
 
   // Offset for Sigma_eta equivalent in vector case
   const unsigned int offset1 = (numOutputs == 1) ?
@@ -241,7 +236,7 @@ GPMSAEmulator<V, M>::lnValue(const V & domainVector,
       // Emulator component       // = first term in (1)
       prodScenario = 1.0;
       unsigned int emulatorCorrStrStart =
-        dimParameter + (this->num_svd_terms < numOutputs) + num_svd_terms;
+        dimParameter + (this->num_svd_terms < num_nonzero_eigenvalues) + num_svd_terms;
       for (unsigned int k = 0; k < dimScenario; k++) {
         const double & emulator_corr_strength =
           domainVector[emulatorCorrStrStart+k];
@@ -285,7 +280,7 @@ GPMSAEmulator<V, M>::lnValue(const V & domainVector,
           // Sigma_uw etc. it's lambda_wi and we skip lambda_eta
           const double relevant_precision =
             domainVector[dimParameter + basis +
-                         (this->num_svd_terms<numOutputs) + (numOutputs>1)];
+                         (this->num_svd_terms<num_nonzero_eigenvalues)];
           queso_assert_greater(relevant_precision, 0.0);
 
           const unsigned int stridei =
@@ -307,35 +302,51 @@ GPMSAEmulator<V, M>::lnValue(const V & domainVector,
       if (i < this->m_numExperiments && j < this->m_numExperiments) {
         typename SharedPtr<V>::Type cross_scenario1 = (this->m_experimentScenarios)[i];
         typename SharedPtr<V>::Type cross_scenario2 = (this->m_experimentScenarios)[j];
-        prodDiscrepancy = 1.0;
         unsigned int discrepancyCorrStrStart =
-          dimParameter + num_svd_terms + dimParameter + dimScenario + 1 +
-          (this->num_svd_terms<numOutputs) + (numOutputs > 1);
-        for (unsigned int k = 0; k < dimScenario; k++) {
-          const double & discrepancy_corr_strength =
-            domainVector[discrepancyCorrStrStart+k];
-          double cross_scenario_param1 =
-            m_opts.normalized_scenario_parameter(k, (*cross_scenario1)[k]);
-          double cross_scenario_param2 =
-            m_opts.normalized_scenario_parameter(k, (*cross_scenario2)[k]);
-          prodDiscrepancy *=
-            std::pow(discrepancy_corr_strength, 4.0 *
-                     (cross_scenario_param1 - cross_scenario_param2) *
-                     (cross_scenario_param1 - cross_scenario_param2));
+          dimParameter + num_svd_terms + dimParameter + dimScenario + num_discrepancy_groups +
+          (this->num_svd_terms<num_nonzero_eigenvalues);
+
+        // Loop over discrepancy groups.
+        // Here I'm hard-coding the number of discrepancy groups F to be the
+        // number of outputs, numOutputs.  This is the default for the
+        // multivariate case.
+        for (unsigned int disc_grp = 0; disc_grp < num_discrepancy_groups; disc_grp++) {
+          prodDiscrepancy = 1.0;
+          for (unsigned int k = 0; k < dimScenario; k++) {
+            const double & discrepancy_corr_strength =
+              domainVector[discrepancyCorrStrStart+(disc_grp*dimScenario)+k];
+            double cross_scenario_param1 =
+              m_opts.normalized_scenario_parameter(k, (*cross_scenario1)[k]);
+            double cross_scenario_param2 =
+              m_opts.normalized_scenario_parameter(k, (*cross_scenario2)[k]);
+            prodDiscrepancy *=
+              std::pow(discrepancy_corr_strength, 4.0 *
+                       (cross_scenario_param1 - cross_scenario_param2) *
+                       (cross_scenario_param1 - cross_scenario_param2));
+          }
+
+          queso_assert (!queso_isnan(prodDiscrepancy));
+
+          unsigned int discrepancyPrecisionStart = dimParameter +
+                                                   (num_svd_terms<num_nonzero_eigenvalues) +
+                                                   num_svd_terms +
+                                                   dimScenario +
+                                                   dimParameter;
+
+          const double discrepancy_precision =
+            domainVector[discrepancyPrecisionStart+disc_grp];
+
+          queso_assert_greater(discrepancy_precision, 0);
+
+          // Sigma_delta term from below (3) in univariate case
+          // Sigma_v term from p. 576 in multivariate case
+          const double R_v = prodDiscrepancy / discrepancy_precision;
+
+          // This assumes there is 1 element in each discrepancy group.  This
+          // assumption is not legitimate for the functional case.
+          covMatrix(disc_grp*m_numExperiments+i,
+                    disc_grp*m_numExperiments+j) += R_v;
         }
-
-        const double discrepancy_precision =
-          domainVector[discrepancyCorrStrStart-1];
-        queso_assert_greater(discrepancy_precision, 0);
-        queso_assert (!queso_isnan(prodDiscrepancy));
-
-        // Sigma_delta term from below (3) in univariate case
-        // Sigma_v term from p. 576 in multivariate case
-        const double R_v = prodDiscrepancy / discrepancy_precision;
-        for (unsigned int disc = 0; disc != num_discrepancy_bases;
-             ++disc)
-          covMatrix(disc*m_numExperiments+i,
-                    disc*m_numExperiments+j) += R_v;
 
         if (numOutputs == 1)
           {
@@ -354,14 +365,18 @@ GPMSAEmulator<V, M>::lnValue(const V & domainVector,
               m_opts.m_calibrateObservationalPrecision ?
               domainVector[dimSum-1] : 1.0;
 
-            covMatrix(i,j) += lambda_y * experimentalError;
+            covMatrix(i,j) += experimentalError / lambda_y;
           }
       }
     }
 
     // Add small white noise component to diagonal to make stuff +ve def
     // = "small ridge"
-    const double emulator_data_precision = domainVector[dimSum-1-(numOutputs>1)];
+    // Barely alluded to, never described, in Higdon et. al.
+    const double emulator_data_precision =
+      domainVector[dimSum-1-
+                   m_opts.m_calibrateObservationalPrecision];
+
     queso_assert_greater(emulator_data_precision, 0);
     double nugget = 1.0 / emulator_data_precision;
 
@@ -385,15 +400,18 @@ GPMSAEmulator<V, M>::lnValue(const V & domainVector,
         for (unsigned int j=0; j != BT_Wy_B_size; ++j)
           covMatrix(i,j) += BT_Wy_B_inv(i,j) * inv_lambda_y;
 
-      const double emulator_precision =
-        domainVector[dimParameter+1];
-      const double inv_emulator_precision = 1.0/emulator_precision;
+      // Only add KT_K_inv if we're actually calibrating the truncation error
+      // precision term
+      if (num_svd_terms < num_nonzero_eigenvalues) {
+        const double trunc_err_precision = domainVector[dimParameter];
+        const double inv_trunc_err_precision = 1.0 / trunc_err_precision;
 
-      unsigned int KT_K_size = KT_K_inv.numCols();
-      for (unsigned int i=0; i != KT_K_size; ++i)
-        for (unsigned int j=0; j != KT_K_size; ++j)
-          covMatrix(i+offset2,j+offset2) +=
-            KT_K_inv(i,j) * inv_emulator_precision;
+        unsigned int KT_K_size = KT_K_inv.numCols();
+        for (unsigned int i=0; i != KT_K_size; ++i)
+          for (unsigned int j=0; j != KT_K_size; ++j)
+            covMatrix(i+offset2,j+offset2) +=
+              KT_K_inv(i,j) * inv_trunc_err_precision;
+      }
     }
 
 
@@ -478,6 +496,7 @@ GPMSAFactory<V, M>::GPMSAFactory(
     m_numSimulationAdds(0),
     m_numExperimentAdds(0),
     num_svd_terms(0),
+    num_nonzero_eigenvalues(0),
     priors(),
     m_constructedGP(false)
 {
@@ -487,15 +506,7 @@ GPMSAFactory<V, M>::GPMSAFactory(
                         experimentOutputSpace.dimGlobal());
 
   {
-    const unsigned int numOutputs =
-      this->m_experimentOutputSpace.dimLocal();
     const Map & output_map = experimentOutputSpace.map();
-
-    // Set up the default discrepancy basis:
-    typename SharedPtr<V>::Type all_ones_basis(new V(env, output_map));
-    for (unsigned int i=0; i != numOutputs; ++i)
-      (*all_ones_basis)[i] = 1;
-    m_discrepancyBases.push_back(all_ones_basis);
 
     // Set up the default observation error covariance matrix:
     for (unsigned int i = 0; i != numExperiments; ++i)
@@ -503,6 +514,11 @@ GPMSAFactory<V, M>::GPMSAFactory(
         typename SharedPtr<M>::Type identity_matrix(new M(env, output_map, 1.0));
         m_observationErrorMatrices.push_back(identity_matrix);
       }
+
+    // Set up a nonsense, "placeholder" discrepancy basis; we'll test
+    // for this later to determine whether or not the user has
+    // requested a non-default discrepancy basis.
+    m_discrepancyBases.push_back(NULL);
   }
 
   // DM: Not sure if the logic in these 3 if-blocks is correct
@@ -736,6 +752,36 @@ GPMSAFactory<V, M>::addSimulations(
 
 template <class V, class M>
 void
+GPMSAFactory<V, M>::setUpDiscrepancyBases()
+{
+  // If our "placeholder" basis is still there, then the user hasn't
+  // requested anything different, and we need to autogenerate the
+  // default basis.
+  if ((m_discrepancyBases.size() == 1) &&
+      !m_discrepancyBases[0].get())
+    {
+      const Map & output_map = m_simulationOutputs[0]->map();
+      const BaseEnvironment &env = m_simulationOutputs[0]->env();
+
+      // Replace our placeholder with the default discrepancy basis:
+      m_discrepancyBases.clear();
+
+      const unsigned int numOutputs =
+        this->m_simulationOutputSpace.dimLocal();
+      for (unsigned int i=0; i != numOutputs; ++i)
+        {
+          typename SharedPtr<V>::Type standard_basis(new V(env, output_map));
+          // De-normalize the basis so it will be re-normalized later.
+          (*standard_basis)[i] = this->m_opts->output_scale(i);
+          m_discrepancyBases.push_back(standard_basis);
+        }
+    }
+}
+
+
+
+template <class V, class M>
+void
 GPMSAFactory<V, M>::setUpEmulator()
 {
   this->m_opts->template set_final_scaling<V>
@@ -745,12 +791,10 @@ GPMSAFactory<V, M>::setUpEmulator()
      m_experimentScenarios,
      m_experimentOutputs);
 
-  const unsigned int numOutputs =
-    this->m_experimentOutputSpace.dimLocal();
+  this->setUpDiscrepancyBases();
 
-  this->num_svd_terms = this->m_opts->m_maxEmulatorBasisVectors ?
-    std::min((unsigned int)(this->m_opts->m_maxEmulatorBasisVectors), numOutputs) :
-    numOutputs;
+  const unsigned int numOutputs =
+    this->m_simulationOutputSpace.dimLocal();
 
   const Map & output_map = m_simulationOutputs[0]->map();
 
@@ -765,7 +809,8 @@ GPMSAFactory<V, M>::setUpEmulator()
 
   for (unsigned int i=0; i != m_numSimulations; ++i)
     for (unsigned int j=0; j != numOutputs; ++j)
-      (*simulationOutputMeans)[j] += (*m_simulationOutputs[i])[j];
+      (*simulationOutputMeans)[j] +=
+        this->m_opts->normalized_output(j, (*m_simulationOutputs[i])[j]);
 
   for (unsigned int j=0; j != numOutputs; ++j)
     (*simulationOutputMeans)[j] /= m_numSimulations;
@@ -775,7 +820,8 @@ GPMSAFactory<V, M>::setUpEmulator()
   for (unsigned int i=0; i != m_numSimulations; ++i)
     for (unsigned int j=0; j != numOutputs; ++j)
       simulation_matrix(i,j) =
-        (*m_simulationOutputs[i])[j] - (*simulationOutputMeans)[j];
+        this->m_opts->normalized_output(j, (*m_simulationOutputs[i])[j]) -
+        (*simulationOutputMeans)[j];
 
   // GSL only finds left singular vectors if n_rows>=n_columns, so we need to
   // calculate them indirectly from the eigenvalues of M^T*M
@@ -789,13 +835,45 @@ GPMSAFactory<V, M>::setUpEmulator()
 
   SM_squared.eigen(SM_singularValues, &SM_singularVectors);
 
+  // Check the eigenvalues are in ascending order
+  for (unsigned int i = 0; i < numOutputs-1; i++) {
+    queso_assert_less_equal(SM_singularValues[i], SM_singularValues[i+1]);
+  }
+
+  // Count the number of "nonzero" eigenvalues (eigenvalues over a tolerance)
+  double eigenvalue_tolerance = 1e-10;
+  for (unsigned int i = 0; i < SM_singularValues.sizeLocal(); i++) {
+    // All eigenvalues should be positive, so we don't take fabs
+    if (SM_singularValues[i] > eigenvalue_tolerance) {
+      num_nonzero_eigenvalues++;
+    }
+  }
+
+  // Is this the right way to enforce the scalar case of num_svd_terms
+  if (numOutputs > 1) {
+    this->num_svd_terms = this->m_opts->m_maxEmulatorBasisVectors ?
+      std::min((unsigned int)(this->m_opts->m_maxEmulatorBasisVectors),
+          num_nonzero_eigenvalues) : num_nonzero_eigenvalues;
+  }
+  else {
+    // We do this so logic like 'num_svd_terms < num_nonzero_eigenvalues' is
+    // false in the scalar case.
+    this->num_svd_terms = 1;
+    this->num_nonzero_eigenvalues = 1;
+  }
+
+  queso_require_greater_equal(num_svd_terms, 0);
+
   // Copy only those vectors we want into K_eta
   m_TruncatedSVD_simulationOutputs.reset
     (new M(env, output_map, num_svd_terms));
 
+  // The singular values are in ascending order (with associated vectors ordered
+  // accordingly).  Therefore we want to pull the singular vectors from the
+  // back, not the front.
   for (unsigned int i=0; i != numOutputs; ++i)
     for (unsigned int k = 0; k != num_svd_terms; ++k)
-      (*m_TruncatedSVD_simulationOutputs)(i,k) = SM_singularVectors(i,k);
+      (*m_TruncatedSVD_simulationOutputs)(i,k) = SM_singularVectors(i,numOutputs-1-k);
 
   Map copied_map(numOutputs * m_numSimulations, 0, comm);
 
@@ -822,7 +900,7 @@ GPMSAFactory<V, M>::setUpEmulator()
 
       for (unsigned int j=0; j != numOutputs; ++j)
         for (unsigned int k=0; k != m_discrepancyBases.size(); ++k)
-          D_i(j,k) = (*m_discrepancyBases[k])[j];
+          D_i(j,k) = (*m_discrepancyBases[k])[j] / this->m_opts->output_scale(j);
 
       m_discrepancyMatrices.push_back(D_i);
     }
@@ -854,24 +932,32 @@ GPMSAFactory<V, M>::setUpEmulator()
 
   const Map Wy_row_map(Wyrows, 0, comm);
 
-  m_observationErrorMatrix.reset
-    (new M(env, Wy_row_map, Wyrows));
-
   M& B = *m_BMatrix;
-  M& Wy = *m_observationErrorMatrix;
+
+  // Observation precision matrix
+  M Wy(env, Wy_row_map, Wyrows);
+
+  m_observationErrorMatrix.reset(new M(env, Wy_row_map, Wyrows));
 
   for (unsigned int ex = 0; ex != m_numExperiments; ++ex)
     {
       const M & D_i = m_discrepancyMatrices[ex];
 
-      // Each error covariance matrix had better be SPD
-      const M & W_i = (*m_observationErrorMatrices[ex]);
+      const M & Sigma_i = *m_observationErrorMatrices[ex];
+
 #ifndef NDEBUG
-      M W_i_copy(W_i);
-      int rv = W_i_copy.chol();
-      queso_assert_msg(!rv, "Observation error matrix W_" << ex <<
+      // Each error covariance matrix had better be SPD
+      M Sigma_i_copy(Sigma_i);
+      int rv = Sigma_i_copy.chol();
+      queso_assert_msg(!rv, "Observation error matrix Sigma_" << ex <<
                        " was not SPD!");
 #endif
+
+      // I think this computes the inverse from the LU factorisation.  Perhaps
+      // we should have it done through the cholesky factorisation.
+      //
+      // inverse() returns a new matrix, so a reference is not enough here.
+      M W_i(Sigma_i.inverse());
 
       // For the multivariate case, the bases K_eta computed from
       // simulator outputs are the same as the bases K_i which apply
@@ -903,7 +989,14 @@ GPMSAFactory<V, M>::setUpEmulator()
               // No fancy perturbation here
               unsigned int j = ex*numOutputs+outj;
 
-              Wy(i,j) = W_i(outi,outj);
+              Wy(i,j) = W_i(outi,outj) *
+                (this->m_opts->output_scale(outi) *
+                 this->m_opts->output_scale(outj));
+
+              (*m_observationErrorMatrix)(i,j) = Sigma_i(outi,outj) /
+                (this->m_opts->output_scale(outi) *
+                 this->m_opts->output_scale(outj));
+
             }
         }
     }
@@ -911,11 +1004,27 @@ GPMSAFactory<V, M>::setUpEmulator()
   M BT_Wy_B (B.transpose() * Wy * B);
 
   // Adding a "small ridge" to make sure this is invertible, as on
-  // p.577 - using 1e-4 from discussion notes.
-  for (unsigned int i=0; i != Brows; ++i)
-    BT_Wy_B(i,i) += 1.e-4;
+  // p.577 - defaulted to 1e-4 from discussion notes, but may be
+  // overridden by user options.
+  //
+  // This is "DKridge" in the MATLAB prototype
+  //
+  // The number of rows BT_Wy_B has is Bcols
+  for (unsigned int i=0; i != Bcols; ++i)
+    BT_Wy_B(i,i) +=
+      this->m_opts->m_observationalPrecisionRidge;
 
   BT_Wy_B_inv.reset(new M(BT_Wy_B.inverse()));
+
+  // Add a ridge to the inverse even, if the user requested one.
+  //
+  // The number of rows BT_Wy_B_inv has is Bcols
+  for (unsigned int i=0; i != Bcols; ++i)
+    (*BT_Wy_B_inv)(i,i) +=
+      this->m_opts->m_observationalCovarianceRidge;
+
+  queso_assert_equal_to(BT_Wy_B_inv->numCols(), BT_Wy_B_inv->numRowsGlobal());
+  queso_assert_equal_to(BT_Wy_B_inv->numCols(), Bcols);
 
   this->setUpHyperpriors();
 
@@ -942,6 +1051,10 @@ GPMSAFactory<V, M>::setUpEmulator()
       *this->BT_Wy_B_inv,
       *this->KT_K_inv,
       *this->m_opts));
+
+  // FIXME: epic hack.  pls fix.
+  this->gpmsaEmulator->num_svd_terms = num_svd_terms;
+  this->gpmsaEmulator->num_nonzero_eigenvalues = num_nonzero_eigenvalues;
 }
 
 
@@ -1069,6 +1182,7 @@ GPMSAFactory<V, M>::setUpHyperpriors()
     this->m_experimentOutputSpace.dimLocal();
 
   const unsigned int num_discrepancy_bases = m_discrepancyBases.size();
+  const unsigned int num_discrepancy_groups = numOutputs;
 
   const MpiComm & comm = m_simulationOutputs[0]->map().Comm();
 
@@ -1103,14 +1217,14 @@ GPMSAFactory<V, M>::setUpHyperpriors()
       for (unsigned int i = 0; i < this->m_numExperiments; i++) {
         for (unsigned int k = 0; k != numOutputs; ++k)
           y[i*numOutputs+k] =
-            (*((this->m_experimentOutputs)[i]))[k] -
+            this->m_opts->normalized_output(k, (*((this->m_experimentOutputs)[i]))[k]) -
             (*simulationOutputMeans)[k];
       }
 
       for (unsigned int i = 0; i < this->m_numSimulations; i++) {
         for (unsigned int k = 0; k != numOutputs; ++k)
           eta[i*numOutputs+k] =
-            (*((this->m_simulationOutputs)[i]))[k] -
+            this->m_opts->normalized_output(k, (*((this->m_simulationOutputs)[i]))[k]) -
             (*simulationOutputMeans)[k];
       }
 
@@ -1145,6 +1259,8 @@ GPMSAFactory<V, M>::setUpHyperpriors()
       V y_temp(Wy * y);
       y_temp -= Wy * B * yhat;
 
+      // At this point everything has already been normalized, so no
+      // more normalization to do?
       observationalPrecisionScale +=
         scalarProduct(y, y_temp) / 2.0;
     }
@@ -1158,12 +1274,13 @@ GPMSAFactory<V, M>::setUpHyperpriors()
       // We currently use the mean of the simulation data, not a free
       // hyperparameter mean
       for (unsigned int i = 0; i < this->m_numExperiments; i++) {
-        (*residual)[i] = (*((this->m_experimentOutputs)[i]))[0] -
-                         (*simulationOutputMeans)[0];
+        (*residual)[i] =
+          this->m_opts->normalized_output(0, (*((this->m_experimentOutputs)[i]))[0]) -
+          (*simulationOutputMeans)[0];
       }
       for (unsigned int i = 0; i < this->m_numSimulations; i++) {
         (*residual)[i+this->m_numExperiments] =
-          (*((this->m_simulationOutputs)[i]))[0] -
+          this->m_opts->normalized_output(0, (*((this->m_simulationOutputs)[i]))[0]) -
           (*simulationOutputMeans)[0];
       }
     }
@@ -1181,12 +1298,26 @@ GPMSAFactory<V, M>::setUpHyperpriors()
   this->oneDSpace.reset
     (new VectorSpace<V, M>(this->m_env, "", 1, NULL));
 
+  this->numDiscrepancyGroupsDSpace.reset
+    (new VectorSpace<V, M>(this->m_env, "", num_discrepancy_groups, NULL));
+
   // Truncation error precision
-  if (this->num_svd_terms < numOutputs)
+  if (this->num_svd_terms < num_nonzero_eigenvalues)
     {
+      this->truncationErrorPrecisionSpace.reset
+        (new VectorSpace<V, M>
+         (this->m_env,
+          "",
+          1,
+          NULL));
+
       this->truncationErrorPrecisionMin.reset(new V(this->oneDSpace->zeroVector()));
       this->truncationErrorPrecisionMax.reset(new V(this->oneDSpace->zeroVector()));
-      this->truncationErrorPrecisionMin->cwSet(-INFINITY);
+      this->m_truncationErrorPrecisionShapeVec.reset
+        (new V(this->truncationErrorPrecisionSpace->zeroVector()));
+      this->m_truncationErrorPrecisionScaleVec.reset
+        (new V(this->truncationErrorPrecisionSpace->zeroVector()));
+      this->truncationErrorPrecisionMin->cwSet(0);
       this->truncationErrorPrecisionMax->cwSet(INFINITY);
 
       this->truncationErrorPrecisionDomain.reset
@@ -1197,9 +1328,11 @@ GPMSAFactory<V, M>::setUpHyperpriors()
            *(this->truncationErrorPrecisionMax)));
 
       this->m_truncationErrorPrecision.reset
-        (new UniformVectorRV<V, M>
+        (new GammaVectorRV<V, M>
          ("",
-          *(this->truncationErrorPrecisionDomain)));
+          *(this->truncationErrorPrecisionDomain),
+          *(this->m_truncationErrorPrecisionShapeVec),
+          *(this->m_truncationErrorPrecisionScaleVec)));
     }
 
   // Emulator precision
@@ -1207,7 +1340,7 @@ GPMSAFactory<V, M>::setUpHyperpriors()
     (new VectorSpace<V, M>
      (this->m_env,
       "",
-      num_svd_terms + (numOutputs > 1),
+      num_svd_terms,
       NULL));
 
   this->emulatorPrecisionMin.reset
@@ -1313,13 +1446,13 @@ GPMSAFactory<V, M>::setUpHyperpriors()
 
   // Discrepancy precision
   this->discrepancyPrecisionMin.reset
-    (new V(this->oneDSpace->zeroVector()));
+    (new V(this->numDiscrepancyGroupsDSpace->zeroVector()));
   this->discrepancyPrecisionMax.reset
-    (new V(this->oneDSpace->zeroVector()));
+    (new V(this->numDiscrepancyGroupsDSpace->zeroVector()));
   this->m_discrepancyPrecisionShapeVec.reset
-    (new V(this->oneDSpace->zeroVector()));
+    (new V(this->numDiscrepancyGroupsDSpace->zeroVector()));
   this->m_discrepancyPrecisionScaleVec.reset
-    (new V(this->oneDSpace->zeroVector()));
+    (new V(this->numDiscrepancyGroupsDSpace->zeroVector()));
   this->discrepancyPrecisionMin->cwSet(0);
   this->discrepancyPrecisionMax->cwSet(INFINITY);
   this->m_discrepancyPrecisionShapeVec->cwSet(discrepancyPrecisionShape);
@@ -1328,7 +1461,7 @@ GPMSAFactory<V, M>::setUpHyperpriors()
   this->discrepancyPrecisionDomain.reset
     (new BoxSubset<V, M>
      ("",
-      *(this->oneDSpace),
+      *(this->numDiscrepancyGroupsDSpace),
       *(this->discrepancyPrecisionMin),
       *(this->discrepancyPrecisionMax)));
 
@@ -1344,7 +1477,7 @@ GPMSAFactory<V, M>::setUpHyperpriors()
     (new VectorSpace<V, M>
      (this->m_env,
       "",
-      dimScenario,
+      num_discrepancy_groups*dimScenario,
       NULL));
 
   this->discrepancyCorrelationMin.reset
@@ -1403,15 +1536,24 @@ GPMSAFactory<V, M>::setUpHyperpriors()
       *(this->m_emulatorDataPrecisionScaleVec)));
 
   // Now form full prior
-  unsigned int dimSum = 2 +
-                        (this->num_svd_terms < numOutputs) +
-                        (numOutputs > 1) +
-                        this->m_opts->m_calibrateObservationalPrecision +
-                        num_svd_terms +
-                        dimParameter +
-                        dimParameter +
-                        dimScenario +
-                        dimScenario;  // yum
+  const unsigned int dimHyper =
+    1 +
+    (this->num_svd_terms < num_nonzero_eigenvalues) +
+    this->m_opts->m_calibrateObservationalPrecision +
+    num_svd_terms +
+    dimParameter +
+    dimScenario +
+    num_discrepancy_groups +
+    (num_discrepancy_groups*dimScenario);  // yum
+
+  const unsigned int dimSum = dimParameter + dimHyper;
+
+  this->hyperparamSpace.reset
+    (new VectorSpace<V, M>
+     (this->m_env,
+      "",
+      dimHyper,
+      NULL));
 
   this->totalSpace.reset
     (new VectorSpace<V, M>
@@ -1419,65 +1561,60 @@ GPMSAFactory<V, M>::setUpHyperpriors()
       "",
       dimSum,
       NULL));
-  this->totalMins.reset(new V(this->totalSpace->zeroVector()));
-  this->totalMaxs.reset(new V(this->totalSpace->zeroVector()));
+  this->hyperparamMins.reset(new V(this->hyperparamSpace->zeroVector()));
+  this->hyperparamMaxs.reset(new V(this->hyperparamSpace->zeroVector()));
 
-  // Hackety hack McHackington.  There's no better way to do this unfortunately
-  this->totalMins->cwSet(0);
-  this->totalMaxs->cwSet(1);
+  this->hyperparamMins->cwSet(0.0);
+  this->hyperparamMaxs->cwSet(1.0);
 
-  // BMA: This hack should be removed once we update to QUESO newer
-  // than 0.57.x.  It only works because we know Dakota passed a
-  // BoxSubset as the parameterDomain (imageSet of the RV). {
-  const VectorSet<V,M> & prior_image_set = this->m_parameterPrior.imageSet();
-  const BoxSubset<V,M> & box_space =
-    dynamic_cast< const BoxSubset<V,M>& >(prior_image_set);
-  for (unsigned int i=0; i<dimParameter; ++i) {
-    (*(this->totalMins))[i] = box_space.minValues()[i];
-    (*(this->totalMaxs))[i] = box_space.maxValues()[i];
+  for (unsigned int basis = 0; basis != num_svd_terms; ++basis) {
+    // Min emulator precision
+    (*(this->hyperparamMins))[(num_svd_terms<num_nonzero_eigenvalues)+basis] = 0.3;
+    // Max emulator precision
+    (*(this->hyperparamMaxs))[(num_svd_terms<num_nonzero_eigenvalues)+basis] = INFINITY;
   }
-  // } BMA: End hack
 
-  // Min emulator precision
-  (*(this->totalMins))[dimParameter] = 0.3;
-  // Max emulator precision
-  (*(this->totalMaxs))[dimParameter] = INFINITY;
+  // FIXME: F = p_delta and |G_i| = 1 for now
+  for (unsigned int disc_grp = 0; disc_grp < num_discrepancy_groups; disc_grp++) {
+    // Starting index of the discrepancy precisions in the hyperparameter vector
+    unsigned int discrepancyPrecisionIdx = (num_svd_terms<num_nonzero_eigenvalues) +
+                                           num_svd_terms +
+                                           dimScenario +
+                                           dimParameter;
 
-  if (numOutputs > 1)
-    for (unsigned int basis = 0; basis != num_svd_terms; ++basis)
-      {
-        // Min weights precision
-        (*(this->totalMins))[dimParameter+1+basis] = 0.3;
-        // Max weights precision
-        (*(this->totalMaxs))[dimParameter+1+basis] = INFINITY;
-      }
-
-  // FIXME: F = 1 for now
-  // Min discrepancy precision
-  (*(this->totalMins))[dimParameter+(numOutputs>1)+num_svd_terms+dimScenario+dimParameter] = 0;
-  // Max discrepancy precision
-  (*(this->totalMaxs))[dimParameter+(numOutputs>1)+num_svd_terms+dimScenario+dimParameter] = INFINITY;
+    // Min discrepancy precision
+    (*(this->hyperparamMins))[discrepancyPrecisionIdx+disc_grp] = 0;
+    // Max discrepancy precision
+    (*(this->hyperparamMaxs))[discrepancyPrecisionIdx+disc_grp] = INFINITY;
+  }
 
   const int emulator_data_precision_index =
-    dimSum - 1 - this->m_opts->m_calibrateObservationalPrecision;
-  (*(this->totalMins))[emulator_data_precision_index] = 60.0;  // Min emulator data precision
-  (*(this->totalMaxs))[emulator_data_precision_index] = 1e5;   // Max emulator data precision
+    dimHyper - 1 - this->m_opts->m_calibrateObservationalPrecision;
+  (*(this->hyperparamMins))[emulator_data_precision_index] = 60.0;  // Min emulator data precision
+  (*(this->hyperparamMaxs))[emulator_data_precision_index] = 1e5;   // Max emulator data precision
 
   if (this->m_opts->m_calibrateObservationalPrecision) {
-    (*(this->totalMins))[dimSum-1] = 0.3;      // Min observation error precision
-    (*(this->totalMaxs))[dimSum-1] = INFINITY; // Max observation error precision
+    (*(this->hyperparamMins))[dimHyper-1] = 0.3;      // Min observation error precision
+    (*(this->hyperparamMaxs))[dimHyper-1] = INFINITY; // Max observation error precision
   }
 
-  this->totalDomain.reset
+  this->hyperparamDomain.reset
     (new BoxSubset<V, M>
      ("",
+      *(this->hyperparamSpace),
+      *(this->hyperparamMins),
+      *(this->hyperparamMaxs)));
+
+  this->totalDomain.reset
+    (new ConcatenationSubset<V, M>
+     ("",
       *(this->totalSpace),
-      *(this->totalMins),
-      *(this->totalMaxs)));
+      this->m_parameterPrior.imageSet(),
+      *(this->hyperparamDomain)));
 
   this->priors.push_back(&(this->m_parameterPrior));
 
-  if (this->num_svd_terms < numOutputs)
+  if (this->num_svd_terms < num_nonzero_eigenvalues)
     this->priors.push_back(this->m_truncationErrorPrecision.get());
 
   this->priors.push_back(this->m_emulatorPrecision.get());

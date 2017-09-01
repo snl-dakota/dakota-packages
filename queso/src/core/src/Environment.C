@@ -24,11 +24,13 @@
 
 #include <queso/Environment.h>
 
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 #include <boost/program_options.hpp>
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 
+#define GETPOT_NAMESPACE QUESO // So we don't clash with other getpots
 #include <queso/getpot.h>
+#undef GETPOT_NAMESPACE
 
 #include <queso/config_queso.h>
 #include <queso/EnvironmentOptions.h>
@@ -39,6 +41,10 @@
 #include <queso/BasicPdfsBoost.h>
 #include <queso/BasicPdfsCXX11.h>
 #include <queso/Miscellaneous.h>
+
+// Local includes
+#include "core/inc/FilePtr.h"
+
 #include <sys/time.h>
 #ifdef HAVE_GRVY
 #include <grvy.h>
@@ -153,10 +159,10 @@ BaseEnvironment::BaseEnvironment(
   m_fullCommSize               (1),
   m_optionsInputFileName       (""),
   m_optionsInputFileAccessState(true),
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
   m_allOptionsDesc             (),
   m_allOptionsMap              (),
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
   m_input                      (new GetPot),
   m_subComm                    (),
   m_subRank                    (-1),
@@ -192,10 +198,10 @@ BaseEnvironment::BaseEnvironment(
   m_fullCommSize               (1),
   m_optionsInputFileName       (passedOptionsInputFileName),
   m_optionsInputFileAccessState(true),
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
   m_allOptionsDesc             (),
   m_allOptionsMap              (),
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
   m_input                      (new GetPot),
   m_subComm                    (),
   m_subRank                    (-1),
@@ -369,7 +375,7 @@ BaseEnvironment::setOptionsInputFileAccessState(bool newState) const
   return;
 }
 //-------------------------------------------------------
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 #ifdef UQ_USES_COMMAND_LINE_OPTIONS
 const boost::program_options::options_description&
 BaseEnvironment::allOptionsDesc() const
@@ -379,9 +385,9 @@ BaseEnvironment::allOptionsDesc() const
   return *m_allOptionsDesc;
 }
 #endif
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 //-------------------------------------------------------
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 boost::program_options::variables_map&
 BaseEnvironment::allOptionsMap() const
 {
@@ -390,9 +396,9 @@ BaseEnvironment::allOptionsMap() const
   queso_require_msg(m_allOptionsMap, "m_allOptionsMap variable is NULL");
   return *m_allOptionsMap;
 }
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 //-------------------------------------------------------
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 void
 BaseEnvironment::scanInputFileForMyOptions(const boost::program_options::options_description& optionsDesc) const
 {
@@ -444,7 +450,7 @@ BaseEnvironment::scanInputFileForMyOptions(const boost::program_options::options
 
   return;
 }
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 //-----------------------------------------------------
 unsigned int
 BaseEnvironment::displayVerbosity() const
@@ -807,10 +813,18 @@ BaseEnvironment::openUnifiedOutputFile(
         }
 #ifdef QUESO_HAS_HDF5
         else if (fileType == UQ_FILE_EXTENSION_FOR_HDF_FORMAT) {
-          filePtrSet.h5Var = H5Fcreate((baseFileName+"."+fileType).c_str(),
+
+          std::string fullFileName = baseFileName+"."+fileType;
+
+          filePtrSet.h5Var = H5Fcreate(fullFileName.c_str(),
                                        H5F_ACC_TRUNC,
                                        H5P_DEFAULT,
                                        H5P_DEFAULT);
+
+
+          queso_require_greater_equal_msg(
+              filePtrSet.h5Var, 0,
+              "error opening file `" << fullFileName << "`");
         }
 #endif
         else {
@@ -838,7 +852,10 @@ BaseEnvironment::openUnifiedOutputFile(
         }
 #ifdef QUESO_HAS_HDF5
         else if (fileType == UQ_FILE_EXTENSION_FOR_HDF_FORMAT) {
-          filePtrSet.h5Var = H5Fcreate((baseFileName+"."+fileType).c_str(), // TEMPORARY - FIX ME
+
+          std::string fullFileName = baseFileName+"."+fileType;
+
+          filePtrSet.h5Var = H5Fcreate(fullFileName.c_str(),
                                        H5F_ACC_TRUNC,
                                        H5P_DEFAULT,
                                        H5P_DEFAULT);
@@ -846,6 +863,9 @@ BaseEnvironment::openUnifiedOutputFile(
           //                    m_worldRank,
           //                    "BaseEnvironment::openUnifiedOutputFile(), writeOver=false",
           //                    "hdf file type not supported yet");
+          queso_require_greater_equal_msg(
+              filePtrSet.h5Var, 0,
+              "error opening file `" << fullFileName << "`");
         }
 #endif
         else {
@@ -1235,10 +1255,10 @@ FullEnvironment::construct (RawType_MPI_Comm inputComm,
     // If there's an input file, we grab the options from there.  Otherwise the
     // defaults are used
     if (m_optionsInputFileName != "") {
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
       m_allOptionsMap.reset(new boost::program_options::variables_map());
       m_allOptionsDesc.reset(new boost::program_options::options_description("Allowed options"));
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 
       readOptionsInputFile();
 
@@ -1431,8 +1451,12 @@ FullEnvironment::construct (RawType_MPI_Comm inputComm,
     m_basicPdfs.reset(new BasicPdfsGsl(m_worldRank));
   }
   else if (m_optionsObj->m_rngType == "boost") {
+#ifdef QUESO_HAVE_BOOST
     m_rngObject.reset(new RngBoost(m_optionsObj->m_seed,m_worldRank));
     m_basicPdfs.reset(new BasicPdfsBoost(m_worldRank));
+#else
+    queso_error_msg("Boost RNG requested, but QUESO was not built with boost.");
+#endif  // QUESO_HAVE_BOOST
   }
   else if (m_optionsObj->m_rngType == "cxx11") {
 #ifdef QUESO_HAVE_CXX11
@@ -1516,10 +1540,10 @@ FullEnvironment::construct (const char *prefix)
     // If there's an input file, we grab the options from there.  Otherwise the
     // defaults are used
     if (m_optionsInputFileName != "") {
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
       m_allOptionsMap.reset(new boost::program_options::variables_map());
       m_allOptionsDesc.reset(new boost::program_options::options_description("Allowed options"));
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 
       readOptionsInputFile();
 
@@ -1684,8 +1708,12 @@ FullEnvironment::construct (const char *prefix)
     m_basicPdfs.reset(new BasicPdfsGsl(m_worldRank));
   }
   else if (m_optionsObj->m_rngType == "boost") {
+#ifdef QUESO_HAVE_BOOST
     m_rngObject.reset(new RngBoost(m_optionsObj->m_seed,m_worldRank));
     m_basicPdfs.reset(new BasicPdfsBoost(m_worldRank));
+#else
+    queso_error_msg("Boost RNG requested, but QUESO wasn't built with boost.");
+#endif  // QUESO_HAVE_BOOST
   }
   else if (m_optionsObj->m_rngType == "cxx11") {
 #ifdef QUESO_HAVE_CXX11

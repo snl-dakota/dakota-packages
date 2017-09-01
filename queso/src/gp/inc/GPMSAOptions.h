@@ -24,10 +24,10 @@
 #include <queso/Environment.h>
 #include <queso/SharedPtr.h>
 
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 #include <queso/BoostInputOptionsParser.h>
 #include <queso/ScopedPtr.h>
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 
 #ifndef UQ_GPMSA_OPTIONS_H
 #define UQ_GPMSA_OPTIONS_H
@@ -88,39 +88,51 @@ public:
   double m_emulatorBasisVarianceToCapture;
 
   //! Do automatic normalization, using minimum and maximum values in
-  //  the supplied data, for uncertain parameter i.
+  //  the supplied simulator data, for uncertain parameter i.
   //
   //  Normalized values will range from 0 to 1.
   void set_autoscale_minmax_uncertain_parameter(unsigned int i);
 
   //! Do automatic normalization, using minimum and maximum values in
-  //  the supplied data, for scenario parameter i.
+  //  the supplied simulator data, for scenario parameter i.
   //
   //  Normalized values will range from 0 to 1.
   void set_autoscale_minmax_scenario_parameter(unsigned int i);
 
   //! Do automatic normalization, using minimum and maximum values in
-  //  the supplied data, for all input uncertain parameters, all input
-  //  scenario parameters, and all output values.
+  //  the supplied simulator data, for output data i.
+  //
+  //  Normalized values will range from 0 to 1.
+  void set_autoscale_minmax_output(unsigned int i);
+
+  //! Do automatic normalization, using minimum and maximum values in
+  //  the supplied simulator data, for all input uncertain parameters,
+  //  all input scenario parameters, and all output values.
   //
   //  Normalized values will range from 0 to 1.
   void set_autoscale_minmax();
 
   //! Do automatic normalization, using mean and variance of the
-  //  supplied data, for uncertain parameter i.
+  //  supplied simulator data, for uncertain parameter i.
   //
   //  Normalized values will have mean 0 and standard deviation 1.
   void set_autoscale_meanvar_uncertain_parameter(unsigned int i);
 
   //! Do automatic normalization, using mean and variance of the
-  //  supplied data, for scenario parameter i.
+  //  supplied simulator data, for scenario parameter i.
   //
   //  Normalized values will have mean 0 and standard deviation 1.
   void set_autoscale_meanvar_scenario_parameter(unsigned int i);
 
   //! Do automatic normalization, using mean and variance of the
-  //  supplied data, for all input uncertain parameters, all input
-  //  scenario parameters, and all output values.
+  //  supplied simulator data, for output i.
+  //
+  //  Normalized values will have mean 0 and standard deviation 1.
+  void set_autoscale_meanvar_output(unsigned int i);
+
+  //! Do automatic normalization, using mean and variance of the
+  //  supplied simulator data, for all input uncertain parameters, all
+  //  input scenario parameters, and all output values.
   //
   //  Normalized values will have mean 0 and standard deviation 1.
   void set_autoscale_meanvar();
@@ -151,9 +163,9 @@ public:
                                       double range_min,
                                       double range_max);
 
-  //! Set a value, for output value i in simulation and
-  //  experimental outputs, of the physical output range (range_min,
-  //  range_max) which should be rescaled to (0,1)
+  //! Set a value, for output value i in simulation and experimental
+  //  outputs, of the physical output range (range_min, range_max)
+  //  which should be rescaled to (0,1)
   //
   //  If no value is set and no automatic normalization is specified,
   //  a default of (0,1) will be used; i.e. no normalization.
@@ -184,6 +196,21 @@ public:
   //  specified uncertain parameter.
   double normalized_uncertain_parameter(unsigned int i,
                                         double physical_param) const;
+
+  //! Calculate a normalized value from a physical value for the
+  //  specified output index.
+  double normalized_output(unsigned int i,
+                           double output_data) const;
+
+  //! Returns the scale, in physical units, corresponding to a single
+  //  nondimensionalized unit for the specified output index.
+  double output_scale(unsigned int i) const;
+
+  //! The shape parameter for the Gamma hyperprior for the truncation error precision
+  double m_truncationErrorPrecisionShape;
+
+  //! The scale parameter for the Gamma hyperprior for the truncation error precision
+  double m_truncationErrorPrecisionScale;
 
   //! The shape parameter for the Gamma hyperprior for the emulator precision
   double m_emulatorPrecisionShape;
@@ -231,14 +258,20 @@ public:
   //! The scale parameter for the Gamma hyperprior for the emulator data precision
   double m_emulatorDataPrecisionScale;
 
+  //! The ridge to add to B^T*W_y*B before inverting it
+  double m_observationalPrecisionRidge;
+
+  //! The ridge to add to (B^T*W_y*B)^-1 before using it
+  double m_observationalCovarianceRidge;
+
   friend std::ostream & operator<<(std::ostream& os, const GPMSAOptions & obj);
 
 private:
   const BaseEnvironment * m_env;
 
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
   QUESO::ScopedPtr<BoostInputOptionsParser>::Type m_parser;
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 
   // True if the specified autoscaling should be done for all inputs
   bool m_autoscaleMinMaxAll;
@@ -253,6 +286,11 @@ private:
   // scenario input parameter index
   std::set<unsigned int> m_autoscaleMinMaxScenario;
   std::set<unsigned int> m_autoscaleMeanVarScenario;
+
+  // True if the specified autoscaling should be done for the specific
+  // output index
+  std::set<unsigned int> m_autoscaleMinMaxOutput;
+  std::set<unsigned int> m_autoscaleMeanVarOutput;
 
   // The point in each uncertain input parameter range (typically min
   // or mean) corresponding to a normalized parameter of 0
@@ -272,8 +310,18 @@ private:
   // a normalized width of 1
   std::vector<double> m_scenarioScaleRange;
 
+  // The point in each output range (typically min
+  // or mean) corresponding to a normalized parameter of 0
+  std::vector<double> m_outputScaleMin;
+
+  // The width of the physical output range (typically max minus min
+  // or standard deviation) corresponding to a normalized width of 1
+  std::vector<double> m_outputScaleRange;
+
   std::string m_option_help;
   std::string m_option_maxEmulatorBasisVectors;
+  std::string m_option_truncationErrorPrecisionShape;
+  std::string m_option_truncationErrorPrecisionScale;
   std::string m_option_emulatorBasisVarianceToCapture;
   std::string m_option_emulatorPrecisionShape;
   std::string m_option_emulatorPrecisionScale;
@@ -288,9 +336,13 @@ private:
   std::string m_option_discrepancyCorrelationStrengthBeta;
   std::string m_option_emulatorDataPrecisionShape;
   std::string m_option_emulatorDataPrecisionScale;
+  std::string m_option_observationalPrecisionRidge;
+  std::string m_option_observationalCovarianceRidge;
 
   std::string m_option_autoscaleMinMaxAll;
   std::string m_option_autoscaleMeanVarAll;
+
+  bool options_have_been_used;
 
   void checkOptions();
 };

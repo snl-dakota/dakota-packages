@@ -31,14 +31,10 @@
 #include <queso/MpiComm.h>
 #include <queso/ScopedPtr.h>
 
-#ifdef QUESO_HAS_HDF5
-#include <hdf5.h>
-#endif
 #include <iostream>
 #include <fstream>
 
-
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 // Forward declarations
 namespace boost {
   namespace program_options {
@@ -46,51 +42,25 @@ namespace boost {
     class variables_map;
     }
 }
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 
 namespace QUESO {
 
 // Forward declarations
 class GetPot;
-class EnvironmentOptions;
 class EnvOptionsValues;
 class BasicPdfsBase;
 class RngBase;
+class FilePtrSetStruct;
 
 
-  /*! queso_terminate_handler
-   *  \brief Function for unhandled exceptions in Queso
-   *
-   *  This function deals with unhandled exceptions encountered in Queso.
-   *  It provides a call to MPI_abort using the global communicator.
-   */
-  void queso_terminate_handler();
-
-/*! \struct FilePtrSetStruct
- *  \brief Struct for handling data input and output from files.
+/*! queso_terminate_handler
+ *  \brief Function for unhandled exceptions in Queso
  *
- *  This struct deals with data input and output from files.
- *  It encapsulates the input/output stream class std:: fstream.
+ *  This function deals with unhandled exceptions encountered in Queso.
+ *  It provides a call to MPI_abort using the global communicator.
  */
-
-//!
-struct FilePtrSetStruct {
-
-  //! Struct constructor
-  FilePtrSetStruct();
-
-  //! Destructor
-  ~FilePtrSetStruct();
-
-  //! Provides a stream interface to write data to files.
-  std::ofstream* ofsVar;
-
-  //! Provides a stream interface to read data from files.
-  std::ifstream* ifsVar;
-#ifdef QUESO_HAS_HDF5
-  hid_t  h5Var;
-#endif
-};
+void queso_terminate_handler();
 
 //------------------------------------------------------------------------
 // Library versioning routines: we include them in a QUESO namespace
@@ -99,8 +69,8 @@ struct FilePtrSetStruct {
 // QUESO MPI environment.
 //------------------------------------------------------------------------
 
-  void QUESO_version_print       (std::ostream &os);
-  int  QUESO_get_numeric_version ();
+void QUESO_version_print       (std::ostream &os);
+int  QUESO_get_numeric_version ();
 
 //*****************************************************
 // Base class
@@ -138,15 +108,16 @@ file per allowed rank is opened and allowed ranks can be specified through the '
 /*! These classes rely on 'options classes' to read their options from the input file.
     The options classes are, respectively:
 <list type=number>
-<item> EnvironmentOptions
-<item> StatisticalInverseProblemOptions
-<item> StatisticalForwardProblemOptions
-<item> MetropolisHastingsSGOptions
-<item> MonteCarloSGOptions
++<item> EnvOptionsValues
++<item> SipOptionsValues
++<item> SfpOptionsValues
++<item> MhOptionsValues (and deprecated MetropolisHastingsSGOptions)
++<item> McOptionsValues
 </list>
-    The last two classes also rely on SequenceStatisticalOptions for reading the
-    options specifying which statistics have to be computed on the sequences of vectors
-    involved.
+    The last two classes also rely on
+    SsOptionsValues/SequenceStatisticalOptions for reading the options
+    specifying which statistics have to be computed on the sequences
+    of vectors involved.
 -------------------------------------------------------------*/
 
 /*! The QUESO environment class manages five types of communicators. Let:
@@ -193,7 +164,6 @@ a boolean, is set to 1 (the default value is 0);
     For instance, if 'm_subDisplayFileName' is 'pROblem_775_' then a node of sub rank 0 in sub environment 17
     will write a message to the file 'pROblem_775_sub17.txt'.
 */
-
 
 class BaseEnvironment {
 public:
@@ -340,25 +310,25 @@ public:
   void    setOptionsInputFileAccessState(bool newState) const; // Yes, 'const'
 
 
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 #ifdef UQ_USES_COMMAND_LINE_OPTIONS
   const boost::program_options::options_description& allOptionsDesc () const;
 #endif
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
   //! Access function to private attribute m_allOptionsMap. It is an instance of boost::program_options::variables_map(), which
   //! allows concrete variables to map which store variables in real map.
   boost::program_options::variables_map&      allOptionsMap () const;
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 
 
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
   //! This method scans the input file provided by the user to QUESO.
   /*! It checks if no input file is passed and updates the private attribute m_allOptionsDesc, which
    * keeps all the options.*/
   void    scanInputFileForMyOptions(const boost::program_options::options_description& optionsDesc) const;
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
 
   //! Access function to private attribute m_displayVerbosity. It manages how much information will be
   //! release during the use of the QUESO library.
@@ -446,10 +416,10 @@ protected:
 
   std::string m_optionsInputFileName;
   mutable bool m_optionsInputFileAccessState; // Yes, 'mutable'
-#ifndef DISABLE_BOOST_PROGRAM_OPTIONS
+#ifndef QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
   ScopedPtr<boost::program_options::options_description>::Type m_allOptionsDesc;
   ScopedPtr<boost::program_options::variables_map>::Type m_allOptionsMap;
-#endif  // DISABLE_BOOST_PROGRAM_OPTIONS
+#endif  // QUESO_DISABLE_BOOST_PROGRAM_OPTIONS
   ScopedPtr<GetPot>::Type m_input;
 
   unsigned int m_subId;
