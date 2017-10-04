@@ -380,10 +380,16 @@ GPMSAEmulator<V, M>::lnValue(const V & domainVector,
     queso_assert_greater(emulator_data_precision, 0);
     double nugget = 1.0 / emulator_data_precision;
 
-    for (unsigned int disc = 0; disc != num_discrepancy_bases;
-         ++disc)
-      covMatrix(disc*m_numExperiments+i,
-                disc*m_numExperiments+i) += nugget;
+    // Compute the offset occupied by the \Sigma_v matrix
+    unsigned int discrepancy_offset =
+      numOutputs == 1 ? 0 : num_discrepancy_bases;
+
+    discrepancy_offset *= m_numExperiments;
+
+    for (unsigned int basis = 0; basis < num_svd_terms; basis++) {
+      covMatrix(discrepancy_offset+basis*totalRuns+i,
+                discrepancy_offset+basis*totalRuns+i) += nugget;
+    }
   }
 
   // If we're in the multivariate case, we've built the full Sigma_z
@@ -885,7 +891,7 @@ GPMSAFactory<V, M>::setUpEmulator()
         {
           const unsigned int i = i1 * numOutputs + i2;
           const unsigned int j = k * m_numSimulations + i1;
-          (*K)(i,j) = SM_singularVectors(i2,k);
+          (*K)(i,j) = (*m_TruncatedSVD_simulationOutputs)(i2,k);
         }
 
   KT_K_inv.reset
@@ -1026,7 +1032,7 @@ GPMSAFactory<V, M>::setUpEmulator()
   queso_assert_equal_to(BT_Wy_B_inv->numCols(), BT_Wy_B_inv->numRowsGlobal());
   queso_assert_equal_to(BT_Wy_B_inv->numCols(), Bcols);
 
-  this->setUpHyperpriors();
+  this->setUpHyperpriors(Wy);
 
   this->m_constructedGP = true;
   this->gpmsaEmulator.reset
@@ -1106,6 +1112,9 @@ GPMSAFactory<V, M>::addExperiments(
   queso_require_equal_to(experimentScenarios.size(),
                          experimentErrors.size());
 
+  this->m_observationErrorMatrices.resize
+    (this->m_experimentScenarios.size());
+
   for (unsigned int i = 0; i < this->m_experimentScenarios.size(); i++) {
     this->m_experimentScenarios[i] = experimentScenarios[i];
     this->m_experimentOutputs[i] = experimentOutputs[i];
@@ -1176,7 +1185,7 @@ GPMSAFactory<V, M>::print(std::ostream& /* os */) const
 // Private methods follow
 template <class V, class M>
 void
-GPMSAFactory<V, M>::setUpHyperpriors()
+GPMSAFactory<V, M>::setUpHyperpriors(const M & Wy)
 {
   const unsigned int numOutputs =
     this->m_experimentOutputSpace.dimLocal();
@@ -1229,7 +1238,6 @@ GPMSAFactory<V, M>::setUpHyperpriors()
       }
 
       M& B = *m_BMatrix;
-      M& Wy = *m_observationErrorMatrix;
 
       V yhat(*BT_Wy_B_inv * (B.transpose() * (Wy * y)));
 
