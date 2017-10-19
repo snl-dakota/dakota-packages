@@ -31,6 +31,7 @@ check_PROGRAMS += test_inf_options
 check_PROGRAMS += test_SequenceOfVectorsErase
 check_PROGRAMS += test_GaussianMean1DRegression
 check_PROGRAMS += test_gpmsa_cobra
+check_PROGRAMS += test_gpmsa_functional
 check_PROGRAMS += test_gpmsa_vector
 check_PROGRAMS += test_LlhdTargetOutput
 check_PROGRAMS += test_jeffreys
@@ -77,7 +78,7 @@ check_PROGRAMS += test_fd_fallback
 check_PROGRAMS += test_custom_tk_am
 check_PROGRAMS += test_no_initial_point
 check_PROGRAMS += test_parallel_h5
-check_PROGRAMS += test_gpmsa_scalar_pdf_small
+check_PROGRAMS += test_gpmsa_pdf_small
 check_PROGRAMS += test_gpmsa_scalar_pdf_large
 
 LDADD       = $(top_builddir)/src/libqueso.la
@@ -133,6 +134,7 @@ unit_driver_SOURCES += unit/scalar_sequence.C
 unit_driver_SOURCES += unit/vector_space.C
 unit_driver_SOURCES += unit/base_vector_sequence.C
 unit_driver_SOURCES += unit/sequence_of_vectors.C
+unit_driver_SOURCES += unit/tensor_product_mesh.C
 unit_driver_SOURCES += unit/tensor_product_quadrature.C
 unit_driver_SOURCES += unit/monte_carlo_quadrature.C
 unit_driver_SOURCES += unit/rng_gsl.C
@@ -172,6 +174,7 @@ test_inf_options_SOURCES = test_infinite/test_inf_options.C
 test_SequenceOfVectorsErase_SOURCES = test_SequenceOfVectors/test_SequenceOfVectorsErase.C
 test_GaussianMean1DRegression_SOURCES = test_Regression/test_GaussianMean1DRegression.C
 test_gpmsa_cobra_SOURCES = test_Regression/test_gpmsa_cobra.C
+test_gpmsa_functional_SOURCES = test_gpmsa/test_gpmsa_functional.C
 test_gpmsa_vector_SOURCES = test_gpmsa/test_gpmsa_vector.C
 test_LlhdTargetOutput_SOURCES = test_StatisticalInverseProblem/test_LlhdTargetOutput.C
 test_jeffreys_SOURCES = test_Regression/test_jeffreys.C
@@ -260,7 +263,7 @@ test_custom_tk_am_CPPFLAGS = -I$(srcdir)/custom_tk $(AM_CPPFLAGS)
 test_no_initial_point_SOURCES = test_StatisticalInverseProblem/test_no_initial_point.C
 test_parallel_h5_SOURCES = test_StatisticalInverseProblem/test_parallel_h5.C
 
-test_gpmsa_scalar_pdf_small_SOURCES = test_gpmsa/scalar_pdf_small.C
+test_gpmsa_pdf_small_SOURCES = test_gpmsa/pdf_small.C
 test_gpmsa_scalar_pdf_large_SOURCES = test_gpmsa/scalar_pdf_large.C
 
 TESTS =
@@ -296,6 +299,7 @@ TESTS += test_GaussianMean1DRegression
 TESTS += test_Regression/test_cobra_samples_diff.sh
 TESTS += test_gpmsa/test_gpmsa_samples_diff.sh
 TESTS += test_gpmsa/test_autoscaled.sh
+TESTS += test_gpmsa/test_functional.sh
 TESTS += test_StatisticalInverseProblem/test_LlhdTargetOutput.sh
 TESTS += test_Regression/test_jeffreys_samples_diff.sh
 TESTS += test_gsloptimizer
@@ -344,6 +348,7 @@ TESTS += test_no_initial_point
 TESTS += test_StatisticalInverseProblem/test_parallel_h5.sh
 TESTS += test_gpmsa/scalar_pdf_small.sh
 TESTS += test_gpmsa/scalar_pdf_large.sh
+TESTS += test_gpmsa/mv_pdf_small.sh
 
 if ! MPI_ENABLED
 XFAIL_TESTS = test_SequenceOfVectors/test_unifiedPositionsOfMaximum.sh
@@ -362,18 +367,22 @@ EXTRA_DIST += test_Regression/test_cobra_samples_diff.sh
 EXTRA_DIST += test_Regression/test_gpmsa_cobra_samples.m
 EXTRA_DIST += test_Regression/ctf_dat.txt
 EXTRA_DIST += test_Regression/dakota_pstudy.dat
+EXTRA_DIST += test_gpmsa/gpmsa_autoscaled_input.txt
+EXTRA_DIST += test_gpmsa/gpmsa_functional_input.txt
 EXTRA_DIST += test_gpmsa/gpmsa_vector_input.txt
-EXTRA_DIST += test_gpmsa/test_gpmsa_samples_diff.sh
 EXTRA_DIST += test_gpmsa/test_autoscaled.sh
+EXTRA_DIST += test_gpmsa/test_functional.sh
+EXTRA_DIST += test_gpmsa/test_gpmsa_samples_diff.sh
 EXTRA_DIST += test_gpmsa/test_gpmsa_vector_samples.m
 EXTRA_DIST += test_gpmsa/test_gpmsa_autoscaled_samples.m
-EXTRA_DIST += test_gpmsa/gpmsa_autoscaled_input.txt
+EXTRA_DIST += test_gpmsa/test_gpmsa_functional_samples.m
 EXTRA_DIST += test_StatisticalInverseProblem/both_input.txt
 EXTRA_DIST += test_StatisticalInverseProblem/llhdout_input.txt
 EXTRA_DIST += test_StatisticalInverseProblem/targetout_input.txt
 EXTRA_DIST += test_StatisticalInverseProblem/neither_input.txt
 EXTRA_DIST += test_StatisticalInverseProblem/test_LlhdTargetOutput.sh
 EXTRA_DIST += test_StatisticalInverseProblem/output_test_parallel_h5_expected.h5
+EXTRA_DIST += test_StatisticalInverseProblem/input_test_parallel_h5.txt
 EXTRA_DIST += test_Regression/jeffreys_input.txt
 EXTRA_DIST += test_Regression/test_jeffreys_samples_diff.sh
 EXTRA_DIST += test_Regression/test_jeffreys_samples.m
@@ -424,6 +433,11 @@ EXTRA_DIST += test_gpmsa/sim_scalar_large.dat
 EXTRA_DIST += test_gpmsa/y_exp_scalar_large.txt
 EXTRA_DIST += test_gpmsa/regression_solution_pdf_large.txt
 EXTRA_DIST += test_gpmsa/scalar_pdf_large.sh
+EXTRA_DIST += test_gpmsa/mv_pdf_small.sh
+EXTRA_DIST += test_gpmsa/gpmsa_mv_pdf_small_input.txt
+EXTRA_DIST += test_gpmsa/sim_mv_small.dat
+EXTRA_DIST += test_gpmsa/y_exp_mv_small.txt
+EXTRA_DIST += test_gpmsa/regression_solution_pdf_mv_small.txt
 
 CLEANFILES =
 CLEANFILES += test_Environment/debug_output_sub0.txt
@@ -436,6 +450,7 @@ clean-local:
 	rm -rf $(top_builddir)/test/outputData
 	rm -rf $(top_builddir)/test/test_output_gaussian_likelihoods
 	rm -rf $(top_builddir)/test/test_gpmsa_cobra_output
+	rm -rf $(top_builddir)/test/test_gpmsa_functional_output
 	rm -rf $(top_builddir)/test/test_gpmsa_vector_output
 	rm -rf $(top_builddir)/test/test_gpmsa_autoscaled_output
 	rm -rf $(top_builddir)/test/test_adaptedcov_output
