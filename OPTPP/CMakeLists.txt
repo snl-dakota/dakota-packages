@@ -41,57 +41,57 @@ FortranCInterface_HEADER(include/cblas_config.h MACRO_NAMESPACE OPTPP_)
 
 
 # OPT++ Teuchos management; 3 cases to consider:
-# * Installed Trilinos
-# * Teuchos provided elsewhere, e.g., DAKOTA
-# * local Teuchos (separately checked out into teuchos/)
+#  1. Installed Trilinos
+#  2. Teuchos provided elsewhere in build, e.g., Dakota
+#  3. Local Teuchos (separately checked out into trilinos/)
 
-# when building inside Trilinos, the path to Teuchos will already be set
 if (NOT BUILD_IN_TRILINOS)
-  # first probe for system-installed Trilinos
-  # this will respect Trilinos_DIR if already set
+
+  # First probe for system-installed Trilinos, respecting Trilinos_DIR if set
   find_package(Trilinos QUIET)
 
-  if ( NOT Trilinos_DIR )
+  if(Trilinos_DIR)
+    message(STATUS
+      "OPT++ using previously specified Trilinos in ${Trilinos_DIR}")
+  else()
 
-    # if no one has configured a src Teuchos via Teuchos_DIR,
-    # see if a local one is available
+    # If no parent project configured Teuchos, do so, using Teuchos_DIR if set
     if(Teuchos_DIR)
-      message( "in ${CMAKE_CURRENT_BINARY_DIR} Teuchos_DIR already set to ${Teuchos_DIR}" )
+      message(STATUS
+	"OPT++ using previously specified Teuchos in ${Teuchos_DIR}")
+    elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/trilinos)
+
+      set(Teuchos_DIR
+        ${CMAKE_CURRENT_BINARY_DIR}/trilinos/packages/teuchos)
+      set(Trilinos_ENABLE_Teuchos ON CACHE BOOL
+        "OPT++ enabling Trilinos Teuchos" FORCE)
+
+      # Map key OPT++ variables to TriBITS variables
+      set( TPL_BLAS_LIBRARIES ${BLAS_LIBS} )
+      set( TPL_LAPACK_LIBRARIES ${LAPACK_LIBS} )
+      # OPT++ doesn't use any Teuchos MPI features; may want to force off
+      #set( TPL_ENABLE_MPI ${DAKOTA_HAVE_MPI} )
+# This doesn't do as name implies; setting OFF doesn't generate Config.cmake
+# at all; doesn't just control whether installed!  Want Config.cmake in build
+#        set(Trilinos_ENABLE_INSTALL_CMAKE_CONFIG_FILES OFF CACHE BOOL
+#	  "OPT++ is the top-level package; don't write Trilinos config files")
+
+      message(STATUS "OPT++ setting Teuchos_DIR to ${Teuchos_DIR}")
+      add_subdirectory(trilinos)
+
     else()
-      # teuchos checked out under OPT++
-      if( EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/teuchos/cmake/tribits )
-	set( Teuchos_DIR ${CMAKE_CURRENT_BINARY_DIR}/teuchos/packages/teuchos )
-	set( Trilinos_ENABLE_Teuchos ON CACHE BOOL "Enable teuchos only" FORCE )
-        set( TPL_BLAS_LIBRARIES ${BLAS_LIBS} )
-        set( TPL_LAPACK_LIBRARIES ${LAPACK_LIBS} )
-	add_subdirectory(teuchos)
-      elseif (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/teuchos)
-        # "Historical" directory hierarchy, before TriBITS
-	set( Teuchos_DIR ${CMAKE_CURRENT_BINARY_DIR}/teuchos )
-	message( "Setting Teuchos_DIR to ${Teuchos_DIR}" )
-	add_subdirectory(teuchos)
-	set(Teuchos_LIBRARY_DIRS "")
-      else()
-	message(WARNING 
-	  "OPT++ requires teuchos, but could not find local nor parent copy!")
-      endif()
+      message(WARNING	"OPT++ requires teuchos, but could not find local nor parent copy!")
     endif() # Teuchos_DIR
 
-    if( EXISTS ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig.cmake )
-      # Move the "TriBITS" config file to teuchos subdir (rather than the BuildRoot)
-      file(RENAME ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/teuchos/TrilinosConfig.cmake)
-
-      # Additional setting to prevent multiple targets with the same name
-      set(Trilinos_TARGETS_IMPORTED 1)
-    endif()
+    # Additional setting to prevent multiple targets with the same name
+    set(Trilinos_TARGETS_IMPORTED 1)
 
     find_package( Teuchos NO_MODULE REQUIRED )
-    #message( STATUS "Teuchos_LIBRARIES for opt++ link: ${Teuchos_LIBRARIES}" )
-  else()
-    message( "Using system trilinos in ${Trilinos_DIR}" )
-  endif() # NOT Trilinos_DIR
+
+  endif() # Trilinos_DIR
+
 endif() # NOT BUILD_IN_TRILINOS
+
 link_directories(${Teuchos_LIBRARY_DIRS})
 
 
