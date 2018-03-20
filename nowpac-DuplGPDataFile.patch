@@ -1,0 +1,58 @@
+diff --git a/nowpac/include/NOWPAC.hpp b/nowpac/include/NOWPAC.hpp
+index 74adbf3..a3abb1c 100644
+--- a/nowpac/include/NOWPAC.hpp
++++ b/nowpac/include/NOWPAC.hpp
+@@ -1189,29 +1189,30 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::output_for_plotting ( con
+     }
+     outputfile.close( );
+   } else std::cout << "Unable to open file." << std::endl;
+-  std::ofstream outputfile ( "gp_data_" + std::to_string(evaluation_step) + "_" + std::to_string(sub_index) + ".dat" );
+-  if ( outputfile.is_open( ) ) {
+-    for ( int i = 0; i < dim; ++i)
+-      x_loc.at(i) = 0e0;
+-    for (double i = -1.0; i <= 1.0; i+=0.01) {
+-      //x_loc.at(xcoord) =  i;
+-      x_loc.at(xcoord) = ( (i+1)/(2) * (upper_bound-lower_bound) + lower_bound);
+-      for (double j = -1.0; j < 1.0; j+=0.01) {
+-        //x_loc.at(ycoord) = j;
+-        x_loc.at(ycoord) = ( (j+1)/(2) * (upper_bound-lower_bound) + lower_bound);
+-        //fvals.at(0) = surrogate_models[0].evaluate( x_loc );
+-        gaussian_processes.evaluate_gaussian_process_at(0, x_loc, fvals.at(0), fvar.at(0));
+-        outputfile << x_loc.at(xcoord) << "; " << x_loc.at(ycoord) << "; " << fvals.at(0)<<"; " << fvar.at(0) << ";";
+-        for ( int k = 0; k < nb_constraints; ++k) {
+-          //fvals.at(k+1) = surrogate_models[k+1].evaluate( x_loc );
+-          gaussian_processes.evaluate_gaussian_process_at(k+1, x_loc, fvals.at(k+1), fvar.at(0));
+-          outputfile << fvals.at(k+1) << "; ";
+-        }
+-        outputfile << std::endl;
+-      }
+-    }
+-    outputfile.close( );
+-  } else std::cout << "Unable to open file." << std::endl;
++// BMA, 20180317: In NOWPAC v3.5, this code appears twice; disable this instance:
++//  std::ofstream outputfile ( "gp_data_" + std::to_string(evaluation_step) + "_" + std::to_string(sub_index) + ".dat" );
++//  if ( outputfile.is_open( ) ) {
++//    for ( int i = 0; i < dim; ++i)
++//      x_loc.at(i) = 0e0;
++//    for (double i = -1.0; i <= 1.0; i+=0.01) {
++//      //x_loc.at(xcoord) =  i;
++//      x_loc.at(xcoord) = ( (i+1)/(2) * (upper_bound-lower_bound) + lower_bound);
++//      for (double j = -1.0; j < 1.0; j+=0.01) {
++//        //x_loc.at(ycoord) = j;
++//        x_loc.at(ycoord) = ( (j+1)/(2) * (upper_bound-lower_bound) + lower_bound);
++//        //fvals.at(0) = surrogate_models[0].evaluate( x_loc );
++//        gaussian_processes.evaluate_gaussian_process_at(0, x_loc, fvals.at(0), fvar.at(0));
++//        outputfile << x_loc.at(xcoord) << "; " << x_loc.at(ycoord) << "; " << fvals.at(0)<<"; " << fvar.at(0) << ";";
++//        for ( int k = 0; k < nb_constraints; ++k) {
++//          //fvals.at(k+1) = surrogate_models[k+1].evaluate( x_loc );
++//          gaussian_processes.evaluate_gaussian_process_at(k+1, x_loc, fvals.at(k+1), fvar.at(0));
++//          outputfile << fvals.at(k+1) << "; ";
++//        }
++//        outputfile << std::endl;
++//      }
++//    }
++//    outputfile.close( );
++//  } else std::cout << "Unable to open file." << std::endl;
+ 
+   outputfile.open( "gp_best_point_" + std::to_string(evaluation_step) + "_" + std::to_string(sub_index) + ".dat" );
+   if ( outputfile.is_open( ) ) {
