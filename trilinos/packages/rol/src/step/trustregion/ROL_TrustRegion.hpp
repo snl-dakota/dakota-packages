@@ -60,7 +60,7 @@ template<class Real>
 class TrustRegion {
 private:
 
-  Teuchos::RCP<Vector<Real> > prim_, dual_;
+  ROL::Ptr<Vector<Real> > prim_, dual_;
 
   ETrustRegionModel TRmodel_;
 
@@ -75,8 +75,8 @@ private:
 
   Real ftol_old_;
 
-  Real scale_, omega_, force_;
-  int updateIter_, forceFactor_, cnt_;
+  Real scale_, omega_, force_, forceFactor_;
+  int updateIter_, cnt_;
 
   unsigned verbosity_;
 

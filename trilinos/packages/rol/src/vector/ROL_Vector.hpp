@@ -45,11 +45,13 @@
 #ifndef ROL_VECTOR_H
 #define ROL_VECTOR_H
 
+#define ROL_UNUSED(x) (void) x
+
 #include <ostream>
 
 #include "ROL_Elementwise_Function.hpp"
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "ROL_Ptr.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
 /** @ingroup la_group
@@ -73,7 +75,11 @@
 namespace ROL {
 
 template <class Real>
-class Vector {
+class Vector
+#ifdef ENABLE_PYROL
+ : public std::enable_shared_from_this<Vector<Real>> 
+#endif 
+{
 public:
 
   virtual ~Vector() {}
@@ -128,7 +134,7 @@ public:
 
              ---             
   */
-  virtual Teuchos::RCP<Vector> clone() const = 0;
+  virtual ROL::Ptr<Vector> clone() const = 0;
 
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mathtt{*this}\f$.
@@ -143,7 +149,7 @@ public:
              ---
   */
   virtual void axpy( const Real alpha, const Vector &x ) {
-    Teuchos::RCP<Vector> ax = x.clone();
+    ROL::Ptr<Vector> ax = x.clone();
     ax->set(x);
     ax->scale(alpha);
     this->plus(*ax);
@@ -171,7 +177,10 @@ public:
 
              ---
   */
-  virtual Teuchos::RCP<Vector> basis( const int i ) const {return Teuchos::null;}
+  virtual ROL::Ptr<Vector> basis( const int i ) const {
+    ROL_UNUSED(i);
+    return ROL::nullPtr;
+  }
 
 
   /** \brief Return dimension of the vector space.
@@ -217,22 +226,40 @@ public:
   }
 
   virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+    ROL_UNUSED(f);
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyUnary wass called, but not implemented" << std::endl); 
   }
 
   virtual void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector &x ) {
+    ROL_UNUSED(f);
+    ROL_UNUSED(x);
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyBinary wass called, but not implemented" << std::endl); 
   }
 
   virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
+    ROL_UNUSED(r);
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method reduce was called, but not implemented" << std::endl); 
   }
 
   virtual void print( std::ostream &outStream ) const {
     outStream << "The method print was called, but not implemented" << std::endl;
+  }
+
+  /** \brief Set \f$y \leftarrow C\f$ where \f$C\in\mathbb{R}\f$.
+
+             @param[in]      C     is a scalar.
+
+             On return \f$\mathtt{*this} = C\f$.
+             Uses #applyUnary methods for the computation.
+             Please overload if a more efficient implementation is needed.
+
+             ---
+  */
+  virtual void setScalar( const Real C ) {
+    this->applyUnary(Elementwise::Fill<Real>(C));
   }
 
 
@@ -276,21 +303,21 @@ public:
 
     Teuchos::oblackholestream bhs; // outputs nothing
 
-    Teuchos::RCP<std::ostream> pStream;
+    ROL::Ptr<std::ostream> pStream;
     if (printToStream) {
-      pStream = Teuchos::rcp(&outStream, false);
+      pStream = ROL::makePtrFromRef(outStream);
     } else {
-      pStream = Teuchos::rcp(&bhs, false);
+      pStream = ROL::makePtrFromRef(bhs);
     }
 
     // Save the format state of the original pStream.
     Teuchos::oblackholestream oldFormatState, headerFormatState;
     oldFormatState.copyfmt(*pStream);
 
-    Teuchos::RCP<Vector> v    = this->clone();
-    Teuchos::RCP<Vector> vtmp = this->clone();
-    Teuchos::RCP<Vector> xtmp = x.clone();
-    Teuchos::RCP<Vector> ytmp = y.clone();
+    ROL::Ptr<Vector> v    = this->clone();
+    ROL::Ptr<Vector> vtmp = this->clone();
+    ROL::Ptr<Vector> xtmp = x.clone();
+    ROL::Ptr<Vector> ytmp = y.clone();
 
     //*pStream << "\n************ Begin verification of linear algebra.\n\n";
     *pStream << "\n" << std::setw(width) << std::left << std::setfill('*') << "********** Begin verification of linear algebra. " << "\n\n";
@@ -360,8 +387,8 @@ public:
 
     // Reflexivity.
     v->set(*this);
-    xtmp = Teuchos::rcp_const_cast<Vector>(Teuchos::rcpFromRef(this->dual()));
-    ytmp = Teuchos::rcp_const_cast<Vector>(Teuchos::rcpFromRef(xtmp->dual()));
+    xtmp = ROL::constPtrCast<Vector>(ROL::makePtrFromRef(this->dual()));
+    ytmp = ROL::constPtrCast<Vector>(ROL::makePtrFromRef(xtmp->dual()));
     v->axpy(-one, *ytmp); vCheck.push_back(v->norm());
     *pStream << std::setw(width) << std::left << "Reflexivity. Consistency error: " << " " << vCheck.back() << "\n\n";
 

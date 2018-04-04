@@ -97,7 +97,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Ifpack                packages/ifpack                   PT
   ML                    packages/ml                       PT
   Belos                 packages/belos                    PT
-  ShyLU                 packages/shylu                    PT
+  ShyLU_Node            packages/shylu/shylu_node         PT
   Amesos2               packages/amesos2                  PT
   SEACAS                packages/seacas                   PT # Depends on netcdf, optionally hdf5, xdmf, pamgen
   Trios                 packages/trios                    EX #temporary
@@ -120,6 +120,8 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   NOX                   packages/nox                      PT
   Moertel               packages/moertel                  ST
   MueLu                 packages/muelu                    PT
+  ShyLU_DD              packages/shylu/shylu_dd           PT
+  ShyLU                 packages/shylu                    PT
   Rythmos               packages/rythmos                  PT
   Tempus                packages/tempus                   PT
   MOOCHO                packages/moocho                   ST
@@ -129,7 +131,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Panzer                packages/panzer                   PT
   Sundance              packages/Sundance                 ST # Could be PT based on deps (BUG: 4669)
   CTrilinos             packages/CTrilinos                ST # Switched to ST to speed up checkin testing
-  ForTrilinos           packages/ForTrilinos              EX
+#  ForTrilinos           packages/ForTrilinos              EX
   PyTrilinos            packages/PyTrilinos               ST
   WebTrilinos           packages/WebTrilinos              EX # Should be ST
   NewPackage            packages/new_package              EX # Should be ST

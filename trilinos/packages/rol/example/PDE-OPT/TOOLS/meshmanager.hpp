@@ -50,7 +50,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Intrepid_FieldContainer.hpp"
-
+#include "ROL_Ptr.hpp"
 
 /** \class  MeshManager
     \brief  This is the pure virtual parent class for mesh construction
@@ -71,28 +71,41 @@ public:
              Format: number_of_nodes x 2 (Real)
                      (node_index)  x, y coordinates
   */
-  virtual Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const = 0;
+  virtual ROL::Ptr<Intrepid::FieldContainer<Real> > getNodes() const = 0;
 
   /** \brief Returns cell to node adjacencies.
              Format: number_of_cells x number_of_nodes_per_cell (int)
                      (cell_index)  node_index1  node_index2  ...
   */
-  virtual Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const = 0;
+  virtual ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const = 0;
 
   /** \brief Returns cell to edge adjacencies.
              Format: number_of_cells x number_of_edges_per_cell (int)
                      (cell_index)  edge_index1  edge_index2  ...
   */
-  virtual Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const = 0;
+  virtual ROL::Ptr<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+    return ROL::makePtr<Intrepid::FieldContainer<int>>(); // default due to lack of edges in 1D
+  }
+
+  /** \brief Returns cell to edge adjacencies.
+             Format: number_of_cells x number_of_edges_per_cell (int)
+                     (cell_index)  edge_index1  edge_index2  ...
+  */
+  virtual ROL::Ptr<Intrepid::FieldContainer<int> > getCellToFaceMap() const {
+    return ROL::makePtr<Intrepid::FieldContainer<int>>(); // default due to lack of faces in 1D and 2D
+  }
 
   /** \brief Returns sideset information.
              Format: The std::vector components are indexed by the local side number (0, 1, 2, ...);
                      the FieldConTainer is a 1D array of cell indices.
              Input:  Sideset number.  Its meaning is context-dependent.
   */
-  virtual Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-              std::ostream & outStream = std::cout,
-              const bool verbose = false) const = 0;
+  //virtual ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
+  //            std::ostream & outStream = std::cout,
+  //            const bool verbose = false) const = 0;
+  virtual ROL::Ptr<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const = 0;
 
   /** \brief Returns number of cells.
   */
@@ -104,7 +117,15 @@ public:
 
   /** \brief Returns number of edges.
   */
-  virtual int getNumEdges() const = 0;
+  virtual int getNumEdges() const {
+    return 0; // default due to lack of edges in 1D
+  }
+
+  /** \brief Returns number of faces.
+  */
+  virtual int getNumFaces() const {
+    return 0; // default due to lack of faces in 1D and 2D
+  }
 
 }; // MeshManager
 
@@ -155,11 +176,11 @@ private:
   int numNodes_;
   int numEdges_;
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > meshNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
 
 public:
 
@@ -199,24 +220,24 @@ public:
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const {
+  ROL::Ptr<Intrepid::FieldContainer<Real> > getNodes() const {
     return meshNodes_;
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
     return meshCellToNodeMap_;
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
     return meshCellToEdgeMap_;
   }
 
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-      std::ostream & outStream = std::cout,
-      const bool verbose = false) const {
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const { 
     return meshSideSets_;
   }
 
@@ -240,7 +261,7 @@ private:
 
   void computeNodes() {
 
-    meshNodes_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numNodes_, 2));
+    meshNodes_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(numNodes_, 2);
     Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
 
     Real dy1 = stepH_ / ny1_;
@@ -288,7 +309,7 @@ private:
 
   void computeCellToNodeMap() {
 
-    meshCellToNodeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 4));
+    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, 4);
     Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
 
     int cellCt = 0;
@@ -329,7 +350,7 @@ private:
 
   void computeCellToEdgeMap() {
 
-    meshCellToEdgeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 4));
+    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, 4);
     Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
 
     int cellCt = 0;
@@ -378,7 +399,7 @@ private:
 
   virtual void computeSideSets() {
 
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(11));
+    meshSideSets_ = ROL::makePtr<std::vector<std::vector<std::vector<int> > >>(11);
     int numSides = 4;
     (*meshSideSets_)[0].resize(numSides); // bottom
     (*meshSideSets_)[1].resize(numSides); // right lower
@@ -404,32 +425,32 @@ private:
     (*meshSideSets_)[10][3].resize(ny1_);
 
     for (int i=0; i<nx1_+nx2_; ++i) {
-      (*meshSideSets_)[0][0](i) = i;
+      (*meshSideSets_)[0][0][i] = i;
     }
     for (int i=0; i<ny2_; ++i) {
-      (*meshSideSets_)[1][1](i) = (i+1)*(nx1_+nx2_) - 1;
+      (*meshSideSets_)[1][1][i] = (i+1)*(nx1_+nx2_) - 1;
     }
     int offset = nx1_*ny1_+nx2_*ny2_;
     for (int i=0; i<ny5_; ++i) {
-      (*meshSideSets_)[2][1](i) = offset + (i+1)*(nx3_+nx4_+nx5_) - 1;
+      (*meshSideSets_)[2][1][i] = offset + (i+1)*(nx3_+nx4_+nx5_) - 1;
     }
     for (int i=0; i<nx3_+nx4_+nx5_; ++i) {
-      (*meshSideSets_)[3][2](i) = offset + (ny3_-1)*(nx3_+nx4_+nx5_) + i;
+      (*meshSideSets_)[3][2][i] = offset + (ny3_-1)*(nx3_+nx4_+nx5_) + i;
     }
     for (int i=0; i<ny3_; ++i) {
-      (*meshSideSets_)[4][3](i) = offset + i*(nx3_+nx4_+nx5_);
+      (*meshSideSets_)[4][3][i] = offset + i*(nx3_+nx4_+nx5_);
     }
     for (int i=0; i<nx3_; ++i) {
-      (*meshSideSets_)[5][0](i) = offset + i;
+      (*meshSideSets_)[5][0][i] = offset + i;
     }
     for (int i=0; i<ny1_-1; ++i) {
-      (*meshSideSets_)[6][3](i) = i*(nx1_+nx2_);
+      (*meshSideSets_)[6][3][i] = i*(nx1_+nx2_);
     }
-    (*meshSideSets_)[7][0](0) = offset + nx3_;
-    (*meshSideSets_)[8][3](0) = (ny1_-1)*(nx1_+nx2_);
-    (*meshSideSets_)[9][0](0) = offset + ny5_*(nx3_+nx4_+nx5_) - 1;
+    (*meshSideSets_)[7][0][0] = offset + nx3_;
+    (*meshSideSets_)[8][3][0] = (ny1_-1)*(nx1_+nx2_);
+    (*meshSideSets_)[9][0][0] = offset + ny5_*(nx3_+nx4_+nx5_) - 1;
     for (int i=0; i<ny1_; ++i) {
-      (*meshSideSets_)[10][3](i) = i*(nx1_+nx2_);
+      (*meshSideSets_)[10][3][i] = i*(nx1_+nx2_);
     }
 
   } // computeSideSets
@@ -472,11 +493,11 @@ private:
   int numNodes_;
   int numEdges_;
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > meshNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
 
 public:
 
@@ -500,24 +521,24 @@ public:
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const {
+  ROL::Ptr<Intrepid::FieldContainer<Real> > getNodes() const {
     return meshNodes_;
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
     return meshCellToNodeMap_;
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
     return meshCellToEdgeMap_;
   }
 
 
-  virtual Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-      std::ostream & outStream = std::cout,
-      const bool verbose = false) const {
+  virtual ROL::Ptr<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const { 
     return meshSideSets_;
   }
 
@@ -540,7 +561,7 @@ private:
 
   void computeNodes() {
 
-    meshNodes_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numNodes_, 2));
+    meshNodes_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(numNodes_, 2);
     Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
 
     Real dx = width_ / nx_;
@@ -561,7 +582,7 @@ private:
 
   void computeCellToNodeMap() {
 
-    meshCellToNodeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 4));
+    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, 4);
     Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
 
     int cellCt = 0;
@@ -581,7 +602,7 @@ private:
 
   void computeCellToEdgeMap() {
 
-    meshCellToEdgeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 4));
+    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, 4);
     Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
 
     int cellCt = 0;
@@ -601,7 +622,7 @@ private:
 
   virtual void computeSideSets() {
 
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(1));
+    meshSideSets_ = ROL::makePtr<std::vector<std::vector<std::vector<int> > >>(1);
     int numSides = 4;
     (*meshSideSets_)[0].resize(numSides);
     (*meshSideSets_)[0][0].resize(nx_);
@@ -610,16 +631,16 @@ private:
     (*meshSideSets_)[0][3].resize(ny_);
 
     for (int i=0; i<nx_; ++i) {
-      (*meshSideSets_)[0][0](i) = i;
+      (*meshSideSets_)[0][0][i] = i;
     }
     for (int i=0; i<ny_; ++i) {
-      (*meshSideSets_)[0][1](i) = (i+1)*nx_-1;
+      (*meshSideSets_)[0][1][i] = (i+1)*nx_-1;
     }
     for (int i=0; i<nx_; ++i) {
-      (*meshSideSets_)[0][2](i) = i + nx_*(ny_-1);
+      (*meshSideSets_)[0][2][i] = i + nx_*(ny_-1);
     }
     for (int i=0; i<ny_; ++i) {
-      (*meshSideSets_)[0][3](i) = i*nx_;
+      (*meshSideSets_)[0][3][i] = i*nx_;
     }
 
   } // computeSideSets
@@ -641,13 +662,11 @@ private:
 
   int numCells_;
   int numNodes_;
-  int numEdges_;
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > meshNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > > meshSideSets_;
 
 public:
 
@@ -662,31 +681,25 @@ public:
 
     numCells_ = nx_;
     numNodes_ = nx_+1;
-    numEdges_ = 2;
 
     // Compute and store mesh data structures
     computeNodes();
     computeCellToNodeMap();
-    computeCellToEdgeMap();
     computeSideSets();
 
   }
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const {
+  ROL::Ptr<Intrepid::FieldContainer<Real> > getNodes() const {
     return meshNodes_;
   }
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
     return meshCellToNodeMap_;
   }
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
-    return meshCellToEdgeMap_;
-  }
-
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-      std::ostream & outStream = std::cout,
-      const bool verbose = false) const {
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const {
     return meshSideSets_;
   }
 
@@ -699,16 +712,11 @@ public:
   } // getNumNodes
 
 
-  int getNumEdges() const {
-    return numEdges_;
-  } // getNumEdges
-
-
-private: 
+private:
 
   void computeNodes() {
 
-    meshNodes_ = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numNodes_,1) );
+    meshNodes_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(numNodes_,1);
     Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
 
     Real dx = width_ / nx_;
@@ -721,7 +729,7 @@ private:
 
   void computeCellToNodeMap() {
 
-    meshCellToNodeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_,2));
+    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_,2);
     Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
 
     for( int i=0; i<nx_; ++i ) {
@@ -731,33 +739,21 @@ private:
   } // computeCellToNodeMap
 
 
-  void computeCellToEdgeMap() {
-
-    meshCellToEdgeMap_ = Teuchos::rcp( new Intrepid::FieldContainer<int>(numCells_,1) );
-    Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
-
-    for( int i=0; i<nx_; ++i ) {
-      cte(i,0) = i;
-    }
-
-  } // computeCellToEdgeMap
-
-
   virtual void computeSideSets() {
     int numSideSets = 2;
     int numSides = 2;
     meshSideSets_
-      = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(numSideSets));
+      = ROL::makePtr<std::vector<std::vector<std::vector<int> > >>(numSideSets);
 
     (*meshSideSets_)[0].resize(numSides);
     (*meshSideSets_)[0][0].resize(1);
-    (*meshSideSets_)[0][0](0) = 0;
+    (*meshSideSets_)[0][0][0] = 0;
     (*meshSideSets_)[0][1].resize(0);
 
     (*meshSideSets_)[1].resize(numSides);
     (*meshSideSets_)[1][0].resize(0);
     (*meshSideSets_)[1][1].resize(1);
-    (*meshSideSets_)[1][1](0) = numCells_-1;
+    (*meshSideSets_)[1][1][0] = numCells_-1;
 
   } // computeSideSets
 
@@ -781,11 +777,11 @@ private:
   int numNodes_;
   int numEdges_;
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > meshNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > > meshSideSets_;
 
 public:
 
@@ -810,21 +806,21 @@ public:
     computeSideSets();
   }
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const {
+  ROL::Ptr<Intrepid::FieldContainer<Real> > getNodes() const {
     return meshNodes_;
   }
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
     return meshCellToNodeMap_; 
   }
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
     return meshCellToEdgeMap_;
   }
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-      std::ostream & outStream = std::cout,
-      const bool verbose = false) const {
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const { 
     return meshSideSets_;
   }
 
@@ -845,7 +841,7 @@ public:
 private:
 
   void computeNodes() {
-    meshNodes_ = Teuchos::rcp( new Intrepid::FieldContainer<Real>(numNodes_,1) );
+    meshNodes_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(numNodes_,1);
     Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
 
     for( int i=0; i<nx_+1; ++i ) {
@@ -855,7 +851,7 @@ private:
 
 
   void computeCellToNodeMap() {
-    meshCellToNodeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_,2));
+    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_,2);
     Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
 
     for( int i=0; i<nx_; ++i ) {
@@ -866,7 +862,7 @@ private:
 
 
   void computeCellToEdgeMap() {
-    meshCellToEdgeMap_ = Teuchos::rcp( new Intrepid::FieldContainer<int>(numCells_,1) );
+    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_,1);
     Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
 
     for( int i=0; i<nx_; ++i ) {
@@ -879,17 +875,17 @@ private:
     int numSideSets = 2;
     int numSides = 2;
     meshSideSets_
-      = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(numSideSets));
+      = ROL::makePtr<std::vector<std::vector<std::vector<int> > >>(numSideSets);
 
     (*meshSideSets_)[0].resize(numSides);
     (*meshSideSets_)[0][0].resize(1);
-    (*meshSideSets_)[0][0](0) = 0;
+    (*meshSideSets_)[0][0][0] = 0;
     (*meshSideSets_)[0][1].resize(0);
 
     (*meshSideSets_)[1].resize(numSides);
     (*meshSideSets_)[1][0].resize(0);
     (*meshSideSets_)[1][1].resize(1);
-    (*meshSideSets_)[1][1](0) = numCells_-1;
+    (*meshSideSets_)[1][1][0] = numCells_-1;
 
   } // computeSideSets
 
@@ -939,11 +935,11 @@ private:
   int numNodes_;
   int numEdges_;
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > meshNodes_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  Teuchos::RCP<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > meshNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
 
 public:
 
@@ -970,24 +966,24 @@ public:
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > getNodes() const {
+  ROL::Ptr<Intrepid::FieldContainer<Real> > getNodes() const {
     return meshNodes_;
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToNodeMap() const {
     return meshCellToNodeMap_;
   }
 
 
-  Teuchos::RCP<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellToEdgeMap() const {
     return meshCellToEdgeMap_;
   }
 
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-      std::ostream & outStream = std::cout,
-      const bool verbose = false) const {
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const { 
     return meshSideSets_;
   }
 
@@ -1010,7 +1006,7 @@ private:
 
   void computeNodes() {
 
-    meshNodes_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numNodes_, 3));
+    meshNodes_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(numNodes_, 3);
     Intrepid::FieldContainer<Real> &nodes = *meshNodes_;
 
     Real dx = width_ / nx_;
@@ -1036,7 +1032,7 @@ private:
 
   void computeCellToNodeMap() {
 
-    meshCellToNodeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 8));
+    meshCellToNodeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, 8);
     Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
 
     int cellCt = 0;
@@ -1067,7 +1063,7 @@ private:
 
   void computeCellToEdgeMap() {
 
-    meshCellToEdgeMap_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, 12));
+    meshCellToEdgeMap_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, 12);
     Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
 
     int cellCt = 0;
@@ -1105,7 +1101,7 @@ private:
   virtual void computeSideSets() {
 
     // single sideset (all of the boundary)
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(1));
+    meshSideSets_ = ROL::makePtr<std::vector<std::vector<std::vector<int> > >>(1);
     // the sideset has six sides with local side ids from 0 to 5
     int numSides = 6;
     (*meshSideSets_)[0].resize(numSides);
@@ -1120,32 +1116,32 @@ private:
 
     for (int j=0; j<nz_; ++j) {
       for (int i=0; i<nx_; ++i) {
-        (*meshSideSets_)[0][0](i+nx_*j) = i+nxny*j;
+        (*meshSideSets_)[0][0][i+nx_*j] = i+nxny*j;
       }
     }
     for (int j=0; j<nz_; ++j) {
       for (int i=0; i<ny_; ++i) {
-        (*meshSideSets_)[0][1](i+ny_*j) = (i+1)*nx_-1 + nxny*j;
+        (*meshSideSets_)[0][1][i+ny_*j] = (i+1)*nx_-1 + nxny*j;
       }
     }
     for (int j=0; j<nz_; ++j) {
       for (int i=0; i<nx_; ++i) {
-        (*meshSideSets_)[0][2](i+nx_*j) = nx_*(ny_-1) + i + nxny*j;
+        (*meshSideSets_)[0][2][i+nx_*j] = nx_*(ny_-1) + i + nxny*j;
       }
     }
     for (int j=0; j<nz_; ++j) {
       for (int i=0; i<ny_; ++i) {
-        (*meshSideSets_)[0][3](i+ny_*j) = i*nx_ + nxny*j;
+        (*meshSideSets_)[0][3][i+ny_*j] = i*nx_ + nxny*j;
       }
     }
     for (int j=0; j<ny_; ++j) {
       for (int i=0; i<nx_; ++i) {
-        (*meshSideSets_)[0][4](i+nx_*j) = i + nx_*j;
+        (*meshSideSets_)[0][4][i+nx_*j] = i + nx_*j;
       }
     }
     for (int j=0; j<ny_; ++j) {
       for (int i=0; i<nx_; ++i) {
-        (*meshSideSets_)[0][5](i+nx_*j) = i + nx_*j + nxny*(nz_-1);
+        (*meshSideSets_)[0][5][i+nx_*j] = i + nx_*j + nxny*(nz_-1);
       }
     }
 

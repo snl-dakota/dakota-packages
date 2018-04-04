@@ -52,11 +52,11 @@ namespace ROL {
 
 /* ROL Parameters */
 
-inline Teuchos::RCP<const Teuchos::ParameterList> getValidROLParameters() {
+inline ROL::Ptr<const Teuchos::ParameterList> getValidROLParameters() {
   
   typedef Teuchos::ParameterList PL;
 
-  Teuchos::RCP<PL> rol = Teuchos::rcp( new PL("ROL") );
+  ROL::Ptr<PL> rol = ROL::makePtr<PL>("ROL");
 
   /* ===== GENERAL INPUT PARAMETERS ============================ */ 
   PL &general = rol->sublist("General");
@@ -287,23 +287,23 @@ inline Teuchos::RCP<const Teuchos::ParameterList> getValidROLParameters() {
 
 /* SOL Parameters */
 
-inline Teuchos::RCP<const Teuchos::ParameterList> getValidSOLParameters() {
+inline ROL::Ptr<const Teuchos::ParameterList> getValidSOLParameters() {
   
   typedef Teuchos::ParameterList PL;
 
-  Teuchos::RCP<PL> sol = Teuchos::rcp( new PL("SOL") );
+  ROL::Ptr<PL> sol = ROL::makePtr<PL>("SOL");
 
-  sol->set("Stochastic Optimization Type",  "Risk Neutral");
+  sol->set("Stochastic Component Type",  "Risk Neutral");
   sol->set("Store Sampled Value and Gradient", true);
-
-  /* ===== BPOE ================= */
-  PL &bpoe = sol->sublist("BPOE");
-    bpoe.set("Moment Order",   2.0);
-    bpoe.set("Threshold",      1.0);
     
   /* ===== RISK MEASURE ============== */
   PL &risk = sol->sublist("Risk Measure");
     risk.set("Name","CVaR");
+
+    /* ===== BPOE ================= */
+    PL &bpoe = risk.sublist("bPOE");
+      bpoe.set("Moment Order",   2.0);
+      bpoe.set("Threshold",      1.0);
 
     /* ===== EXPONENTIAL UTILITY =============== */
     PL &expo = risk.sublist("Exponential Utility");

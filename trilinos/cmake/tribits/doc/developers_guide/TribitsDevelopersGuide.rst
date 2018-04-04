@@ -562,6 +562,8 @@ units are:
 * `TriBITS Repository`_: A collection of one or more `TriBITS Packages`_
   specified in a `<repoDir>/PackagesList.cmake`_ file and zero or more TPL
   declarations specified in a `<repoDir>/TPLsList.cmake`_ file.
+  As discussed below, Repositories can include Native Repositories and Version
+  Control (VC) Repositories.
 
 .. _TriBITS Projects:
 
@@ -672,6 +674,7 @@ ${PROJECT_SOURCE_DIR}``) are::
      cmake/
        NativeRepositoriesList.cmake    # [Optional] Rarely used
        ExtraRepositoriesList.cmake     # [Optional] Lists repos and VC URLs 
+       ProjectCompilerPostConfig.cmake # [Optional] Override/tweak build flags
        ProjectDependenciesSetup.cmake  # [Optional] Project deps overrides
        CallbackDefineProjectPackaging.cmake  # [Optional] CPack settings
        tribits/    # [Optional] Or provide ${PROJECT_NAME}_TRIBITS_DIR
@@ -687,6 +690,7 @@ These TriBITS Project files are documented in more detail below:
 * `<projectDir>/project-checkin-test-config.py`_
 * `<projectDir>/cmake/NativeRepositoriesList.cmake`_
 * `<projectDir>/cmake/ExtraRepositoriesList.cmake`_
+* `<projectDir>/cmake/ProjectCompilerPostConfig.cmake`_
 * `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_
 * `<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_
 * `<projectDir>/cmake/tribits/`_
@@ -781,10 +785,10 @@ For example, the ``VERA/CMakeLists.txt`` file lists as its first line::
 
 **<projectDir>/CTestConfig.cmake**: [Optional] Specifies the CDash site and
 project to submit results to when doing an automated build driven by the CTest
-driver function `TRIBITS_CTEST_DRIVER()`_ (see `TriBITS Package-by-Package
-CTest/Dash Driver`_).  This file is also required to use the TriBITS-generated
-``dashboard`` target (see `Dashboard Submissions`_).  An example of this file
-is `TribitsExampleProject`_/``CTestConfig.cmake``:
+driver function `TRIBITS_CTEST_DRIVER()`_ (see `TriBITS CTest/CDash Driver`_).
+This file is also required to use the TriBITS-generated ``dashboard`` target
+(see `Dashboard Submissions`_).  An example of this file is
+`TribitsExampleProject`_/``CTestConfig.cmake``:
 
 .. include:: ../../examples/TribitsExampleProject/CTestConfig.cmake
    :literal:
@@ -855,7 +859,7 @@ using checkin-test.py`_.
 
 .. _<projectDir>/cmake/NativeRepositoriesList.cmake:
 
-**<projectDir>/cmake/NativeRepositoriesList.cmake**: [Optional] If present,
+**<projectDir>/cmake/NativeRepositoriesList.cmake**: [Deprecated] If present,
 this file gives the list of native repositories for the TriBITS project.  The
 file must contain a ``SET()`` statement defining the variable
 ``${PROJECT_NAME}_NATIVE_REPOSITORIES`` which is just a flat list of repository
@@ -873,8 +877,8 @@ backward compatibility since there may be some TriBITS projects that still use
 it.  It is recommended instead to define multiple repositories using the
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file as it allows for more
 flexibility in how extra repositories are specified and how they are accessed.
-The latter file allows the various tools to perform VC activities with these
-repos while "native repositories" do not.
+The latter file allows the various tools to perform version control (VC)
+activities with these repos while "native repositories" do not.
 
 If this file ``NativeRepositoriesList.cmake`` does not exist, then TriBITS
 sets ``${PROJECT_NAME}_NATIVE_REPOSITORIES`` equal to ".", or the base project
@@ -920,6 +924,47 @@ NOTE: This file can be overridden by setting the cache variable
 .. looks like only the selected repos will be cloned.  I need to add some unit
 .. tests that really show what the real behavior is and then document that
 .. behavior here.
+
+
+.. _<projectDir>/cmake/ProjectCompilerPostConfig.cmake:
+
+**<projectDir>/cmake/ProjectCompilerPostConfig.cmake**: [Optional] If present,
+then this file is read using ``INCLUDE()`` at the top-level CMakeLists.txt
+file scope right after the compilers for the languages ``<LANG>`` = ``C``,
+``CXX``, and ``Fortran`` are determined and checked using
+``ENABLE_LANGUAGE(<LANG>)`` but before any other checks are performed.  This
+file can contain logic for the project to adjust the flags set in
+``CMAKE_<LANG>_FLAGS`` and changes to other aspects of the build flags
+(including link flags, etc.).
+
+One example of the usage of this file is the Trilinos project where this file
+is (or was) used to apply specialized logic implemented in the Kokkos build
+system to select compiler options and to determine how C++11 and OpenMP flags
+are set.  This file in Trilinos looked like::
+
+  IF (${Trilinos_ENABLE_Kokkos})
+
+    ...
+
+    include(${Kokkos_GEN_DIR}/kokkos_generated_settings.cmake)
+  
+    IF (NOT KOKKOS_ARCH STREQUAL "None")
+    
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${KOKKOS_CXX_FLAGS}")
+    
+      MESSAGE("-- " "Skip adding flags for C++11 because Kokkos flags does that ...")
+      SET(${PROJECT_NAME}_CXX11_FLAGS " ")
+    
+      MESSAGE("-- " "Skip adding flags for OpenMP because Kokkos flags does that ...")
+      SET(OpenMP_CXX_FLAGS_OVERRIDE " ")
+    
+    ENDIF()
+  
+  ENDIF()
+
+The exact context where this file is processed (if it exists) is described in
+`Full Processing of TriBITS Project Files`_ and `TriBITS Environment Probing
+and Setup`_.
 
 
 .. _<projectDir>/cmake/ProjectDependenciesSetup.cmake:
@@ -1903,8 +1948,8 @@ A TriBITS Subpackage:
   ``${PARENT_PACKAGE_NAME}_ENABLE_TESTS=ON``.
 
 The contents of a TriBITS Subpackage are almost identical to those of a
-TriBITS Package.  The differences are described below and in `How is a TriBITS
-Subpackage is different from a TriBITS Package?`_.
+TriBITS Package.  The differences are described below and in `How is a TriBITS 
+Subpackage different from a TriBITS Package?`_.
 
 For more details on the definition of a TriBITS Package (or subpackage), see:
 
@@ -2061,8 +2106,8 @@ subpackage's files are:
     The absolute path to the parent package's base binary directory.
 
 
-How is a TriBITS Subpackage is different from a TriBITS Package?
-................................................................
+How is a TriBITS Subpackage different from a TriBITS Package?
+.............................................................
 
 A common question this is natural to ask is how a TriBITS Subpackage is
 different from a TriBITS Package?  They contain the same basic files (i.e. a
@@ -2078,14 +2123,13 @@ so when the parent package is explicitly enabled or disabled, it is identical
 to explicitly enabling or disabling all of its subpackages (see
 `Enable/disable of parent package is enable/disable for subpackages`_).  Also,
 subpackages are tested along with their peer subpackages with the parent
-package as part of `TriBITS Package-by-Package CTest/Dash Driver`_.  This
-effectively means that if a build failure is detected in any subpackage, then
-that will effectively disable the parent package and all of its other
-subpackages in downstream testing.  This is a type of "all for one and all for
-one" when it comes to the relationship between the subpackages within a single
-parent package.  These are some of the issues to consider when breaking up
-software into packages and subpackages that will be mentioned in other
-sections as well.
+package as part of `TriBITS CTest/CDash Driver`_.  This effectively means that if a
+build failure is detected in any subpackage, then that will effectively
+disable the parent package and all of its other subpackages in downstream
+testing.  This is a type of "all for one and all for one" when it comes to the
+relationship between the subpackages within a single parent package.  These
+are some of the issues to consider when breaking up software into packages and
+subpackages that will be mentioned in other sections as well.
 
 TriBITS TPL
 +++++++++++
@@ -2257,7 +2301,7 @@ proceeds through the call to `TRIBITS_PROJECT()`_.
 | 3.  Call `TRIBITS_PROJECT()`_:
 |   1)  Set `PROJECT_SOURCE_DIR`_ and `PROJECT_BINARY_DIR`_
 |   2)  For each ``<optFile>`` in ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE`_}
-|         ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_}
+|         then in ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_}
         :
 |       * ``INCLUDE(<optFile>)``
 |   3)  Set variables ``CMAKE_HOST_SYSTEM_NAME`` and ``${PROJECT_NAME}_HOSTNAME``
@@ -2287,6 +2331,7 @@ proceeds through the call to `TRIBITS_PROJECT()`_.
 |       (see `Package Dependencies and Enable/Disable Logic`_)
 |   11) `Probe and set up the environment`_ (finds MPI, compilers, etc.)
 |       (see `TriBITS Environment Probing and Setup`_)
+|       * ``INCLUDE(`` `<projectDir>/cmake/ProjectCompilerPostConfig.cmake`_ ``)``
 |   12) For each ``<tplName>`` in the set of enabled TPLs:
 |       * ``INCLUDE(${<tplName>_FINDMOD})`` (see `TriBITS TPL`_)
 |   13) For each ``<repoDir>`` in all defined TriBITS repositories:
@@ -2389,7 +2434,7 @@ configure command::
     -DTribitsExProj_TRACE_FILE_PROCESSING=ON \
     -DTribitsExProj_ENABLE_CPACK_PACKAGING=ON \
     -DTribitsExProj_DUMP_CPACK_SOURCE_IGNORE_FILES=ON \
-    <tribitsDir>/doc/examples/TribitsExampleProject \
+    <tribitsDir>/doc/TribitsExampleProject \
     | grep "^-- File Trace:"
 
 looks something like::
@@ -2621,7 +2666,7 @@ itself which allows the TriBITS system to be tested and installed from any
 TriBITS project that lists it, including the ``TriBITS`` project itself
 (see `Coexisting Projects, Repositories, and Packages`_).
 
-The directory ``tribits/doc/examples/`` contains some other example TriBITS
+The directory ``tribits/examples/`` contains some other example TriBITS
 projects and repositories as well that are referred to in this and other
 documents.
 
@@ -2632,7 +2677,7 @@ TribitsHelloWorld
 ``TribitsHelloWorld`` is about the simplest possible TriBITS project that you
 can imagine and is contained under the directory::
 
-  tribits/doc/examples/TribitsHelloWorld/
+  tribits/examples/TribitsHelloWorld/
 
 This example project contains only a single TriBITS package and no frills at
 all (does not support MPI or Fortran).  However, it does show how minimal a
@@ -2673,7 +2718,7 @@ TribitsExampleProject
 ``TribitsExampleProject`` in an example `TriBITS Project`_ and `TriBITS
 Repository`_ contained in the TriBITS source tree under::
 
-  tribits/doc/examples/TribitsExampleProject/
+  tribits/examples/TribitsExampleProject/
 
 When this is used as the base TriBITS project, this is the directory
 corresponds to ``<projectDir>`` and ``<repoDir>`` referenced in `TriBITS
@@ -4067,13 +4112,12 @@ define a number of different standard `Nested Layers of TriBITS Project
 Testing`_ which include different types of CI testing as well as nightly and
 other tests.  One of the most important types of CI testing, pre-push testing,
 is then described in more detail in the subsection `Pre-push Testing using
-checkin-test.py`_.  The subsection `TriBITS Package-by-Package CTest/Dash
-Driver`_ describes the usage of the advanced `TRIBITS_CTEST_DRIVER()`_
-function to do incremental project testing of a projects using advanced
-``ctest -S`` scripts.  The final subsection `TriBITS CDash Customizations`_
-describes how projects can use a CDash server to more effectively display test
-results and provide notifications for failures that are compartmentalized for
-a large project.
+checkin-test.py`_.  The subsection `TriBITS CTest/CDash Driver`_ describes the usage
+of the advanced `TRIBITS_CTEST_DRIVER()`_ function to do incremental project
+testing of a projects using advanced ``ctest -S`` scripts.  The final
+subsection `TriBITS CDash Customizations`_ describes how projects can use a
+CDash server to more effectively display test results and provide
+notifications for failures that are compartmentalized for a large project.
 
 
 Test Classifications for Repositories, Packages, and Tests
@@ -4116,8 +4160,8 @@ in trough the `${PROJECT_NAME}_EXTRAREPOS_FILE`_ cache variable) using the
 ``REPO_CLASSIFICATION`` field in the macro call
 `TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()`_.  These classifications map to
 the standard CTest dashboard types ``Continuous``, ``Nightly``, and
-``Experimental`` (see `CTest documentation`_ and `TriBITS Package-by-Package
-CTest/Dash Driver`_ for details).
+``Experimental`` (see `CTest documentation`_ and `TriBITS CTest/CDash Driver`_
+for details).
 
 .. _Repository Test Continuous:
 
@@ -4210,7 +4254,7 @@ More detailed descriptions of the test groups are given below.
 
 .. _ST:
 
-* **Secondary Tested (PT)** Code is still very important code for the project
+* **Secondary Tested (ST)** Code is still very important code for the project
   and represents important capability to maintain but is excluded from the
   ``PT`` set of code for one of a few different reasons.  First, code may be
   marked as ``ST`` if is not critical to drive most day-to-day development
@@ -4389,7 +4433,7 @@ describe and assume a certain class of software development processes (namely
 agile processes) where testing and *continuous integration* (CI) are critical
 components.  However, detailed descriptions of these processes are deferred to
 the later sections `Pre-push Testing using checkin-test.py`_ and `TriBITS
-Package-by-Package CTest/Dash Driver`_.
+CTest/CDash Driver`_.
 
 The standard TriBITS-defined project testing processes are:
 
@@ -4463,10 +4507,10 @@ immediately fires off a CI build using CTest to test the changes and the
 results are posted to a CDash server (in the "Continuous" section on the
 project's dashboard page).  This process is driven by CTest driver code that
 calls `TRIBITS_CTEST_DRIVER()`_ as described in the section `TriBITS
-Package-by-Package CTest/Dash Driver`_.  Various types of specific CI builds
-can be constructed and run (see `CTest/CDash CI Server`_) but these post-push
-CI builds typically select repositories, SE packages and code, and individual
-tests using the following test-related classifications:
+CTest/CDash Driver`_.  Various types of specific CI builds can be constructed
+and run (see `CTest/CDash CI Server`_) but these post-push CI builds typically
+select repositories, SE packages and code, and individual tests using the
+following test-related classifications:
 
 =========================  ==================  ====================================
    Classification Type        Classification           (See Reference)
@@ -4490,18 +4534,18 @@ pre-push CI builds correctly before pushing.
 In addition to pre-push and post-push CI testing, a typical TriBITS project
 will set up multiple *Nightly Testing* builds (or once-a-day builds, they
 don't need to only run at night).  These builds are also driven by CTest
-driver scripts described in the section `TriBITS Package-by-Package CTest/Dash
-Driver`_ and post results to the project's CDash server (in the "Nightly"
-section on the project's dashboard page).  Nightly builds don't run in a
-continuous loop but instead are run once a day (e.g. driven by a cron job) and
-there tends to be many different nightly build cases that test the project
-using different compilers (e.g.  GCC, Intel, Microsoft, etc., and different
-versions of each), different TPL versions (e.g. different OpenMPI versions,
-different MPICH versions, etc.), different platforms (e.g. Linux, Windows,
-etc.), and varying many other options and settings on these different
-platforms.  What all nightly builds have in common is that they tend to select
-repositories, SE packages and code, and individual tests using the following
-test-related classifications:
+driver scripts described in the section `TriBITS CTest/CDash Driver`_ and post
+results to the project's CDash server (in the "Nightly" section on the
+project's dashboard page).  Nightly builds don't run in a continuous loop but
+instead are run once a day (e.g. driven by a cron job) and there tends to be
+many different nightly build cases that test the project using different
+compilers (e.g.  GCC, Intel, Microsoft, etc., and different versions of each),
+different TPL versions (e.g. different OpenMPI versions, different MPICH
+versions, etc.), different platforms (e.g. Linux, Windows, etc.), and varying
+many other options and settings on these different platforms.  What all
+nightly builds have in common is that they tend to select repositories, SE
+packages and code, and individual tests using the following test-related
+classifications:
 
 =========================  ==================  ====================================
    Classification Type        Classification           (See Reference)
@@ -4669,7 +4713,7 @@ Note that the ``checkin-test.py`` script can also be used to implement
 "poor-man's" post-push testing processes as described in `Post-Push CI and
 Nightly Testing using checkin-test.py`_.  However, most software projects will
 want to go with the more elaborate and more feature-full CTest/CDash system
-described in `TriBITS Package-by-Package CTest/Dash Driver`_.
+described in `TriBITS CTest/CDash Driver`_.
 
 .. ToDo: Describe the standard workflow for using the checkin-test.py script.
 
@@ -4687,10 +4731,10 @@ described in `TriBITS Package-by-Package CTest/Dash Driver`_.
 .. ToDo: Describe the role that checkin-test.py plays in multi-repo ACI
 
 
-TriBITS Package-by-Package CTest/Dash Driver
---------------------------------------------
+TriBITS CTest/CDash Driver
+--------------------------
 
-The TriBITS system uses a sophisticated and highly customized CTest driver
+The TriBITS system uses a sophisticated and highly customized CTest -S driver
 script to test TriBITS projects and submit results to a CDash server.  The
 primary code for driving this is contained in the CTest function
 `TRIBITS_CTEST_DRIVER()`_ contained in the file
@@ -4964,19 +5008,19 @@ Multi-Repository Support
 ========================
 
 TriBITS has built-in support for projects involving multiple `TriBITS
-Repositories`_ which contain multiple `TriBITS Packages`_.  The basic
-configuration, build, and test of such projects requires only raw CMake/CTest,
-just like any other CMake project (see `TriBITS System Project
-Dependencies`_).  Every TriBITS project automatically supports tacking on
-add-on TriBITS packages and TPLs through the
+Repositories`_ which contain multiple `TriBITS Packages`_ (see `How to set up
+multi-repository support`_).  The basic configuration, build, and test of such
+projects requires only raw CMake/CTest, just like any other CMake project (see
+`TriBITS System Project Dependencies`_).  Every TriBITS project automatically
+supports tacking on add-on TriBITS packages and TPLs through the
 `${PROJECT_NAME}_EXTRA_REPOSITORIES`_ cmake cache variable as described in
 `Enabling extra repositories with add-on packages`_.  In addition, a TriBITS
 project can be set up to pull in other TriBITS Repositories using the
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  A special form of
-this is a `TriBITS Meta-Project`_ that contains no native packages or TPLs of
-its own.  The ability to create meta-projects out of individual TriBITS
-repositories allows TriBITS to be used to provide coordinated builds (or
-meta-builds) of large aggregations of software.
+this type of project is a `TriBITS Meta-Project`_ that contains no native
+packages or TPLs of its own.  The ability to create meta-projects out of
+individual TriBITS repositories allows TriBITS to be used to provide
+coordinated builds (or meta-builds) of large aggregations of software.
 
 To help set up a full-featured development environment (i.e. not just the
 basic configure, build, test, and install) for TriBITS projects with multiple
@@ -4994,7 +5038,7 @@ To demonstrate, consider the TriBITS meta-project with the following
     ExtraRepo2  "ExtraRepo1/ExtraRepos2"  GIT  git@someurl.com:ExtraRepo2
                                                    NOPACKAGES  Continuous
     ExtraRepo3  ""  GIT  git@someurl.com:ExtraRepo3  ""  Nightly
-  )
+    )
 
 Once cloned, the directories would be laid out as::
 
@@ -5519,8 +5563,8 @@ as follows:
    ``ADD_DEFINITIONS()`` in `Miscellaneous Notes (TRIBITS_ADD_LIBRARY())`_).
    We don't want the package's header files to change or libraries to have to
    be rebuilt if tests/examples get enabled or disabled.  Otherwise, the
-   `TriBITS Package-by-Package CTest/Dash Driver`_ process will result in
-   unnecessary rebuilds of software over and over again.
+   `TriBITS CTest/CDash Driver`_ process will result in unnecessary rebuilds
+   of software over and over again.
 
 3) **Use the features of the upstream package in the source files of the
    downstream package sources and/or tests/examples:** Usage of the features
@@ -5836,11 +5880,84 @@ Enable/Disable Logic`_).  Also, these files get processed in `Reduced Package
 Dependency Processing`_ as well so they get processed in all contexts where
 enable/disable logic is applied.
 
+
+How to set up multi-repository support
+--------------------------------------
+
+The following steps describe how to set up support for TriBITS project
+managing multiple version control and TriBITS repositories by default (see
+`Multi-Repository Support`_).
+
+1) Add file `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ and list out
+extra repos
+
+  For example, this file would contain something like::
+
+    TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
+      ExtraRepo1  ""  GIT  git@someurl.com:ExtraRepo1  ""  Continuous
+      ExtraRepo2  "ExtraRepo1/ExtraRepos2"  GIT  git@someurl.com:ExtraRepo2
+                                                     NOPACKAGES  Continuous
+      ExtraRepo3  ""  GIT  git@someurl.com:ExtraRepo3  ""  Nightly
+      )
+
+  NOTE: If one will not be using the `checkin-test.py`_ script, or
+  `clone_extra_repos.py`_ script, or the `TriBITS CTest/CDash Driver`_ system, then
+  one can leave the **REPO_VCTYPE** and **REPO_URL** fields empty (see
+  `TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()`_ for details).  (TriBITS Core
+  does not have any dependencies on any specific VC tool.  These fields are
+  listed here to avoid duplicating the list of repos in another file when
+  using these additional TriBITS tools.)
+
+2) Set default values for `${PROJECT_NAME}_EXTRAREPOS_FILE`_ and
+``${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` (and possibly
+``${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES``) in the file
+`<projectDir>/ProjectName.cmake`_
+
+  For example, add::
+
+    SET(${PROJECT_NAME}_EXTRAREPOS_FILE  cmake/ExtraRepositoriesList.cmake
+      CACHE  FILEPATH  "Set in ProjectName.cmake")
+    SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE  Continuous
+      CACHE  STRING  "Set in ProjectName.cmake")
+
+  to the `<projectDir>/ProjectName.cmake`_ file.  Otherwise, no extra repos
+  will be defined or processed by default when configuring the project.
+
+  And if the project can operate without all of its extra repos, the project
+  can set the following default in this file as well with::
+
+    SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES  TRUE
+      CACHE  STRING  "Set in ProjectName.cmake")
+
+  Otherwise, all of the extra repos need to be present or the project
+  configure will fail.
+
+3) If using git as the VC tool, then set the variable
+`${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_ in the
+`<projectDir>/ProjectName.cmake`_ file
+
+  For example::
+
+    SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE  TRUE
+      CACHE  BOOL  "Set in ProjectName.cmake")
+
+4) If wanting a clone tool with git repos, set up a link to the
+`clone_extra_repos.py`_ script in the base ``<projectDir>/`` directory
+
+  Create a symlink to the script `clone_extra_repos.py`_ in the base project
+  repo, for example with::
+
+    cd <projecDir>/
+    ln -s cmake/tribits/ci_support/clone_extra_repos.py .
+    git add clone_extra_repos.py
+    git commit
+
+
 How to submit testing results to a CDash site
 ---------------------------------------------
 
 The following steps describe how to submit results to a CDash site using the
-`TriBITS Package-by-Package CTest/Dash Driver`_ support.
+`TriBITS CTest/CDash Driver`_ support.
 
 1) Create a CDash project ``<ProjectName>`` on the targeted CDash site.
 
@@ -5871,14 +5988,18 @@ The following steps describe how to submit results to a CDash site using the
   Once the CDash project and the `<projectDir>/CTestConfig.cmake`_ and
   `<projectDir>/cmake/ctest/CTestCustom.cmake.in`_ files are created, one
   perform an experimental submission by just configuring the project as normal
-  and then running the build target::
+  (except configuring additionally with ``-DCTEST_BUILD_FLAGS=-j8`` and
+  ``-DCTEST_PARALLEL_LEVEL=8`` to use parallelism in the build and testing in
+  the ``ctest -S`` script) and then runningq the build target::
 
     make dashboard
 
   That will configure, build, test, and submit results to the CDash site to
-  the ``Experimental`` track of the target CDash project.
+  the ``Experimental`` track of the target CDash project (see `Dashboard
+  Submissions`_).
 
-  To work out issue locally without spamming the CDash site, one can run with:
+  To work out problems locally without spamming the CDash site, one can run
+  with::
 
     env CTEST_DO_SUBMIT=OFF make dashboard
 
@@ -5887,11 +6008,11 @@ The following steps describe how to submit results to a CDash site using the
   configure time. For example, to submit TribitsExampleProject results to a
   different CDash site, configure with::
 
-    ctest \
+    cmake \
     -DCTEST_DROP_SITE=testing.sandia.gov/cdash \
     -DCTEST_PROJECT_NAME=TribitsExProj \
     -DCTEST_DROP_LOCATION="/submit.php?project=TribitsExProj" \
-    [other options] \
+    [other cmake options] \
     <baseDir>/TribitsExamplProject
 
   and then run ``make dashboard``.
@@ -5939,7 +6060,7 @@ The following steps describe how to submit results to a CDash site using the
          &> console.out
 
   where ``TRIBITS_DIR`` is an env var that points to the location of the
-  TriBITS/tribits directory on the local machine (and the location of the
+  ``TriBITS/tribits`` directory on the local machine (and the location of the
   CDash site and project is changed, since the free my.cdash.org site can only
   accept as small number of builds each day).
 
@@ -5959,15 +6080,22 @@ The following steps describe how to submit results to a CDash site using the
 
   * Travis CI can run them to respond to GitHub pushes.
 
+  * Use the legacy `TriBITS Dashboard Driver`_ system (not recommended).
+
   The setup of Jenkins, Travis CI and other more sophisticated automated
   testing systems will not be described here.  What will be briefly outlined
   below is the setup using cron jobs on a Linux machine.  That is sufficient
   for most smaller projects and provides tremendous value.
 
   To set up an automated build using a cron job, one will typically create a
-  shell driver script that sets the env and then calls the `ctest -S <script>`
-  command.  Then one just adds a call to that shell driver script using
-  `crontab -e`.  That is about all there is to it.
+  shell driver script that sets the env and then calls the ``ctest -S
+  <script>`` command.  Then one just adds a call to that shell driver script
+  using ``crontab -e``.  That is about all there is to it.
+
+  .. ToDo: Add some more details and examples on how to do this, using
+  .. TribitsExampleProject implementations.  In particular, you need two
+  .. clones of your base git repo.  One to provide the CTest -S script, and
+  .. the other cloned and updated by the CTest driver script.
 
 Additional Topics
 =================
@@ -6108,7 +6236,7 @@ by default) and then generates the read-only files::
 
 For a simple example of this, see::
 
-  tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
+  tribits/doc/build_ref/create-build-ref.sh
 
 A project-independent version of this file is provided in the
 `TribitsBuildReference`_.[rst,html,pdf] which is referred to many times in this
@@ -6163,18 +6291,21 @@ Processing of TriBITS Project Files`_.  This is executed by the TriBITS macro
 
 **Probe and set up the environment:**
 
-* Set ``CMAKE_BUILD_TYPE``
+* Set ``CMAKE_BUILD_TYPE`` default (if not already set)
 * Set up for MPI (MPI compilers, etc.)
-* Set up C, C++, and Fortran compilers
+* Set up C, C++, and Fortran compilers using ``ENABLE_LANGUAGE(<LANG>)``
+* ``INCLUDE(`` `<projectDir>/cmake/ProjectCompilerPostConfig.cmake`_ ``)``
 * Find Perl (sets ``PERL_EXECUTABLE``)
 * Determine mixed language C/Fortran linking
-* Set up C++11, OpenMP, and Windows support
+* Set up C++11 (`${PROJECT_NAME}_ENABLE_CXX11`_)
+* Set up OpenMP (with ``FIND_PACKAGE(OpenMP)``)
+* Set up optional Windows support
 * Find Doxygen (sets ``DOXYGEN_EXECUTABLE``)
-* Perform some other configure-time tests (see ``cmake`` output)
+* Perform some other configure-time tests (see ``cmake`` configure output)
 
 At the completion of this part of the processing, the TriBITS CMake project is
 ready to compile code.  All of the major variables set as part of this process
-are printed to the ``cmake`` stdout.
+are printed to the ``cmake`` stdout when the project is configured.
 
 
 RPATH Handling
@@ -7023,21 +7154,21 @@ Post-Push CI and Nightly Testing using checkin-test.py
 ------------------------------------------------------
 
 While the post-push CI and Nightly testing processes using ``ctest -S``
-scripts using `TRIBITS_CTEST_DRIVER()`_ (see `TriBITS Package-by-Package
-CTest/Dash Driver`_) which posts results to a CDash server (see `TriBITS CDash
-Customizations`_) is a very attractive testing system with many advantages,
-setting up a CDash server can be a bit difficult and a CDash server can
-require non-trivial storage and CPU resources (due to the MySQL DB of test
-results) and requires some amount of extra maintenance.  As an intermediate
-approach, one can consider just using the project's `checkin-test.py`_ script
-to implement basic post-push CI and/or Nightly testing servers using simple
-cron jobs and some other helper scripts.  The ``checkin-test.py`` script
-will robustly pull new commits, configure the project, build, run tests, and
-send out emails with results and pass/fail.  A bunch of builds can be run at
-once using multiple builds specified in the ``--default-builds``,
-``--st-extra-builds``, and ``--extra-build`` arguments, or different
-invocations of the ``checkin-test.py`` script can be run in parallel for
-better machine utilization.
+scripts using `TRIBITS_CTEST_DRIVER()`_ (see `TriBITS CTest/CDash Driver`_)
+which posts results to a CDash server (see `TriBITS CDash Customizations`_) is
+a very attractive testing system with many advantages, setting up a CDash
+server can be a bit difficult and a CDash server can require non-trivial
+storage and CPU resources (due to the MySQL DB of test results) and requires
+some amount of extra maintenance.  As an intermediate approach, one can
+consider just using the project's `checkin-test.py`_ script to implement basic
+post-push CI and/or Nightly testing servers using simple cron jobs and some
+other helper scripts.  The ``checkin-test.py`` script will robustly pull new
+commits, configure the project, build, run tests, and send out emails with
+results and pass/fail.  A bunch of builds can be run at once using multiple
+builds specified in the ``--default-builds``, ``--st-extra-builds``, and
+``--extra-build`` arguments, or different invocations of the
+``checkin-test.py`` script can be run in parallel for better machine
+utilization.
 
 What one gives up with this approach over the full-blow CTest/CDash
 implementation is:
@@ -7084,9 +7215,14 @@ builds of a TriBITS project makes sense because CTest can run different builds
 in parallel, can time-out builds that are taking too long, and will report
 results to a dashboard and submit notification emails when things fail.
 However, this is the most confusing and immature part of the TriBITS system.
-The `TriBITS Package-by-Package CTest/Dash Driver`_ system using the
-`TRIBITS_CTEST_DRIVER()`_ can be used without this TriBITS Dashboard Driver
-(TDD) system.
+The `TriBITS CTest/CDash Driver`_ system using the `TRIBITS_CTEST_DRIVER()`_
+can be used without this TriBITS Dashboard Driver (TDD) system.
+
+However, this TriBITS subsystem is not well tested with automated tests, is
+difficult to extend and test manually, and has other problems.  Therefore, it
+is not recommended that projects adopt the usage of this subsystem.  A simple
+set of cron jobs or a tool like Jenkins is likely a better option (if done
+carefully).
 
 .. ToDo: Import and format the contents of tribits/ctest/README related to
 .. this topic into this section.
@@ -7722,6 +7858,8 @@ be documented in `TribitsBuildReference`_.
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
+* `${PROJECT_NAME}_C_Standard`_
+* `${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`_
 * `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
 * `${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`_
 * `${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE`_
@@ -7752,8 +7890,86 @@ a given TriBITS project are:
 * `MPI_EXEC_MAX_NUMPROCS`_
 * `PythonInterp_FIND_VERSION`_
 
-
 These options are described below.
+
+.. _${PROJECT_NAME}_C_Standard:
+
+**${PROJECT_NAME}_C_Standard**
+
+  The variable ``${PROJECT_NAME}_C_Standard`` is used define the C standard
+  pass to the compiler in ``--std=<cstd>`` for GCC builds of the project.
+  TriBITS sets the default as ``c99`` but the project can set a new default in
+  the project's base `<projectDir>/CMakeLists.txt`_ file with, for example::
+
+    SET(${PROJECT_NAME}_C_Standard_DEFAULT c11)
+
+.. _${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS:
+
+**${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS**
+
+  The variable ``${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`` determines how
+  unparsed and otherwise ignored arguments are handled in TriBITS functions
+  that are called by the client TriBITS projects.  These are arguments that
+  are left over from parsing input options to functions and macros that take
+  both positional arguments and keyword arguments/options handled with the
+  ``CMAKE_PARSE_ARGUMENTS()`` function.  For example, for the a TriBITS
+  function declared like::
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(
+      <targetName>
+      [SOURCE_FILES <file1> <file2> ...]
+      [SOURCE_DIR <sourceDir>]
+      ...
+      )
+
+  the arguments ``SOURCE_FILES <file1> <file2> ...`` and those that follow are
+  parsed by the ``CMAKE_PARSE_ARGUMENTS()`` function while the argument
+  ``<targetName>`` is a positional argument.  The problem is that any
+  arguments passed between the first ``<targetName>`` argument and the
+  specified keyword arguments like ``SOURCE_FILES`` and ``SOURCE_DIR`` are
+  returned as unparsed arguments and are basically ignored (which is what
+  happened in earlier versions of TriBITS).  For example, calling the function
+  as::
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR( FooTestCopyFiles
+      ThisArgumentIsNotParsedAndIsIgnored
+      SOURCE_FILES file1.cpp file2.cpp ...
+      ...
+      )
+
+  would result in the unparsed argument
+  ``ThisArgumentIsNotParsedAndIsIgnored``.
+
+  The value of ``${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`` determines how
+  that ignored argument is handled.  If the value is ``WARNING``, then it will
+  just result in a ``MESSAGE(WARNING ...)`` command that states the warning
+  but configure is allowed to be completed. This would be the right value to
+  allow an old TriBITS project to keep configuring until the warnings can be
+  cleaned up.  If the value is ``SEND_ERROR``, then ``MESSAGE(SEND_ERROR
+  ...)`` is called.  This will result in the configure failing but will allow
+  configure to continue until the end (or a ``FATAL_ERROR`` is raised).  This
+  would be the right value when trying to upgrade a TriBITS project where you
+  wanted to see all of the warnings when upgrading TriBITS (so you could fix
+  them all in one shot).  Finally, the value of ``FATAL_ERROR`` will result in
+  ``MESSAGE(FATAL_ERROR ...)`` being called which will halt configure right
+  away.  This is the best value when developing on a TriBITS project that is
+  already clean but you want to catch new developer-inserted errors right
+  away.
+
+  The default value for ``${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`` is
+  ``WARNING``, so that it will be backward compatible for TriBITS projects
+  that might have previously undetected unparased and therefore ignored
+  argument .  However, a project can change the default by setting, for
+  example::
+
+    SET(${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS_DEFAULT FATAL_ERROR)
+
+  in the `<projectDir>/ProjectName.cmake`_ file.
+
+  The user of a TriBITS project should not be able to trigger this unparsed
+  arguments condition so this variable is not documented in the `TriBITS Build
+  Reference`_.  But it is still a CMake cache var that is documented in the
+  CMakeCache.txt file and can be set by the user or developer if desired.
 
 .. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND:
 
@@ -8473,6 +8689,8 @@ from `gitdist --help`_ and ``gitdist --dist-help=<topic>``:
 * `gitdist --dist-help=dist-repo-status`_
 * `gitdist --dist-help=repo-versions`_
 * `gitdist --dist-help=aliases`_
+* `gitdist --dist-help=default-branch`_
+* `gitdist --dist-help=move-to-base-dir`_
 * `gitdist --dist-help=usage-tips`_
 * `gitdist --dist-help=script-dependencies`_
 * `gitdist --dist-help=all`_
@@ -8515,6 +8733,18 @@ gitdist --dist-help=aliases
 +++++++++++++++++++++++++++
 
 .. include:: gitdist-dist-help-aliases.txt
+   :literal:
+
+gitdist --dist-help=default-branch
+++++++++++++++++++++++++++++++++++
+
+.. include:: gitdist-dist-help-default-branch.txt
+   :literal:
+
+gitdist --dist-help=move-to-base-dir
+++++++++++++++++++++++++++++++++++++
+
+.. include:: gitdist-dist-help-move-to-base-dir.txt
    :literal:
 
 gitdist --dist-help=usage-tips
@@ -8607,9 +8837,21 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. _Dashboard Submissions: TribitsBuildReference.html#dashboard-submissions
 
+.. _<Project>_VERBOSE_CONFIGURE: TribitsBuildReference.html#project-verbose-configure
+
+.. _<Project>_ENABLE_DEVELOPMENT_MODE: TribitsBuildReference.html#project-enable-development-mode
+
+.. _<Project>_CONFIGURE_OPTIONS_FILE: TribitsBuildReference.html#project-configure-options-file
+
 .. _<Project>_EXTRAREPOS_FILE: TribitsBuildReference.html#project-extrarepos-file
 
 .. _${PROJECT_NAME}_EXTRAREPOS_FILE: `<Project>_EXTRAREPOS_FILE`_
+
+.. _<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE: TribitsBuildReference.html#project-enable-known-external-repos-type
+
+.. _<Project>_PRE_REPOSITORIES: TribitsBuildReference.html#project-pre-repositories
+
+.. _<Project>_EXTRA_REPOSITORIES: TribitsBuildReference.html#project-extra-repositories
 
 .. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE: TribitsBuildReference.html#generating-a-project-repo-version-file
 
@@ -8632,6 +8874,12 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 .. _make dashboard: TribitsBuildReference.html#dashboard-submissions
 
 .. _Setting the install prefix at configure time: TribitsBuildReference.html#setting-the-install-prefix-at-configure-time
+
+.. _TRIBITS_2ND_CTEST_DROP_SITE: TribitsBuildReference.html#tribits-2nd-ctest-drop-site
+
+.. _TRIBITS_2ND_CTEST_DROP_LOCATION: TribitsBuildReference.html#tribits-2nd-ctest-drop-location
+
+.. _Enabling extra repositories through a file: TribitsBuildReference.html#enabling-extra-repositories-through-a-file
 
 .. Common references to the TribitsOverview document
 

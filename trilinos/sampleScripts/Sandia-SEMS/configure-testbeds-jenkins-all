@@ -27,6 +27,34 @@ SERIAL=${JENKINS_DO_SERIAL}
 
 COMPLEX=${JENKINS_DO_COMPLEX}
 
+CXX11_FLAGS_STRING="--std=c++11"
+if [ ${CUDA} == "ON" ]
+then
+  CXX11_FLAGS_STRING="--expt-extended-lambda -std=c++11"
+fi
+
+if [ ${CUDA} == "ON" ]
+then
+  ENABLE_SHYLU="OFF"
+else
+  if [ ${OPENMP} == "ON" ]
+  then
+    ENABLE_SHYLU="ON"
+  else
+    if [ ${PTHREAD} == "ON" ]
+    then
+      ENABLE_SHYLU="OFF"
+    else
+      ENABLE_SHYLU="ON"
+    fi
+  fi
+fi
+  
+if [ ${PTHREAD} == "ON" ]
+then
+  EXTRA_ARGS="$EXTRA_ARGS -DPhalanx_KOKKOS_DEVICE_TYPE="THREAD""
+fi
+
 #--------------------------------------------------
 #--------------------------------------------------
 
@@ -47,10 +75,11 @@ cmake \
 -D Trilinos_ENABLE_OpenMP=${OPENMP} \
 -D Kokkos_ENABLE_Pthread=${PTHREAD} \
 -D TPL_ENABLE_CUDA=${CUDA} \
-  -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
+-D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
 -D Teuchos_ENABLE_COMPLEX=${COMPLEX} \
 \
--D CMAKE_CXX_FLAGS="${JENKINS_ARCH_CXX_FLAG} -g" \
+-D CMAKE_CXX_FLAGS="-g" \
+-D KOKKOS_ARCH="${JENKINS_ARCH}" \
 -D CMAKE_C_FLAGS="${JENKINS_ARCH_C_FLAG} -g" \
 -D CMAKE_Fortran_FLAGS="${JENKINS_ARCH_C_FLAG} -g" \
 -D CMAKE_EXE_LINKER_FLAGS="${JENKINS_ARCH_C_FLAG}" \
@@ -74,7 +103,7 @@ cmake \
 -D DART_TESTING_TIMEOUT:STRING=200 \
 -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
 -D Trilinos_ENABLE_CXX11=ON \
-  -D Trilinos_CXX11_FLAGS:STRING="--std=c++11" \
+  -D Trilinos_CXX11_FLAGS:STRING="${CXX11_FLAGS_STRING}" \
 \
 -D TPL_ENABLE_MPI=ON \
   -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="-bind-to;socket;-map-by;socket" \
@@ -110,6 +139,9 @@ cmake \
 -D Trilinos_ENABLE_Amesos2=ON \
   -D Amesos2_ENABLE_TESTS:BOOL=${TESTS} \
   -D Amesos2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_ShyLU_NodeTacho=${ENABLE_SHYLU} \
+  -D ShyLU_NodeTacho_ENABLE_TESTS:BOOL=${TESTS} \
+  -D ShyLU_NodeTacho_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
 -D Trilinos_ENABLE_Anasazi=ON \
   -D Anasazi_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_AztecOO=ON \
@@ -133,6 +165,7 @@ cmake \
   -D Isorropia_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Kokkos=ON \
   -D Kokkos_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON \
 -D Trilinos_ENABLE_KokkosKernels=ON \
   -D KokkosKernels_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_ML=ON \
@@ -141,6 +174,8 @@ cmake \
   -D MueLu_INST_DOUBLE_INT_LONGINT:BOOL=ON \
   -D MueLu_ENABLE_TESTS:BOOL=${TESTS} \
   -D MueLu_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+  -D MueLu_ENABLE_Experimental:BOOL=ON \
+  -D MueLu_ENABLE_Kokkos_Refactor:BOOL=ON \
 -D Trilinos_ENABLE_NOX=ON \
   -D NOX_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Panzer=ON \
@@ -174,6 +209,8 @@ cmake \
 -D Trilinos_ENABLE_Xpetra=ON \
   -D Xpetra_ENABLE_TESTS:BOOL=${TESTS} \
   -D Xpetra_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+  -D Xpetra_ENABLE_Experimental:BOOL=ON \
+  -D Xpetra_ENABLE_Kokkos_Refactor:BOOL=ON \
 -D Trilinos_ENABLE_Zoltan=ON \
 -D Trilinos_ENABLE_Zoltan2=ON \
   -D Zoltan2_ENABLE_TESTS:BOOL=${TESTS} \
@@ -191,6 +228,7 @@ cmake \
   -D Trilinos_ENABLE_SEACASExodiff:BOOL=ON \
   -D Trilinos_ENABLE_SEACASNemspread:BOOL=ON \
   -D Trilinos_ENABLE_SEACASNemslice:BOOL=ON \
+  -D Trilinos_ENABLE_SEACASAprepro_lib:BOOL=ON \
 \
 \
 $EXTRA_ARGS \
