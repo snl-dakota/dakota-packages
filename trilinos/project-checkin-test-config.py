@@ -12,6 +12,7 @@ configuration = {
     # developers.
     'defaults': {
         '--send-email-to-on-push': 'trilinos-checkin-tests@software.sandia.gov',
+        '--no-rebase' : '',
         },
 
     # CMake options for various build configurations. All entries in
@@ -25,9 +26,6 @@ configuration = {
             '-DBUILD_SHARED_LIBS=ON',
             # For graceful disables, we want to turn this on.
             '-DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON',
-            # We want to see tracing of added tests to help in debugging
-            # problems.
-            '-DTrilinos_TRACE_ADD_TEST=ON',
             ],
 
         # Setup for the builds that should be run by default for a
@@ -37,7 +35,7 @@ configuration = {
         'default-builds': [
 
             ('MPI_RELEASE_DEBUG_SHARED_PT', [
-                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake',
+                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake,cmake/std/sems/SEMSDevEnv.cmake',
                 ]),
 
             ## Options for the SERIAL_RELEASE build.

@@ -1,4 +1,3 @@
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   solInterface
   SOURCES test_01.cpp
@@ -80,6 +79,42 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  checkAlmostSureConstraint
+  SOURCES test_10.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  checkMeanValueConstraint
+  SOURCES test_11.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  checkRiskNeutralConstraint
+  SOURCES test_12.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  checkLinearRegression
+  SOURCES test_13.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   solDataCopy
   SOURCE_FILES
@@ -90,6 +125,11 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     input_07.xml
     input_08.xml
     input_09.xml
+    input_10.xml
+    input_11.xml
+    input_12.xml
+    points.txt
+    weights.txt
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 )

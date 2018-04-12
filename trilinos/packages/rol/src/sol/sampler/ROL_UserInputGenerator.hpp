@@ -59,7 +59,7 @@ private:
               const std::string &file_wt,
               const int n,
               const int dim,
-              const Teuchos::RCP<BatchManager<Real> > &bman) {
+              const ROL::Ptr<BatchManager<Real> > &bman) {
     // Read in full point data and weight data
     std::fstream input_pt;
     input_pt.open(file_pt.c_str(),std::ios::in);
@@ -115,7 +115,7 @@ private:
 
 public:
   UserInputGenerator(Teuchos::ParameterList &parlist,
-               const Teuchos::RCP<BatchManager<Real> > &bman)
+               const ROL::Ptr<BatchManager<Real> > &bman)
     : SampleGenerator<Real>(bman) {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Sample Generator").sublist("User Input");
@@ -138,8 +138,8 @@ public:
   UserInputGenerator(const std::string file_pt,
                      const std::string file_wt,
                      const int n,
-                     const int dim, 
-                     const Teuchos::RCP<BatchManager<Real> > &bman)
+                     const int dim,
+                     const ROL::Ptr<BatchManager<Real> > &bman)
     : SampleGenerator<Real>(bman) {
     sample(file_pt,file_wt,n,dim,bman);
   }

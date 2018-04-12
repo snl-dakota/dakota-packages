@@ -48,40 +48,40 @@
 #ifndef ROL_PDEOPT_STOCH_ADV_DIFF_CONSTRAINT_H
 #define ROL_PDEOPT_STOCH_ADV_DIFF_CONSTRAINT_H
 
-#include "ROL_EqualityConstraint_SimOpt.hpp"
+#include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "Amesos2.hpp"
 #include "data.hpp"
 
 template<class Real>
-class EqualityConstraint_PDEOPT_Poisson : public ROL::EqualityConstraint_SimOpt<Real> {
+class EqualityConstraint_PDEOPT_Poisson : public ROL::Constraint_SimOpt<Real> {
 private:
 
-  const Teuchos::RCP<PoissonData<Real> > data_;
+  const ROL::Ptr<PoissonData<Real> > data_;
 
 public:
 
-  EqualityConstraint_PDEOPT_Poisson(const Teuchos::RCP<PoissonData<Real> > &data,
+  EqualityConstraint_PDEOPT_Poisson(const ROL::Ptr<PoissonData<Real> > &data,
                                     const Teuchos::RCP<Teuchos::ParameterList> &parlist)
     : data_(data) {}
 
-  using ROL::EqualityConstraint_SimOpt<Real>::value;
+  using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > cp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(c)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-//    Teuchos::RCP<const Tpetra::MultiVector<> > zp =
-//      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    Teuchos::RCP<const std::vector<Real> > zp =
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(z)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > cp =
+      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(c)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > up =
+      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
+//    ROL::Ptr<const Tpetra::MultiVector<> > zp =
+//      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
+    ROL::Ptr<const std::vector<Real> > zp =
+      (dynamic_cast<const ROL::StdVector<Real>&>(z)).getVector();
 
 
     Real one(1);
 
-    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
-    data_->updateF(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::Constraint_SimOpt<Real>::getParameter());
+    data_->updateF(ROL::Constraint_SimOpt<Real>::getParameter());
  
     // A*u
     data_->getMatA()->apply(*up, *cp);
@@ -97,25 +97,25 @@ public:
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > jvp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > jvp =
+      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(jv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
+      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 
     // A*v
-    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::Constraint_SimOpt<Real>::getParameter());
     data_->getMatA()->apply(*vp, *jvp);
   }
 
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > jvp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(jv)).getVector();
-//    Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-//      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp =
-      (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > jvp =
+      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(jv)).getVector();
+//    ROL::Ptr<const Tpetra::MultiVector<> > vp =
+//      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
+    ROL::Ptr<const std::vector<Real> > vp =
+      (dynamic_cast<const ROL::StdVector<Real>&>(v)).getVector();
 
     // B*v
     data_->applyMatB(jvp,*vp,false);
@@ -125,26 +125,26 @@ public:
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > ajvp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ajv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > ajvp =
+      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(ajv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
+      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 
     // A'*v
     bool transpose = true;
-    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::Constraint_SimOpt<Real>::getParameter());
     data_->getMatA(transpose)->apply(*vp, *ajvp);
   }
 
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-//    Teuchos::RCP<Tpetra::MultiVector<> > ajvp =
-//      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ajv)).getVector();
-    Teuchos::RCP<std::vector<Real> > ajvp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(ajv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+//    ROL::Ptr<Tpetra::MultiVector<> > ajvp =
+//      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(ajv)).getVector();
+    ROL::Ptr<std::vector<Real> > ajvp =
+      (dynamic_cast<ROL::StdVector<Real>&>(ajv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
+      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 
     // B'*v
     data_->applyMatBtranspose(ajvp,*vp);
@@ -179,19 +179,19 @@ public:
 
   void applyInverseJacobian_1(ROL::Vector<Real> &ijv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > ijvp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ijv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > ijvp =
+      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(ijv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
+      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 
-    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::Constraint_SimOpt<Real>::getParameter());
     data_->getSolver()->setX(ijvp);
     data_->getSolver()->setB(vp);
     data_->getSolver()->solve();
 
     /*    
     // Construct solver using Amesos2 factory.
-    Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver;
+    ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver;
     try{
       solver = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", data_->getMatA(), ijvp, vp);
     } catch (std::invalid_argument e) {
@@ -206,13 +206,13 @@ public:
 
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &iajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                                      const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > iajvp =
-      (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(iajv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp =
-      (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+    ROL::Ptr<Tpetra::MultiVector<> > iajvp =
+      (dynamic_cast<ROL::TpetraMultiVector<Real>&>(iajv)).getVector();
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
+      (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
     
     bool transpose = true;    
-    data_->updateA(ROL::EqualityConstraint_SimOpt<Real>::getParameter());
+    data_->updateA(ROL::Constraint_SimOpt<Real>::getParameter());
     data_->getSolver(transpose)->setX(iajvp);
     data_->getSolver(transpose)->setB(vp);
     data_->getSolver(transpose)->solve();
@@ -220,7 +220,7 @@ public:
     /*
     bool transpose = true;
     // Construct solver using Amesos2 factory.
-    Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver;
+    ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver;
     try{
       solver = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", data_->getMatA(transpose), iajvp, vp);
     } catch (std::invalid_argument e) {

@@ -76,7 +76,7 @@ public:
   }
 
   virtual Real dot( const Vector<Real> &x ) const {
-    Teuchos::RCP<Vector<Real> > y = this->clone();
+    ROL::Ptr<Vector<Real> > y = this->clone();
     y->set(*this);
     y->applyBinary(Elementwise::Multiply<Real>(),x);
     return y->reduce(Elementwise::ReductionSum<Real>());    
@@ -97,6 +97,14 @@ public:
   void set( const Vector<Real> &x ) {
     this->applyBinary(Elementwise::Set<Real>(),x);
   }
+
+  // MUST overload these three functions
+  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &uf ) = 0;
+
+  virtual void applyBinary( const Elementwise::BinaryFunction<Real> &bf,
+                            const Vector<Real> &x ) = 0;
+
+  virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const = 0;
 
 }; // class ElementwiseVector
 
