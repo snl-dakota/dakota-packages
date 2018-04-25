@@ -47,7 +47,9 @@
 #include <iomanip>
 #include <fstream>
 #include <cassert>
+#include <backward/strstream>
 #include <limits>
+#include <float.h>
 //! NOWPAC
 template<class TSurrogateModel = MinimumFrobeniusNormModel, 
          class TBasisForSurrogateModel = LegendreBasisForMinimumFrobeniusNormModel>
@@ -85,7 +87,7 @@ class NOWPAC : protected NoiseDetection<TSurrogateModel> {
     bool delta_max_is_set;
     double delta, delta_min, delta_max;
     double omega, theta, gamma, gamma_inc, mu;
-    double eta_0, eta_1, eps_c;
+    double eta_0, eta_1, eta_2, eps_c;
     double threshold_for_poisedness_constant;
     std::vector<double> inner_boundary_path_constants;
     std::vector<double> max_inner_boundary_path_constants;
@@ -326,8 +328,9 @@ NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::NOWPAC ( int n ) :
   theta = 0.5;
   gamma = 0.8;
   gamma_inc = 1.4;
-  eta_0 = 0.1; 
-  eta_1 = 0.7;
+  eta_0 = 0.000001; 
+  eta_1 = 0.2;
+  eta_2 = 0.7;
   eps_c = 1e-3;
   mu = 1e0;
   nb_constraints = -1;
@@ -370,6 +373,8 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::set_option (
     { eta_0 = option_value; return; }
   if ( option_name.compare( "eta_1" ) == 0 ) 
     { eta_1 = option_value; return; }
+  if ( option_name.compare( "eta_2" ) == 0 ) 
+    { eta_2 = option_value; return; }
   if ( option_name.compare( "eps_c" ) == 0 ) 
     { eps_c = option_value; return; }
   if ( option_name.compare( "mu" ) == 0 ) 
@@ -649,14 +654,69 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::set_blackbox (
 template<class TSurrogateModel, class TBasisForSurrogateModel>
 double NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::compute_acceptance_ratio ( )
 {
+  //if ( stochastic_optimization ) {
+    //update_surrogate_models( );
+    //trial_model_value = surrogate_models[0].evaluate( evaluations.transform(x_trial) );
+  //}
 
-  acceptance_ratio = ( evaluations.values[0].at( evaluations.best_index ) - 
-                       evaluations.values[0].back() )  /
-                     ( evaluations.values[0].at( evaluations.best_index ) - 
-                       surrogate_models[0].evaluate( evaluations.transform(x_trial) ) );//trial_model_value );
+  //acceptance_ratio = ( evaluations.values[0].at( evaluations.best_index ) - 
+  //                     evaluations.values[0].back() )  /
+  //                   ( evaluations.values[0].at( evaluations.best_index ) - 
+  //                     surrogate_models[0].evaluate( evaluations.transform(x_trial) ) );
 
-  if ( acceptance_ratio != acceptance_ratio ) acceptance_ratio = -0.4251981;
+  bool cur_point_is_feasible = true;
 
+  for (int i = 0; i < nb_constraints; ++i ){
+    if(surrogate_models[i+1].evaluate( evaluations.transform(x_trial) ) > 0.){
+        cur_point_is_feasible = false;
+        break;
+    }
+  }
+  
+  double numerator, denominator;
+  double R_best, R_last;
+  double m_best, m_last;
+  if (cur_point_is_feasible){ 
+    R_best = evaluations.values[0].at( evaluations.best_index );
+    R_last = evaluations.values[0].back();
+    m_best = surrogate_models[0].evaluate( evaluations.transform(evaluations.nodes[evaluations.best_index]) );
+    m_last = surrogate_models[0].evaluate( evaluations.transform(x_trial) );
+  }else{ //Feasibility restoration mode, different objective
+    R_best = 0.;
+    R_last = 0.;
+    m_best = 0.;
+    m_last = 0.;
+    for (int i = 0; i < nb_constraints; ++i ) {
+      if (surrogate_models[i+1].evaluate( evaluations.transform(x_trial) ) > 0.){
+        R_best += evaluations.values[i+1].at( evaluations.best_index )*evaluations.values[i+1].at( evaluations.best_index );
+        R_last += evaluations.values[i+1].back() * evaluations.values[i+1].back();
+        m_best += surrogate_models[i+1].evaluate( evaluations.transform(evaluations.nodes[evaluations.best_index]) ) * 
+                  surrogate_models[i+1].evaluate( evaluations.transform(evaluations.nodes[evaluations.best_index]) );
+        m_last += surrogate_models[i+1].evaluate( evaluations.transform(x_trial) ) * 
+                  surrogate_models[i+1].evaluate( evaluations.transform(x_trial) );
+      }
+    }
+  }
+
+  numerator = R_best - R_last;
+  denominator = m_best - m_last;
+
+  acceptance_ratio = (std::fabs(denominator) > DBL_MIN) ? numerator / denominator : numerator;
+
+  if(verbose >= 3){
+    std::cout << "*******************************" << std::endl; 
+    if (!cur_point_is_feasible) std::cout << "#AcceptRatio# #FEASRES#: Feasibility restoration acceptance ratio" << std::endl;
+    std::cout << "#AcceptRatio# x_trial: [ "; 
+    for(int i = 0; i < x_trial.size(); ++i){
+     std::cout << x_trial[i] << " ";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "#AcceptRatio# R_best: " <<  R_best << " R_last: " << R_last  << " numerator: " << numerator << std::endl;
+    std::cout << "#AcceptRatio# m_best: " <<  m_best << " m_last: " << m_last << " denominator: " << denominator << std::endl;
+    std::cout << "#AcceptRatio# Acceptance ratio: " << acceptance_ratio << " eta_1: " << eta_1 << " eta_0: " << eta_0 << std::endl; 
+    std::cout << "*******************************" << std::endl; 
+    std::cout << std::flush; 
+  }
   return acceptance_ratio;
 }
 //--------------------------------------------------------------------------------
@@ -836,7 +896,6 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::blackbox_evaluator ( )
     EXIT_FLAG = gaussian_processes.smooth_data ( evaluations );
   }
 
-
   write_to_file();
 
   return;
@@ -849,21 +908,55 @@ bool NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::last_point_is_feasible ( 
 {
   bool point_is_feasible = true;
 
-  for (int i = 0; i < nb_constraints; ++i ) {
-    tmp_dbl = evaluations.values[i+1].at( evaluations.best_index );
-    if ( tmp_dbl < 0e0 ) tmp_dbl = 0e0;
-    if ( evaluations.values[i+1].back() > tmp_dbl ) {
-      point_is_feasible = false;
-      inner_boundary_path_constants.at(i) *= 2e0;
-//      if ( inner_boundary_path_constants.at(i) > max_inner_boundary_path_constants.at(i) )
-//        inner_boundary_path_constants.at(i) = max_inner_boundary_path_constants.at(i);
+  bool best_point_is_feasible = true;
+  bool back_point_is_feasible = true;
+
+  // Check if new point is feasible
+  for (int i = 0; i < nb_constraints; ++i){
+    if(evaluations.values[i+1].back() > 0.){
+      back_point_is_feasible = false;
+    }
+  } 
+
+  // Check if current best point is feasible
+  for (int i = 0; i < nb_constraints; ++i){
+    if(evaluations.values[i+1][evaluations.best_index] > 0.){
+      best_point_is_feasible = false;
     }
   }
-
-//      tmp_dbl = pow( this->diff_norm( x_trial, evaluations.nodes[ evaluations.best_index ] ) / 
-//                     delta, 1e0 );
-//      std::cout << " step size scale = " << sqrt(tmp_dbl) << std::endl; 
-
+  
+  if(!best_point_is_feasible && back_point_is_feasible){ 
+    //From infeasible to feasible: Take this point
+    point_is_feasible = true;
+  }else if(!best_point_is_feasible && !back_point_is_feasible){ 
+    //From infeasible to infeasible: Check if Feas Restore Condition improved based on robust measures  
+    point_is_feasible = true;
+    double feasiblity_obj_best = 0.;
+    double feasiblity_obj_last = 0.;
+    for (int i = 0; i < nb_constraints; ++i){
+      if(evaluations.values[i+1].back() > 0.){
+        feasiblity_obj_best += evaluations.values[i+1][evaluations.best_index]
+                             * evaluations.values[i+1][evaluations.best_index];
+        feasiblity_obj_last += evaluations.values[i+1].back()
+                             * evaluations.values[i+1].back();
+      }
+    } 
+    if(feasiblity_obj_last >= feasiblity_obj_best){
+      point_is_feasible = false;
+    }
+  }else if(best_point_is_feasible && !back_point_is_feasible){ 
+    //From feasible to infeasible: Reject this point, update inner boundary path
+    for (int i = 0; i < nb_constraints; ++i){
+      if(evaluations.values[i+1].back() > 0.){
+        inner_boundary_path_constants.at(i) *= 2e0;
+      }
+    } 
+    point_is_feasible = false;
+  }else{
+    //Both are feasible  
+    point_is_feasible = true;
+  }
+  
   return point_is_feasible;
 }
 //--------------------------------------------------------------------------------
@@ -932,13 +1025,16 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::update_trustregion (
  if ( noise_detection && scaling_factor >= 1e0) this->reset_noise_detection();
 
   delta *= scaling_factor;
-  std::cout << std::endl << "------------------------- " << std::endl;
-  std::cout << "#Noise#Cur delta " << delta << " Scaling factor: " << scaling_factor << std::endl;
-  std::cout << "#Noise#MAXNOISE " << max_noise << " sqrt = " << sqrt( max_noise ) << std::endl;
+  if(verbose >= 3){
+    std::cout << std::endl << "------------------------- " << std::endl;
+    std::cout << "#Noise#Cur delta " << delta << " Scaling factor: " << scaling_factor << std::endl;
+    std::cout << "#Noise#MAXNOISE " << max_noise << " sqrt = " << sqrt( max_noise ) << std::endl;
     std::cout << "#Noise#   ObjF " << noise_per_function[0] << " sqrt = " << sqrt( noise_per_function[0] ) << std::endl;
     for ( int j = 1; j < nb_constraints+1; ++j ) {
-        std::cout << "#Noise#   C" << j << " " << noise_per_function[j] << " sqrt = " << sqrt( noise_per_function[j] ) << std::endl;
+      std::cout << "#Noise#   C" << j << " " << noise_per_function[j] << " sqrt = " << sqrt( noise_per_function[j] ) << std::endl;
     }
+    std::cout <<  "------------------------- " << std::endl;
+  }
   if ( stochastic_optimization ) {
     double ar_tmp = acceptance_ratio;
     if ( ar_tmp < 0e0 ) ar_tmp = -ar_tmp;
@@ -956,7 +1052,6 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::update_trustregion (
   }
  if ( delta < delta_min ) EXIT_FLAG = 0;
     //std::cout << "#Noise#   delta: " << delta << std::endl;
-  std::cout <<  "------------------------- " << std::endl;
   /*if (use_approx_gaussian_process){
     gaussian_processes.set_constraint_ball_radius(1.5*delta);
   }*/
@@ -1120,6 +1215,10 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::check_parameter_consisten
   }
   if ( eta_1 <= 0.0 || eta_0 > eta_1 || eta_1 >= 1.0) {
     std::cout << "Error   : Invalid parameter value for eta_1 ([eta_0, 1[)." << std::endl;
+    EXIT_FLAG = -4;
+  }
+  if ( eta_2 <= 0.0 || eta_1 > eta_2 || eta_2 >= 1.0) {
+    std::cout << "Error   : Invalid parameter value for eta_2 ([eta_1, 1[)." << std::endl;
     EXIT_FLAG = -4;
   }
   if ( mu <= 0.0 ) {
@@ -1408,7 +1507,6 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
         std::cout << " -----------------------------------" << std::endl;
       }
       while ( delta > mu * criticality_value ) {
-        //output_for_plotting( number_accepted_steps) ;
         update_trustregion( omega );
         update_surrogate_models( ); //xxx
         if ( EXIT_FLAG != NOEXIT ) break;
@@ -1446,7 +1544,6 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
 
         // TODO: check if while should be exited on infeasible points...
 
-        //output_for_plotting( number_accepted_steps) ;
         if (verbose == 3) {
           std::cout << " Value of criticality measure is " << criticality_value << std::endl;
           std::cout << " -----------------------------------" << std::endl << std::flush;
@@ -1505,7 +1602,6 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
           add_trial_node( );
           if ( EXIT_FLAG != NOEXIT ) break;
         }
-        //output_for_plotting( number_accepted_steps ) ;
         update_trustregion( theta );
         update_surrogate_models( );
 
@@ -1540,7 +1636,6 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
           if ( this->detect_noise( ) && noise_termination ) EXIT_FLAG = -2; 
         }
 
-//        //output_for_plotting ( number_accepted_steps );
       } else {
         if ( verbose == 3 ) { std::cout << "Found feasible trial step" << std::endl << std::flush; }
         break;
@@ -1553,8 +1648,6 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
     if ( EXIT_FLAG == NOEXIT ) { 
       acceptance_ratio = compute_acceptance_ratio ( );
 
-      //output_for_plotting( number_accepted_steps );
-
       tmp_dbl = this->diff_norm( x_trial, evaluations.nodes[ evaluations.best_index ] ) / delta;
       stepsize[0] = ( tmp_dbl + stepsize[1])/ 2e0;
       stepsize[1] = tmp_dbl;
@@ -1562,15 +1655,19 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
         inner_boundary_path_constants.at(i) = pow(stepsize[0], 2e0) * 
                                               max_inner_boundary_path_constants.at(i);
 
-      if ( verbose == 3 ) { std::cout << std::endl; }
- 
-      if ( acceptance_ratio >= eta_1 && acceptance_ratio < 2e0 ) {
+      if ( verbose >= 2 ) std::cout << "*****************************************" << std::endl; 
+
+      if ( acceptance_ratio >= eta_2 && acceptance_ratio < 2e0 ) {
         if ( verbose >= 2 ) { std::cout << "Step successful" << std::endl << std::flush; }
         update_trustregion( gamma_inc );
       } 
       fflush(stdout);
-      if ( (acceptance_ratio >= eta_0 && acceptance_ratio < eta_1) || acceptance_ratio >= 2e0 ) {
+      if ( (acceptance_ratio >= eta_1 && acceptance_ratio < eta_2) || acceptance_ratio >= 2e0 ) {
         if ( verbose >= 2 ) { std::cout << "Step acceptable" << std::endl << std::flush; }
+      }
+      if ( (acceptance_ratio >= eta_0 && acceptance_ratio < eta_1)) {
+        if ( verbose >= 2 ) { std::cout << "Step acceptable but shrink" << std::endl << std::flush; }
+        update_trustregion( gamma );
       }
 
       if ( acceptance_ratio >= eta_0 ) {
