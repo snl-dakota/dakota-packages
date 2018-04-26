@@ -24,5 +24,5 @@ ADD_SUBDIRECTORY (5-multi-start)
 
 #---- Installation instructions.
 INSTALL (FILES README.txt
-         DESTINATION examples
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples
          PERMISSIONS OWNER_READ GROUP_READ WORLD_READ)

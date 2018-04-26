@@ -24,6 +24,6 @@ ADD_EXECUTABLE (
 
 #---- Installation instructions.
 INSTALL (TARGETS linear_constraints
-         DESTINATION examples/2-linear-constraints)
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples/2-linear-constraints)
 INSTALL (FILES ${HOPSPACK_SOURCE_DIR}/${PARAMS_FILE_NAME}
-         DESTINATION examples/2-linear-constraints)
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples/2-linear-constraints)
