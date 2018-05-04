@@ -9,6 +9,7 @@
 #   the U.S. Government retains certain rights in this software.
 # ************************************************************************
 
+include(ModifyTargetRpath)
 
 #---- Copy the parameters file to the target location.
 SET (PARAMS_FILE_NAME examples/4-nonlinear-constraints/example4_params.txt)
@@ -25,5 +26,6 @@ ADD_EXECUTABLE (
 #---- Installation instructions.
 INSTALL (TARGETS nonlinear_constraints
          DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/examples/hopspack/4-nonlinear-constraints)
+ModifyTargetRpath( nonlinear_constraints 5)
 INSTALL (FILES ${HOPSPACK_SOURCE_DIR}/${PARAMS_FILE_NAME}
          DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/examples/hopspack/4-nonlinear-constraints)
