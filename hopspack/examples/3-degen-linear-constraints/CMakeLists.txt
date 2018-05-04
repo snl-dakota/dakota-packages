@@ -24,6 +24,6 @@ ADD_EXECUTABLE (
 
 #---- Installation instructions.
 INSTALL (TARGETS degen_linear_constraints
-         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples/3-degen-linear-constraints)
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/examples/hopspack/3-degen-linear-constraints)
 INSTALL (FILES ${HOPSPACK_SOURCE_DIR}/${PARAMS_FILE_NAME}
-         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples/3-degen-linear-constraints)
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/examples/hopspack/3-degen-linear-constraints)

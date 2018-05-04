@@ -24,6 +24,6 @@ ADD_EXECUTABLE (
 
 #---- Installation instructions.
 INSTALL (TARGETS nonlinear_constraints
-         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples/4-nonlinear-constraints)
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/examples/hopspack/4-nonlinear-constraints)
 INSTALL (FILES ${HOPSPACK_SOURCE_DIR}/${PARAMS_FILE_NAME}
-         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples/4-nonlinear-constraints)
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/examples/hopspack/4-nonlinear-constraints)

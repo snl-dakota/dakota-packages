@@ -24,6 +24,6 @@ ADD_EXECUTABLE (
 
 #---- Installation instructions.
 INSTALL (TARGETS multi_start
-         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples/5-multi-start)
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/examples/hopspack/5-multi-start)
 INSTALL (FILES ${HOPSPACK_SOURCE_DIR}/${PARAMS_FILE_NAME}
-         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples/5-multi-start)
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/examples/hopspack/5-multi-start)

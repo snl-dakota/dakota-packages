@@ -24,6 +24,6 @@ ADD_EXECUTABLE (
 
 #---- Installation instructions.
 INSTALL (TARGETS var_bnds_only
-         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples/1-var-bnds-only)
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/examples/hopspack/1-var-bnds-only)
 INSTALL (FILES ${HOPSPACK_SOURCE_DIR}/${PARAMS_FILE_NAME}
-         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/hopspack/examples/1-var-bnds-only)
+         DESTINATION ${DAKOTA_EXAMPLES_INSTALL}/examples/hopspack/1-var-bnds-only)
