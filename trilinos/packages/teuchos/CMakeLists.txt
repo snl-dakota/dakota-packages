@@ -3,6 +3,8 @@
 # project!
 #
 
+INCLUDE(CombinedOption)
+
 
 IF (TRIBITS_PROCESSING_PACKAGE)
 
@@ -125,11 +127,14 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
-IF (Trilinos_ENABLE_COMPLEX_DOUBLE)
+ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_DOUBLE)
+ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_FLOAT)
+IF (Trilinos_ENABLE_COMPLEX_DOUBLE OR Trilinos_ENABLE_COMPLEX_FLOAT)
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  TRUE)
 ELSE()
+  # If Teuchos is configured as its own CMake project, independent of
+  # Trilinos, then Teuchos_ENABLE_COMPLEX could be OFF by default.
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  FALSE)
-  # ABove will be set in case Teuchos is confiugred as its own CMake project!
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -181,9 +186,36 @@ IF (DEFINED BUILD_SHARED_LIBS)
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_THREAD_SAFE
+  HAVE_TEUCHOS_THREAD_SAFE
+  "Enable thread safe code for RCP classes."
+  ${Trilinos_ENABLE_THREAD_SAFE}
+  )
+
+IF (${PACKAGE_NAME}_ENABLE_THREAD_SAFE AND NOT ${PROJECT_NAME}_ENABLE_CXX11)
+  MESSAGE(FATAL_ERROR
+    "You set ${PACKAGE_NAME}_ENABLE_THREAD_SAFE=ON, but ${PACKAGE_NAME}' support"
+    " for CXX11 is not enabled (${PROJECT_NAME}_ENABLE_CXX11=OFF)."
+    "  This is not allowed.  Please enable ${PACKAGE_NAME}_ENABLE_CXX11 in"
+    " ${PACKAGE_NAME} before attempting to enable ${PACKAGE_NAME}_ENABLE_THREAD_SAFE"
+    " or leave ${PACKAGE_NAME}_ENABLE_THREAD_SAFE off.")
+ENDIF ()
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_THREAD_SAFE)
+ASSERT_DEFINED(${PACKAGE_NAME}Core_ENABLE_Pthread)
+COMBINED_OPTION(
+  ${PACKAGE_NAME}_ENABLE_THREAD_SAFE_UNIT_TESTS
+  DEP_OPTIONS_NAMES
+    ${PACKAGE_NAME}_ENABLE_THREAD_SAFE
+    ${PACKAGE_NAME}Core_ENABLE_Pthread
+  DOCSTR
+    "Enable thread safe unit tests for ${PACKAGE_NAME} Memory Management classes."
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ABC
   HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  "Enable Teuchos features for array bounds checking."
+  "Enable ${PACKAGE_NAME} features for array bounds checking."
   ${${PROJECT_NAME}_ENABLE_DEBUG}
   )
 
@@ -292,6 +324,38 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Set the Teuchos::UnitTestRepository to globally reduce test pass/fail results across all MPI ranks."
   OFF
   )
+
+ASSERT_DEFINED(TPL_ENABLE_Valgrind)
+IF(TPL_ENABLE_Valgrind)
+  # Heap profiling using massif
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_TIME_MASSIF_SNAPSHOTS
+    HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+    "Enable memory profiling using massif."
+    OFF)
+  IF (${PACKAGE_NAME}_TIME_MASSIF_SNAPSHOTS)
+    MESSAGE(STATUS "Enabling memory profiling using massif")
+  ENDIF()
+ENDIF()
+
+# Enabling Kokkos profiling hooks in Teuchos timers requires that the
+# Kokkos package be enabled, and that KOKKOS_ENABLE_PROFILING is ON.
+
+IF(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos)
+  ASSERT_DEFINED(KOKKOS_ENABLE_PROFILING)
+  SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT ${KOKKOS_ENABLE_PROFILING})
+ELSE()
+  SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT OFF)
+ENDIF()
+
+ASSERT_DEFINED(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT)
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_KOKKOS_PROFILING
+  HAVE_TEUCHOS_KOKKOS_PROFILING
+  "Wrap every Teuchos timer with a Kokkos profiling region."
+  "${${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT}")
+IF (${PACKAGE_NAME}_KOKKOS_PROFILING)
+  MESSAGE(STATUS "Wrapping every Teuchos timer with a Kokkos profiling region.")
+ENDIF()
+
 
 #
 # D) Process the subpackages for Teuchos

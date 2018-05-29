@@ -42,14 +42,14 @@
 // @HEADER
 
 /*! \file  test_09.cpp
-    \brief Shows how to use the EqualityConstraint_Partitioned interface
+    \brief Shows how to use the Constraint_Partitioned interface
            to solve Hock & Schittkowski's problem 39
 */
 
 #include "ROL_HS39.hpp" 
 
 #include "ROL_RandomVector.hpp"
-#include "ROL_EqualityConstraint_Partitioned.hpp"
+#include "ROL_Constraint_Partitioned.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Algorithm.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -66,23 +66,20 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>               V;
   typedef ROL::StdVector<RealT>            SV;
   typedef ROL::Objective<RealT>            OBJ;
-  typedef ROL::EqualityConstraint<RealT>   EC;  
+  typedef ROL::Constraint<RealT>           EC;  
 
   typedef typename vector::size_type       uint;
-
-
-  using Teuchos::RCP; using Teuchos::rcp;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -93,25 +90,25 @@ int main(int argc, char *argv[]) {
     uint xdim = 4;
     uint cdim = 1;
 
-    RCP<vector> x_exact_rcp = rcp( new vector(xdim), 0.0 );
-    (*x_exact_rcp)[0] = 1.0;
-    (*x_exact_rcp)[1] = 1.0;
+    ROL::Ptr<vector> x_exact_ptr = ROL::makePtr<vector>(xdim);
+    (*x_exact_ptr)[0] = 1.0;
+    (*x_exact_ptr)[1] = 1.0;
 
-    RCP<V> x     = rcp( new SV( rcp( new vector(xdim, 0.0) ) ) );
-    RCP<V> d     = rcp( new SV( rcp( new vector(xdim, 0.0) ) ) );
-    RCP<V> xtest = rcp( new SV( rcp( new vector(xdim, 0.0) ) ) );
+    ROL::Ptr<V> x     = ROL::makePtr<SV>( ROL::makePtr<vector>(xdim, 0.0) );
+    ROL::Ptr<V> d     = ROL::makePtr<SV>( ROL::makePtr<vector>(xdim, 0.0) );
+    ROL::Ptr<V> xtest = ROL::makePtr<SV>( ROL::makePtr<vector>(xdim, 0.0) );
 
-    RCP<V> c1    = rcp( new SV( rcp( new vector(cdim, 1.0) ) ) );
-    RCP<V> c2    = rcp( new SV( rcp( new vector(cdim, 1.0) ) ) );
-    RCP<V> l1    = rcp( new SV( rcp( new vector(cdim, 1.0) ) ) );
-    RCP<V> l2    = rcp( new SV( rcp( new vector(cdim, 1.0) ) ) );
+    ROL::Ptr<V> c1    = ROL::makePtr<SV>( ROL::makePtr<vector>(cdim, 1.0) );
+    ROL::Ptr<V> c2    = ROL::makePtr<SV>( ROL::makePtr<vector>(cdim, 1.0) );
+    ROL::Ptr<V> l1    = ROL::makePtr<SV>( ROL::makePtr<vector>(cdim, 1.0) );
+    ROL::Ptr<V> l2    = ROL::makePtr<SV>( ROL::makePtr<vector>(cdim, 1.0) );
 
-    RCP<V> c    =  ROL::CreatePartitionedVector( c1, c2 );
-    RCP<V> l    =  ROL::CreatePartitionedVector( l1, l2 );
+    ROL::Ptr<V> c    =  ROL::CreatePartitionedVector( c1, c2 );
+    ROL::Ptr<V> l    =  ROL::CreatePartitionedVector( l1, l2 );
   
 
 
-    SV x_exact( x_exact_rcp );
+    SV x_exact( x_exact_ptr );
  
     // Initial guess from H&S 39
     x->applyUnary(ROL::Elementwise::Fill<RealT>(2.0));
@@ -119,11 +116,12 @@ int main(int argc, char *argv[]) {
     ROL::RandomizeVector(*d, -1.0, 1.0 ); 
     ROL::RandomizeVector(*xtest, -1.0, 1.0 ); 
     
-    RCP<OBJ> obj  = rcp( new ROL::ZOO::Objective_HS39<RealT>() );
-    RCP<EC>  con1 = rcp( new ROL::ZOO::EqualityConstraint_HS39a<RealT>() );
-    RCP<EC>  con2 = rcp( new ROL::ZOO::EqualityConstraint_HS39b<RealT>() );
+    ROL::Ptr<OBJ> obj  = ROL::makePtr<ROL::ZOO::Objective_HS39<RealT>>();
+    ROL::Ptr<EC>  con1 = ROL::makePtr<ROL::ZOO::Constraint_HS39a<RealT>>();
+    ROL::Ptr<EC>  con2 = ROL::makePtr<ROL::ZOO::Constraint_HS39b<RealT>>();
+    std::vector<ROL::Ptr<EC> > cvec(2); cvec[0] = con1; cvec[1] = con2;
    
-    RCP<EC>  con = CreateEqualityConstraintPartitioned(con1, con2); 
+    ROL::Ptr<EC>  con = ROL::makePtr<ROL::Constraint_Partitioned<RealT>>(cvec);
 
     *outStream << "Checking objective" << std::endl;
     obj->checkGradient(*x,*d,true,*outStream); 

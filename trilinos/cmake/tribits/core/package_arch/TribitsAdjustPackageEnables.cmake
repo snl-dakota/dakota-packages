@@ -302,7 +302,7 @@ ENDMACRO()
 #      [LIB_OPTIONAL_TPLS <tpl1> <tpl2> ...]
 #      [TEST_REQUIRED_TPLS <tpl1> <tpl2> ...]
 #      [TEST_OPTIONAL_TPLS <tpl1> <tpl2> ...]
-#      [REGRESSION_EMAIL_LIST  <regression-email-address>
+#      [REGRESSION_EMAIL_LIST  <regression-email-address>]
 #      [SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
 #        <spkg1_name>  <spkg1_dir>  <spkg1_classifications>  <spkg1_optreq>
 #        <spkg2_name>  <spkg2_dir>  <spkg2_classifications>  <spkg2_optreq>
@@ -479,6 +479,8 @@ MACRO(TRIBITS_PACKAGE_DEFINE_DEPENDENCIES)
      ${ARGN}
      )
 
+  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+
   SET(LIB_REQUIRED_DEP_PACKAGES ${PARSE_LIB_REQUIRED_PACKAGES})
   SET(LIB_OPTIONAL_DEP_PACKAGES ${PARSE_LIB_OPTIONAL_PACKAGES})
   SET(TEST_REQUIRED_DEP_PACKAGES ${PARSE_TEST_REQUIRED_PACKAGES})
@@ -497,7 +499,6 @@ MACRO(TRIBITS_PACKAGE_DEFINE_DEPENDENCIES)
   #   by the number of columns!
 
 ENDMACRO()
-
 
 
 MACRO(TRIBITS_SAVE_OFF_DEPENENCIES_VARS  POSTFIX)
@@ -691,6 +692,7 @@ ENDMACRO()
 # Macro that reads in a single subpackage dependencies file and sets up
 # the dependency structure for it.
 #
+
 MACRO(TRIBITS_READ_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR
   SUBPACKAGE_NAME  SUBPACKAGE_DIR)
 

@@ -55,6 +55,19 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     CACHE  BOOL
     "Enable std::complex<double> scalar types in all Trilinos packages by default.")
 
+  OPTION(Trilinos_ENABLE_THREAD_SAFE
+    "Enable thread safe code including RCP classes." OFF )
+
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
+  IF (Trilinos_ENABLE_THREAD_SAFE AND NOT ${PROJECT_NAME}_ENABLE_CXX11)
+    MESSAGE(FATAL_ERROR
+      "You set Trilinos_ENABLE_THREAD_SAFE=ON, but ${PROJECT_NAME}' support"
+      " for CXX11 is not enabled (${PROJECT_NAME}_ENABLE_CXX11=OFF)."
+      "  This is not allowed.  Please enable ${PROJECT_NAME}_ENABLE_CXX11 in"
+      " ${PROJECT_NAME} before attempting to enable Trilinos_ENABLE_THREAD_SAFE"
+      " or leave Trilinos_ENABLE_THREAD_SAFE off.")
+  ENDIF ()
+
   #
   # Trilinos Data Dir?  Is this still being used anywhere?
   #
@@ -72,7 +85,15 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     TRILINOS_DISABLE_PACKAGE_REQUIRING_CXX11("Tpetra")
   ENDIF()
     
-  IF (NOT ${PROJECT_NAME}_ENABLE_Fortran)
+  IF (
+      NOT ${PROJECT_NAME}_ENABLE_Fortran
+      AND
+      (
+        "${${PROJECT_NAME}_ENABLE_ForTrilinos}" STREQUAL ""
+        OR
+        ${PROJECT_NAME}_ENABLE_ForTrilinos
+      )
+    )
     MESSAGE(
       "\n***"
       "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_ForTrilinos=OFF"
@@ -82,7 +103,15 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     SET(${PROJECT_NAME}_ENABLE_ForTrilinos OFF)
   ENDIF()
 
-  IF ("${${PROJECT_NAME}_ENABLE_PyTrilinos}" STREQUAL "" AND NOT BUILD_SHARED_LIBS)
+  IF (
+      NOT BUILD_SHARED_LIBS
+      AND
+      (
+        "${${PROJECT_NAME}_ENABLE_PyTrilinos}" STREQUAL ""
+        OR
+        ${PROJECT_NAME}_ENABLE_PyTrilinos
+      )
+    )
     MESSAGE(
       "\n***"
       "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_PyTrilinos=OFF"
@@ -92,7 +121,15 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     SET(${PROJECT_NAME}_ENABLE_PyTrilinos OFF)
   ENDIF()
 
-  IF (NOT EXISTS "${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota")
+  IF (
+      NOT EXISTS "${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota"
+      AND
+      (
+        "${${PROJECT_NAME}_ENABLE_TriKota}" STREQUAL ""
+        OR
+        ${PROJECT_NAME}_ENABLE_TriKota
+      )
+    )
     MESSAGE("-- " "Setting ${PROJECT_NAME}_ENABLE_TriKota=OFF"
       " because '${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota' does not exist!")
     SET(${PROJECT_NAME}_ENABLE_TriKota OFF)
