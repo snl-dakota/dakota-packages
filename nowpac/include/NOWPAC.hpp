@@ -69,10 +69,12 @@ class NOWPAC : protected NoiseDetection<TSurrogateModel> {
     void blackbox_evaluator ( );
     void update_surrogate_models ( );
     void update_trustregion ( double );
+    bool best_point_is_feasible ( );
     bool last_point_is_feasible ( );
     void add_trial_node( );
     double compute_acceptance_ratio ( );
     void write_to_file( );
+    void output_for_plotting( const int&, const int&, std::vector< double > const&);
     void check_parameter_consistency( std::vector<double> const&);
     std::unique_ptr<ImprovePoisedness> surrogate_nodes;
     std::unique_ptr< SubproblemOptimization<TSurrogateModel> > surrogate_optimization;
@@ -786,6 +788,11 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::blackbox_evaluator (
 
   write_to_file();
 
+  //TODO Remove this later
+  if(false){
+    output_for_plotting(output_steps, 0, x);
+    output_steps++;
+  }
   return;
 }  
 //--------------------------------------------------------------------------------
@@ -896,10 +903,37 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::blackbox_evaluator ( )
     EXIT_FLAG = gaussian_processes.smooth_data ( evaluations );
   }
 
-  write_to_file();
 
+  write_to_file();
+  //TODO: Remove this later
+  if(false){
+    for(int i = nb_vals_tmp; i < nb_nodes_tmp; ++i){
+      output_for_plotting(output_steps, i-nb_vals_tmp, evaluations.nodes[ i ]);
+    }
+    output_steps++;
+  }
   return;
 }  
+//--------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------
+template<class TSurrogateModel, class TBasisForSurrogateModel>
+bool NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::best_point_is_feasible ( ) 
+{
+
+  bool best_point_is_feasible = true;
+
+  // Check if current best point is feasible
+  for (int i = 0; i < nb_constraints; ++i){
+    if(evaluations.values[i+1][evaluations.best_index] > 0.){
+      best_point_is_feasible = false;
+      break;
+    }
+  }
+  
+  return best_point_is_feasible;
+}
 //--------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------
@@ -936,9 +970,11 @@ bool NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::last_point_is_feasible ( 
     for (int i = 0; i < nb_constraints; ++i){
       if(evaluations.values[i+1].back() > 0.){
         feasiblity_obj_best += evaluations.values[i+1][evaluations.best_index]
-                             * evaluations.values[i+1][evaluations.best_index];
+                               * evaluations.values[i+1][evaluations.best_index] 
+                             + delta * evaluations.values[i+1][evaluations.best_index];
         feasiblity_obj_last += evaluations.values[i+1].back()
-                             * evaluations.values[i+1].back();
+                               * evaluations.values[i+1].back() 
+                             + delta * evaluations.values[i+1].back();
       }
     } 
     if(feasiblity_obj_last >= feasiblity_obj_best){
@@ -1106,25 +1142,43 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::write_to_file ( )
     
     // output the last added design
     for(int i = 0; i < dim; ++i) {
-        fprintf(output_file, double_format, evaluations.nodes.at(evaluations.nodes.size()-1).at(i));
+        fprintf(output_file, double_format, evaluations.nodes.back().at(i));
     }
     // output the last value of the objective
-    fprintf(output_file, double_format, evaluations.values.at(evaluations.values.size()-1).at(0));
+    fprintf(output_file, double_format, evaluations.values.at(0).back() );
+
+    // output the last values of the constraints
+    for(int i = 0; i < nb_constraints; ++i) {
+        fprintf(output_file, double_format, evaluations.values.at(i+1).back() );
+    }
   
     if(stochastic_optimization){
       // output mean and variance of current value of objective gp
-      double mean = -1;
-      double var = -1;
-      gaussian_processes.evaluate_gaussian_process_at(0, evaluations.nodes.at(evaluations.best_index), mean, var);
-      fprintf(output_file, double_format, mean);
+      //double mean = -1;
+      //double var = -1;
+      //gaussian_processes.evaluate_gaussian_process_at(0, evaluations.nodes.at(evaluations.best_index), mean, var);
+      //fprintf(output_file, double_format, mean);
+      //fprintf(output_file, double_format, var);
 
-      fprintf(output_file, double_format, var);
+      // output the noise for best value of the objective
+      fprintf(output_file, double_format, evaluations.noise.at(0).at(evaluations.best_index));
+
+      // output the noise for best values of the constraints
+      for(int i = 0; i < nb_constraints; ++i) {
+          fprintf(output_file, double_format, evaluations.noise.at(i+1).at(evaluations.best_index));
+      }
+
+      // output the noise for last added value of the objective
+      fprintf(output_file, double_format, evaluations.noise.at(0).back() );
+
+      // output the noise for last added values of the constraints
+      for(int i = 0; i < nb_constraints; ++i) {
+          fprintf(output_file, double_format, evaluations.noise.at(i+1).back() );
+      }
     }
 
     fprintf(output_file, "\n");
     fflush(output_file);
-
-
 
 }
 //--------------------------------------------------------------------------------
@@ -1270,6 +1324,188 @@ void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::check_parameter_consisten
 
   return;
 }
+//--------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------
+//XXX--------------------------------------------------------------------------------
+template<class TSurrogateModel, class TBasisForSurrogateModel>
+void NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::output_for_plotting ( const int& evaluation_step, const int& sub_index, std::vector< double > const& best_node )
+{
+
+  std::cout << "Writing Output..." << std::endl;
+  std::vector<double> x_loc(dim);
+  std::vector<double> fvals(nb_constraints+1);
+  std::vector<double> fvar(nb_constraints+1);
+  int xcoord = 0;
+  int ycoord = 1;
+  double var = 0;
+  double upper_bound = 1;
+  double lower_bound = 0;
+  std::ofstream outputfile ( "blackbox_data_" + std::to_string(evaluation_step) + "_" + std::to_string(sub_index) + ".dat");
+  if (outputfile.is_open() ) {
+	for (int i = 0; i < evaluations.nodes.size(); ++i){
+		for(int j = 0; j < dim; ++j){
+			outputfile <<  evaluations.nodes.at(i).at(j) << ';';
+		}
+		for(int j = 0; j < nb_constraints + 1; ++j){
+			outputfile << evaluations.values.at(j).at(i) << ';';
+		}
+		outputfile << std::endl;
+	}
+}else{
+ std::cout << "Unable to open file" << std::endl;
+}
+/*
+  outputfile.open ( "gp_data_" + std::to_string(evaluation_step) + "_" + std::to_string(sub_index) + ".dat" );
+  if ( outputfile.is_open( ) ) {
+    for ( int i = 0; i < dim; ++i)
+      x_loc.at(i) = 0e0;
+    for (double i = 0.0; i <= 1.0; i+=0.05) {
+      //x_loc.at(xcoord) =  i;
+      x_loc.at(xcoord) = i;
+      for (double j = 0.0; j <= 1.0; j+=0.05) {
+        //x_loc.at(ycoord) = j;
+        x_loc.at(ycoord) = j;
+        //fvals.at(0) = surrogate_models[0].evaluate( x_loc );
+        gaussian_processes.evaluate_gaussian_process_at(0, x_loc, fvals.at(0), fvar.at(0));
+        outputfile << x_loc.at(xcoord) << "; " << x_loc.at(ycoord) << "; " << fvals.at(0)<<"; " << fvar.at(0) << ";";
+        for ( int k = 0; k < nb_constraints; ++k) {
+          //fvals.at(k+1) = surrogate_models[k+1].evaluate( x_loc );
+          gaussian_processes.evaluate_gaussian_process_at(k+1, x_loc, fvals.at(k+1), fvar.at(0));
+          outputfile << fvals.at(k+1) << "; ";
+        }
+        outputfile << std::endl;
+      }
+    }
+    outputfile.close( );
+  } else std::cout << "Unable to open file." << std::endl;
+
+  outputfile.open( "gp_best_point_" + std::to_string(evaluation_step) + "_" + std::to_string(sub_index) + ".dat" );
+  if ( outputfile.is_open( ) ) {
+        //fvals.at(0) = surrogate_models[0].evaluate( x_loc );
+        gaussian_processes.evaluate_gaussian_process_at(0, best_node, fvals.at(0), var);
+        outputfile << best_node.at(xcoord) << "; " << best_node.at(ycoord) << "; " << fvals.at(0)<<"; " << var << std::endl;
+        for ( int k = 0; k < nb_constraints; ++k) {
+            //fvals.at(k+1) = surrogate_models[k+1].evaluate( x_loc );
+            gaussian_processes.evaluate_gaussian_process_at(k + 1, best_node, fvals.at(k + 1), var);
+            outputfile << best_node.at(xcoord) << "; " << best_node.at(ycoord) << "; " << fvals.at(k + 1) << "; " << var << std::endl;
+        }
+        outputfile.close();
+  } else std::cout << "Unable to open file." << std::endl;
+
+		outputfile.open( "gp_points_" + std::to_string(evaluation_step) + "_" + std::to_string(sub_index) + ".dat" );
+		std::vector<std::vector<double>> gp_nodes;
+		if ( outputfile.is_open( ) ) {
+			gp_nodes = gaussian_processes.get_nodes_at(0);
+			for ( int i = 0; i < gp_nodes.size(); ++i) {
+					for (int j = 0; j < gp_nodes[i].size(); ++j){
+							outputfile << gp_nodes[i][j] << " ";
+					}
+					outputfile << std::endl;
+			}
+			outputfile.close();
+		} else std::cout << "Unable to open file." << std::endl;
+
+    outputfile.open( "active_nodes_" + std::to_string(evaluation_step) + "_" + std::to_string(sub_index) + ".dat" );
+		if ( outputfile.is_open( ) ) {
+					//fvals.at(0) = surrogate_models[0].evaluate( x_loc );
+					for(int i = 0; i < evaluations.active_index.size(); ++i){
+						for(int j = 0; j < evaluations.nodes[evaluations.active_index[i]].size(); ++j){
+							outputfile << evaluations.nodes[evaluations.active_index[i]][j] << ";";
+						}
+						outputfile << std::endl;
+					}
+					outputfile.close();
+		} else std::cout << "Unable to open file." << std::endl;
+
+    if(use_approx_gaussian_process) {
+        outputfile.open(
+                "gp_induced_points_" + std::to_string(evaluation_step) + "_" + std::to_string(sub_index) + ".dat");
+        if (outputfile.is_open()) {
+            //fvals.at(0) = surrogate_models[0].evaluate( x_loc );
+            gaussian_processes.evaluate_gaussian_process_at(0, best_node, fvals.at(0), var); //reset u_indices and augmented_u
+            std::vector< std::vector<double> > u_nodes;
+            u_nodes.clear();
+            gaussian_processes.get_induced_nodes_at(0, u_nodes);
+            std::cout << "U_matrix: " << std::endl;
+            VectorOperations::print_matrix(u_nodes);
+            for (int i = 0; i < u_nodes.size(); ++i) {
+                for (int j = 0; j < u_nodes[i].size(); ++j){
+                    outputfile << u_nodes[i][j] << " ";
+                }
+                outputfile << std::endl;
+            }
+            outputfile.close();
+        } else std::cout << "Unable to open file." << std::endl;
+    }
+  */
+  /*
+  outputfile.open ( "surrogate_data_" + std::to_string(evaluation_step) + "_" + std::to_string(sub_index) + ".dat" );
+  if ( outputfile.is_open( ) ) {
+      for (int i = 0; i < dim; ++i)
+          x_loc.at(i) = 0e0;
+      for (double i = -1.0; i <= 1.0; i += 0.01) {
+          //x_loc.at(xcoord) =  i;
+          x_loc.at(xcoord) = ((i + 1) / (2) * (upper_bound - lower_bound) + lower_bound);
+          for (double j = -1.0; j < 1.0; j += 0.01) {
+              //x_loc.at(ycoord) = j;
+              x_loc.at(ycoord) = ((j + 1) / (2) * (upper_bound - lower_bound) + lower_bound);
+              fvals.at(0) = surrogate_models[0].evaluate( x_loc );
+              outputfile << x_loc.at(xcoord) << "; " << x_loc.at(ycoord) << "; " << fvals.at(0) << "; ";
+              for (int k = 0; k < nb_constraints; ++k) {
+                  fvals.at(k+1) = surrogate_models[k+1].evaluate( x_loc );
+                  outputfile << fvals.at(k + 1) << "; ";
+              }
+              outputfile << std::endl;
+          }
+      }
+      outputfile.close();
+  }else std::cout << "Unable to open file." << std::endl;
+   */
+
+
+  /*outputfile.open ( "data_" + std::to_string(evaluation_step) + ".dat" );
+  if ( outputfile.is_open( ) ) {
+    std::vector< std::vector<double> > outputnodes;
+    outputfile << delta << "; " << evaluations.active_index.size() << "; ";
+    for ( int i = 0; i < dim-2; ++i)     
+      outputfile << "0 ;";
+    outputfile << std::endl;
+    outputnodes = evaluations.get_scaled_active_nodes( delta );
+    for ( int i = 0; i < evaluations.active_index.size(); ++i) {
+      for ( int j = 0; j < dim; ++j )
+        outputfile << outputnodes[i][j] << "; ";
+      outputfile << std::endl;
+    }
+    for ( int j = 0; j < dim; ++j )
+      outputfile << evaluations.nodes[evaluations.best_index][j] << "; ";
+    outputfile << std::endl;    
+    for ( int j = 0; j < dim; ++j )
+    outputfile << x_trial[j] << "; "; 
+    outputfile << std::endl;    
+    for ( int j = 0; j < nb_constraints; ++j ) {
+      if (acceptance_ratio >= eta_0)
+        outputfile << "1; " << inner_boundary_path_constants[j] << "; " ;
+      else
+        outputfile << "0; " << inner_boundary_path_constants[j] << "; ";
+      for ( int i = 0; i < dim-2; ++i)     
+        outputfile << "0 ;";
+      outputfile << std::endl;
+    }
+    outputfile << xcoord << "; " << ycoord << "; ";
+    for ( int i = 0; i < dim-2; ++i)     
+      outputfile << "0 ;";
+    outputfile << std::endl;
+    outputfile.close( );
+  } else std::cout << "Unable to open file." << std::endl;*/
+
+  //std::cout << "Press Enter to Continue";
+  //std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+  //system("read -n1 -r -p \"Press any key to continue...\"");
+    std::cout << "...Done!" << std::endl;
+  return;
+}
+//XXX--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------
@@ -1501,56 +1737,60 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
     /*- STEP 1 - STEP 1 - STEP 1 - STEP 1 - STEP 1 - STEP 1 - STEP 1 - STEP 1 - STEP 1 -*/
     /*----------------------------------------------------------------------------------*/
     //if criticality measure is small, check if model improvement is necessary
-    if ( criticality_value <= eps_c ) {
-      if ( verbose == 3 && delta > mu * criticality_value ) {
-        std::cout << " Criticality measure below threshold" << std::endl;
-        std::cout << " -----------------------------------" << std::endl;
-      }
-      while ( delta > mu * criticality_value ) {
-        update_trustregion( omega );
-        update_surrogate_models( ); //xxx
-        if ( EXIT_FLAG != NOEXIT ) break;
-        //if (verbose == 3) {
-        //  std::cout << "#Noise# Adjusting trust-region radius to " << delta << std::endl;
-        //}
-        surrogate_nodes->improve_poisedness ( evaluations.best_index, evaluations );
-        if ( stochastic_optimization ) {
-          for (int i = 0; i < dim; ++i ){
-            if(use_hard_box_constraints){
-              out_of_bounds = true;
-              do{
+    if ( best_point_is_feasible( ) ) {
+      if ( criticality_value <= eps_c ) {
+        if ( verbose == 3 && delta > mu * criticality_value ) {
+          std::cout << " Criticality measure below threshold" << std::endl;
+          std::cout << " -----------------------------------" << std::endl;
+        }
+        while ( delta > mu * criticality_value ) {
+          //output_for_plotting( number_accepted_steps) ;
+          update_trustregion( omega );
+          update_surrogate_models( ); //xxx
+          if ( EXIT_FLAG != NOEXIT ) break;
+          //if (verbose == 3) {
+          //  std::cout << "#Noise# Adjusting trust-region radius to " << delta << std::endl;
+          //}
+          surrogate_nodes->improve_poisedness ( evaluations.best_index, evaluations );
+          if ( stochastic_optimization ) {
+            for (int i = 0; i < dim; ++i ){
+              if(use_hard_box_constraints){
+                out_of_bounds = true;
+                do{
+                  x_sample.at(i) = evaluations.nodes[ evaluations.best_index ].at( i ) +
+                           delta * norm_dis( rand_generator ) * 1e0;
+                  if(x_sample[i] >= lower_bound_constraints[i] && x_sample[i] <= upper_bound_constraints[i]){
+                    out_of_bounds = false;
+                  }
+                }while(out_of_bounds);
+              }else{
                 x_sample.at(i) = evaluations.nodes[ evaluations.best_index ].at( i ) +
-                         delta * norm_dis( rand_generator ) * 1e0;
-                if(x_sample[i] >= lower_bound_constraints[i] && x_sample[i] <= upper_bound_constraints[i]){
-                  out_of_bounds = false;
-                }
-              }while(out_of_bounds);
-            }else{
-              x_sample.at(i) = evaluations.nodes[ evaluations.best_index ].at( i ) +
-                         delta * norm_dis( rand_generator ) * 1e0;
+                           delta * norm_dis( rand_generator ) * 1e0;
+              }
             }
+            evaluations.nodes.push_back( x_sample );
           }
-          evaluations.nodes.push_back( x_sample );
-        }
-        blackbox_evaluator( );
-        if ( EXIT_FLAG != NOEXIT ) break;
-        update_surrogate_models( );
-        if ( noise_detection ) {
-          if ( this->detect_noise( ) && noise_termination ) EXIT_FLAG = -2; 
-        }
-        x_trial = evaluations.nodes[ evaluations.best_index ];
+          blackbox_evaluator( );
+          if ( EXIT_FLAG != NOEXIT ) break;
+          update_surrogate_models( );
+          if ( noise_detection ) {
+            if ( this->detect_noise( ) && noise_termination ) EXIT_FLAG = -2; 
+          }
+          x_trial = evaluations.nodes[ evaluations.best_index ];
 
-        criticality_value = surrogate_optimization->compute_criticality_measure( x_trial );
+          criticality_value = surrogate_optimization->compute_criticality_measure( x_trial );
 
-        // TODO: check if while should be exited on infeasible points...
+          // TODO: check if while should be exited on infeasible points...
 
-        if (verbose == 3) {
-          std::cout << " Value of criticality measure is " << criticality_value << std::endl;
-          std::cout << " -----------------------------------" << std::endl << std::flush;
+          //output_for_plotting( number_accepted_steps) ;
+          if (verbose == 3) {
+            std::cout << " Value of criticality measure is " << criticality_value << std::endl;
+            std::cout << " -----------------------------------" << std::endl << std::flush;
+          }
         }
       }
-    }
 
+    }
     /*----------------------------------------------------------------------------------*/
     /*- STEP 2 - STEP 2 - STEP 2 - STEP 2 - STEP 2 - STEP 2 - STEP 2 - STEP 2 - STEP 2 -*/
     /*----------------------------------------------------------------------------------*/
@@ -1586,7 +1826,14 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
         break;
       }
       if ( !last_point_is_feasible( ) ) {
-        if ( verbose == 3 ) { std::cout << " Feasibility violated" << std::endl << std::flush; }
+        if ( verbose == 3 ) { 
+          std::cout << " #FEASVIOLATION Feasibility violated" << std::endl << std::flush; 
+          for (int i = 0; i < nb_constraints; ++i){
+            std::cout << " Constraint " << i+1 
+             << ": [Best: " << evaluations.values[i+1][evaluations.best_index]
+             << ", Back: " << evaluations.values[i+1].back() << "]"<< std::endl << std::flush;
+          }
+        }
 
         tmp_dbl = 1e0;
         for ( int i = 0; i < evaluations.active_index.size(); ++i ) {
@@ -1602,6 +1849,7 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
           add_trial_node( );
           if ( EXIT_FLAG != NOEXIT ) break;
         }
+        //output_for_plotting( number_accepted_steps ) ;
         update_trustregion( theta );
         update_surrogate_models( );
 
@@ -1636,6 +1884,7 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
           if ( this->detect_noise( ) && noise_termination ) EXIT_FLAG = -2; 
         }
 
+//        //output_for_plotting ( number_accepted_steps );
       } else {
         if ( verbose == 3 ) { std::cout << "Found feasible trial step" << std::endl << std::flush; }
         break;
@@ -1647,6 +1896,8 @@ int NOWPAC<TSurrogateModel, TBasisForSurrogateModel>::optimize (
     /*----------------------------------------------------------------------------------*/
     if ( EXIT_FLAG == NOEXIT ) { 
       acceptance_ratio = compute_acceptance_ratio ( );
+
+      //output_for_plotting( number_accepted_steps );
 
       tmp_dbl = this->diff_norm( x_trial, evaluations.nodes[ evaluations.best_index ] ) / delta;
       stepsize[0] = ( tmp_dbl + stepsize[1])/ 2e0;

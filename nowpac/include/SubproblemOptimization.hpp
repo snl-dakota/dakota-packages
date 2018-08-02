@@ -200,6 +200,17 @@ void SubproblemOptimization<TSurrogateModel>::set_feasibility_thresholds (
     if ( feasibility_thresholds.at( i ) < 0e0 ) feasibility_thresholds.at( i ) = 0e0; 
     else point_is_feasible = false;
   }
+  std::cout << "#M2# Subproblem Testing feasiblity: " << std::endl;
+  std::cout << "#M2#      at point: [";
+  for(int i = 0; i < x.size(); ++i)
+    std::cout << x[i] << ', ';
+  std::cout << std::endl;
+  std::cout << "#M2#      Feasiblity thresholds:";
+  for ( int i = 0; i < number_constraints; i++ ) {
+    std::cout << feasibility_thresholds.at( i ) << ", ";
+  }
+  std::cout << std::endl;
+  std::cout << "#M2#      feasible: " << point_is_feasible << std::endl;
 
   return;
 }
@@ -244,7 +255,7 @@ template<class TSurrogateModel>
 double SubproblemOptimization<TSurrogateModel>::compute_criticality_measure ( 
                                                 std::vector<double> &x )
 {
-
+  double lambda_g = *delta;
   best_point = x;
 
   for ( int i = 0; i < dim; ++i )
@@ -265,7 +276,7 @@ double SubproblemOptimization<TSurrogateModel>::compute_criticality_measure (
 //    assert ( false ); 
     set_zero( criticality_gradient );
     for ( int i = 1; i < number_constraints+1; ++i )
-      add( 2e0*feasibility_thresholds.at(i-1),   
+      add( 2e0*feasibility_thresholds.at(i-1) + lambda_g,   
            (*surrogate_models)[i].gradient ( ), 
            criticality_gradient );
   }
@@ -317,9 +328,17 @@ double SubproblemOptimization<TSurrogateModel>::compute_trial_point (
 
   set_feasibility_thresholds ( x );
 
+  std::cout << "#M3: Point is feasible: " << point_is_feasible << std::endl;
   if ( !point_is_feasible ) {
+    std::cout << "#M3: FEASIBILITY RESTORARION: " << std::endl;
+    //opt_restore_feasibility.optimize ( x, optimization_result );for ( int i = 0; i < dim; ++i ) 
+
+    opt_restore_feasibility.set_lower_bounds ( lb );
+    opt_restore_feasibility.set_upper_bounds ( ub );
     opt_restore_feasibility.optimize ( x, optimization_result );
+
     set_feasibility_thresholds ( x );    
+    std::cout << "#M4: Point is feasible: " << point_is_feasible << std::endl;
     if ( point_is_feasible ) {
       /*std::cout << "      LowerBound: " << std::endl;
       for (int i = 0; i < dim; ++i)
@@ -346,6 +365,7 @@ double SubproblemOptimization<TSurrogateModel>::compute_trial_point (
     }
    // assert( false );
   } else {
+    std::cout << "#M3: Classic optimization!" << std::endl;
     try{
       errmess = opt_trial_point.optimize ( x, optimization_result );
     } catch ( ... ) { };
