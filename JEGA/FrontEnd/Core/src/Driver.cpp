@@ -214,7 +214,8 @@ Driver::InitializeJEGA(
     const string& globalLogFilename,
     const LogLevel& globalLogDefLevel,
     unsigned int rSeed,
-    Logger::FatalBehavior onFatal
+    Logger::FatalBehavior onFatal,
+	bool registerSignalHandlers
     )
 {
     EDDY_FUNC_DEBUGSCOPE
@@ -226,12 +227,15 @@ Driver::InitializeJEGA(
 
     // The handle_signal method will give the debugscope project it's chance.
     // So there are no EDDY_DEBUGSIGNAL calls in this method.
-    ::signal(SIGSEGV, &Driver::handle_signal);
-    EDDY_IF_NO_WINDOWS(::signal(SIGINT, &Driver::handle_signal);)
-    ::signal(SIGILL, &Driver::handle_signal);
-    ::signal(SIGFPE, &Driver::handle_signal);
-    ::signal(SIGTERM, &Driver::handle_signal);
-    ::signal(SIGABRT, &Driver::handle_signal);
+	if (registerSignalHandlers)
+	{
+		::signal(SIGSEGV, &Driver::handle_signal);
+		EDDY_IF_NO_WINDOWS(::signal(SIGINT, &Driver::handle_signal);)
+		::signal(SIGILL, &Driver::handle_signal);
+		::signal(SIGFPE, &Driver::handle_signal);
+		::signal(SIGTERM, &Driver::handle_signal);
+		::signal(SIGABRT, &Driver::handle_signal);
+	}
 
     // Start by initializing the logger
     JEGA_LOGGING_INIT(globalLogFilename, globalLogDefLevel);

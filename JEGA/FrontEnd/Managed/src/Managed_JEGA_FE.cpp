@@ -220,7 +220,7 @@ main(
     try {
         MDriver::InitializeJEGA(
             "JEGAGlobal.log", JEGA::Logging::LevelClass::debug, 123456,
-            MAlgorithmConfig::FatalBehavior::ABORT
+            MAlgorithmConfig::FatalBehavior::ABORT, true
             );
 
         MProblemConfig^ pConfig = gcnew MProblemConfig();

@@ -196,7 +196,8 @@ MDriver::InitializeJEGA(
     System::String^ globalLogFilename,
     JEGA::Logging::LogLevel globalLogDefLevel,
     System::UInt32 rSeed,
-    MAlgorithmConfig::FatalBehavior fatalBehavior
+    MAlgorithmConfig::FatalBehavior fatalBehavior,
+	bool registerSignalHandlers
     )
 {
     EDDY_FUNC_DEBUGSCOPE
@@ -204,7 +205,8 @@ MDriver::InitializeJEGA(
     {
         return Driver::InitializeJEGA(
             ToStdStr(globalLogFilename), globalLogDefLevel, rSeed,
-            static_cast<JEGA::Logging::Logger::FatalBehavior>(fatalBehavior)
+            static_cast<JEGA::Logging::Logger::FatalBehavior>(fatalBehavior),
+			registerSignalHandlers
             );
     }
     catch(const std::exception& ex)

@@ -332,7 +332,8 @@ public ref class MDriver :
             System::String^ globalLogFilename,
             JEGA::Logging::LogLevel globalLogDefLevel,
             System::UInt32 rSeed,
-            MAlgorithmConfig::FatalBehavior fatalBehavior
+            MAlgorithmConfig::FatalBehavior fatalBehavior,
+			bool registerSignalHandlers
             );
 
         /**
