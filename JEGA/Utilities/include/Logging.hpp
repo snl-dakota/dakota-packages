@@ -1588,7 +1588,7 @@ Fatal Logging Interface
 // fatal log entries get issued and provide meaningful feedback.  That's what
 // these alternate log macros do.
 
-/// A macro to produce a non descript failure output message.
+/// A macro to produce a nondescript failure output message.
 #define JEGA_LOGGING_NO_LOG_FATAL_ERROR_HANDLE(e)                          \
     JEGA::Logging::Logger::fatal_callback::Invoke(e);
 
