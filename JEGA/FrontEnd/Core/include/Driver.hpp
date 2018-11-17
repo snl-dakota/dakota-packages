@@ -367,7 +367,8 @@ class JEGA_SL_IEDECL Driver
                 JEGA::Logging::LevelClass::Default,
             unsigned int rSeed = 0,
             JEGA::Logging::Logger::FatalBehavior onFatal =
-                JEGA::Logging::Logger::ABORT
+                JEGA::Logging::Logger::ABORT,
+			bool registerSignalHandlers = true
             );
 
         /**

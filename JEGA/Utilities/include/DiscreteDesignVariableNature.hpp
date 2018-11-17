@@ -168,32 +168,6 @@ Class Definition
 class JEGA_SL_IEDECL DiscreteDesignVariableNature :
     public DesignVariableNatureBase
 {
-
-    /*
-    ============================================================================
-    Nested Utility Class Forward Declares
-    ============================================================================
-    */
-    private:
-
-        /**
-         * \brief A base class for the Min and Max predicates.
-         */
-        template <typename Comp>
-        class CutoffPred;
-
-        /**
-         * \brief A class to test passed in values to see if they are less
-         *        than or equal to a stored value.
-         */
-        class MinPred;
-
-        /**
-         * \brief A class to test passed in values to see if they are greater
-         *        than or equal to a stored value.
-         */
-        class MaxPred;
-
     /*
     ============================================================================
     Member Data Declarations

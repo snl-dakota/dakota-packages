@@ -456,27 +456,28 @@ Namespace JEGA.FrontEnd.VisualBasic
         ''' otherwise.
         ''' </returns>
         Public Shared Function _
-        InitializeJEGA( _
-            ByVal globalLogFilename As String, _
-            ByVal globalLogDefLevel As Byte, _
-            Optional ByVal rSeed As Integer = 0, _
-            Optional ByVal fatalBehavior As MAlgorithmConfig.FatalBehavior = _
-                MAlgorithmConfig.FatalBehavior.ABORT _
+        InitializeJEGA(
+            ByVal globalLogFilename As String,
+            ByVal globalLogDefLevel As Byte,
+            Optional ByVal rSeed As Integer = 0,
+            Optional ByVal fatalBehavior As MAlgorithmConfig.FatalBehavior =
+                MAlgorithmConfig.FatalBehavior.ABORT,
+            Optional ByVal registerSignalHandlers As Boolean = True
             ) As Boolean
 
             Try
 
                 ' Simply call down to the managed front end application version.
-                Return MDriver.InitializeJEGA( _
-                    globalLogFilename, globalLogDefLevel, _
-                    System.Convert.ToUInt32(rSeed), _
-                    fatalBehavior _
+                Return MDriver.InitializeJEGA(
+                    globalLogFilename, globalLogDefLevel,
+                    System.Convert.ToUInt32(rSeed),
+                    fatalBehavior, registerSignalHandlers
                     )
 
             Catch ex As System.Exception
 
-                VBJEGAUtilities.DisplayError( _
-                    Err, "VBJEGADriver", "InitializeJEGA" _
+                VBJEGAUtilities.DisplayError(
+                    Err, "VBJEGADriver", "InitializeJEGA"
                     )
                 Return False
 

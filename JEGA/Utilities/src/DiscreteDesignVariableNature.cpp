@@ -68,7 +68,6 @@ Includes
 #include <utilities/include/RandomNumberGenerator.hpp>
 #include <../Utilities/include/DiscreteDesignVariableNature.hpp>
 
-
 /*
 ================================================================================
 Namespace Using Directives
@@ -93,20 +92,53 @@ namespace JEGA {
     namespace Utilities {
 
 
+double
+relative_difference(
+    double arg_a,
+    double arg_b
+    )
+{
+    const double min_val = std::numeric_limits<double>::min();
+    const double max_val = std::numeric_limits<double>::max();
 
+    // Screen out NaN's first, if either value is a NaN then the distance is
+    // "infinite":
+    if(std::isnan(arg_a) || std::isnan(arg_b)) return max_val;
 
+    // Screen out infinites:
+    if(fabs(arg_b) > max_val)
+    {
+        if(fabs(arg_a) > max_val)
+            return (arg_a < 0) == (arg_b < 0) ? 0 : max_val;
+        else
+            return max_val;
+    }
+    else if(fabs(arg_a) > max_val)
+        return max_val;
 
-/*
-================================================================================
-Nested Utility Class Implementations
-================================================================================
-*/
+    // If the values have different signs, treat as infinite difference:
+    if(((arg_a < 0.0) != (arg_b < 0.0)) && (arg_a != 0.0) && (arg_b != 0.0))
+        return max_val;
+
+    arg_a = fabs(arg_a);
+    arg_b = fabs(arg_b);
+
+    // Now deal with zero's, if one value is zero (or denorm) then treat it the
+    // same as min_val for the purposes of the calculation that follows:
+    if(arg_a < min_val) arg_a = min_val;
+    if(arg_b < min_val) arg_b = min_val;
+
+    return std::max(
+        fabs((arg_a - arg_b) / arg_a), fabs((arg_a - arg_b) / arg_b
+        ));
+}
+
 /**
  * \brief A base class for the Min and Max predicates.
  */
 template <typename Comp>
-class DiscreteDesignVariableNature::CutoffPred :
-    public std::unary_function<double, bool>
+class CutoffPred :
+    public unary_function<double, bool>
 {
     /*
     ============================================================================
@@ -163,14 +195,14 @@ class DiscreteDesignVariableNature::CutoffPred :
             EDDY_FUNC_DEBUGSCOPE
         };
 
-}; // class DiscreteDesignVariableNature::MaxPred
+}; // class DiscreteDesignVariableNature::CutoffPred
 
 /**
  * \brief A class to test passed in values to see if they are less
  *        than or equal to a stored value.
  */
-class DiscreteDesignVariableNature::MaxPred :
-	public DiscreteDesignVariableNature::CutoffPred<greater_equal<double> >
+class MaxPred :
+	public CutoffPred<greater_equal<double> >
 {
     /*
     ============================================================================
@@ -187,9 +219,7 @@ class DiscreteDesignVariableNature::MaxPred :
         MaxPred(
             argument_type val
             ) :
-                DiscreteDesignVariableNature::CutoffPred<
-                    greater_equal<double>
-                    >(val)
+                CutoffPred<greater_equal<double> >(val)
         {
             EDDY_FUNC_DEBUGSCOPE
         };
@@ -201,8 +231,8 @@ class DiscreteDesignVariableNature::MaxPred :
  * \brief A class to test passed in values to see if they are greater
  *        than or equal to a stored value.
  */
-class DiscreteDesignVariableNature::MinPred :
-    public DiscreteDesignVariableNature::CutoffPred<less_equal<double> >
+class MinPred :
+    public CutoffPred<less_equal<double> >
 {
     /*
     ============================================================================
@@ -219,15 +249,68 @@ class DiscreteDesignVariableNature::MinPred :
         MinPred(
             argument_type val
             ) :
-                DiscreteDesignVariableNature::CutoffPred<
-                    less_equal<double>
-                    >(val)
+                CutoffPred<less_equal<double> >(val)
         {
             EDDY_FUNC_DEBUGSCOPE
         };
 
 }; // class DiscreteDesignVariableNature::MinPred
 
+
+class EqComp :
+    public unary_function<double, bool>
+{
+    /*
+    ============================================================================
+    Member Data Declarations
+    ============================================================================
+    */
+    protected:
+
+        double _value;
+
+        double _threshold;
+
+    /*
+    ============================================================================
+    Public Methods
+    ============================================================================
+    */
+    public:
+
+        result_type
+        operator ()(
+            argument_type val
+            )
+        {
+            EDDY_FUNC_DEBUGSCOPE
+            return relative_difference(val, this->_value) < this->_threshold;
+        };
+
+    /*
+    ============================================================================
+    Structors
+    ============================================================================
+    */
+    public:
+
+        /// Constructs an EqComp to compare passed in values for equality.
+        /**
+         * \param threshold The relative difference below which equality is
+         *                  obtained in accordance with this operator.
+         */
+        EqComp(
+            double value,
+            double threshold
+            ) :
+                unary_function<double, bool>(),
+                _value(value),
+                _threshold(threshold)
+        {
+            EDDY_FUNC_DEBUGSCOPE
+        };
+
+}; // class DiscreteDesignVariableNature::MinPred
 
 /*
 ================================================================================
@@ -339,10 +422,10 @@ DiscreteDesignVariableNature::GetRandomRep(
     EDDY_FUNC_DEBUGSCOPE
     return static_cast<var_rep_t>(
         RandomNumberGenerator::UniformInt<DoubleVector::size_type>(
-                // if anything, shrink the range.
-                static_cast<size_t>(Math::Ceil(lb)),
-                static_cast<size_t>(Math::Floor(ub))
-             )
+            // if anything, shrink the range.
+            static_cast<size_t>(Math::Ceil(lb)),
+            static_cast<size_t>(Math::Floor(ub))
+            )
         );
 }
 
@@ -352,12 +435,14 @@ DiscreteDesignVariableNature::GetRepOf(
     ) const
 {
     EDDY_FUNC_DEBUGSCOPE
-    DoubleVector::const_iterator it(
-        find(this->_disVals.begin(), this->_disVals.end(), value)
-        );
+
+    DoubleVector::const_iterator it(find_if(
+        this->_disVals.begin(), this->_disVals.end(), EqComp(value, 0.000000001)
+        ));
+
     return (it==this->_disVals.end()) ?
-        -std::numeric_limits<var_rep_t>::max() :
-		static_cast<var_rep_t>(it-this->_disVals.begin());
+        -numeric_limits<var_rep_t>::max() :
+        distance(this->_disVals.begin(), it);
 }
 
 double
@@ -398,7 +483,7 @@ DiscreteDesignVariableNature::GetValueOf(
     DoubleVector::size_type loc =
         static_cast<DoubleVector::size_type>(Math::Round(rep));
     return this->IsValidRep(rep) ?
-		this->_disVals[loc] : -std::numeric_limits<double>::max();
+		this->_disVals[loc] : -numeric_limits<double>::max();
 }
 
 double
@@ -454,7 +539,7 @@ DiscreteDesignVariableNature::GetNearestValidRep(
 {
     EDDY_FUNC_DEBUGSCOPE
 
-    if(rep == -std::numeric_limits<var_rep_t>::max()) return rep;
+    if(rep == -numeric_limits<var_rep_t>::max()) return rep;
     const var_rep_t temp = Math::Round(rep);
     return Math::Max(Math::Min(this->GetMaxRep(), temp), this->GetMinRep());
 }
@@ -473,9 +558,10 @@ DiscreteDesignVariableNature::AddDiscreteValue(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    DoubleVector::const_iterator it(
-        find(this->_disVals.begin(), this->_disVals.end(), value)
-        );
+
+    DoubleVector::const_iterator it(find_if(
+        this->_disVals.begin(), this->_disVals.end(), EqComp(value, 0.000000001)
+        ));
 
     EDDY_DEBUG(it!=this->_disVals.end(),
         "Attempt to add duplicate discrete value failed");
@@ -554,8 +640,10 @@ DiscreteDesignVariableNature::IsValueInBounds(
     ) const
 {
     EDDY_FUNC_DEBUGSCOPE
-    return find(this->_disVals.begin(), this->_disVals.end(), value) !=
-           this->_disVals.end();
+
+    return find_if(
+        this->_disVals.begin(), this->_disVals.end(), EqComp(value, 0.000000001)
+        ) != this->_disVals.end();
 }
 
 bool
