@@ -412,7 +412,7 @@ class EDDY_SL_IEDECL list_log
         /**
          * This method is useful if you wish for to copy all entries in some
          * range into this.  The supplied iterator type (FwdIt) must
-         * support forward iteration via preincrement (operator ++()).
+         * support forward iteration via pre-increment (operator ++()).
          *
          * \param begin An iterator to the first entry in the range to add into
          *              this container.

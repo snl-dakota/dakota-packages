@@ -142,7 +142,7 @@ Class Definition
 ================================================================================
 */
 
-/// This class stores information about design variabes.
+/// This class stores information about design variables.
 /**
  * The information stored includes the type (real, integer, etc) and the
  * nature (continuum, discrete) as well as any inherited information from
@@ -768,7 +768,7 @@ class JEGA_SL_IEDECL DesignVariableInfo :
         /// Returns true if the nature of this variable is Discrete.
         /**
          * This method exists because Discrete and Continuum natures are
-         * the two most common and so it is convienient to directly
+         * the two most common and so it is convenient to directly
          * poll for them.
          *
          * \return True if this design variable has a discrete nature and false
@@ -782,7 +782,7 @@ class JEGA_SL_IEDECL DesignVariableInfo :
         /// Returns true if the nature of this variable is Continuum.
         /**
          * This method exists because Discrete and Continuum natures are
-         * the two most common and so it is convienient to directly
+         * the two most common and so it is convenient to directly
          * poll for them.
          *
          * \return True if this design variable has a continuum nature and
@@ -808,7 +808,7 @@ class JEGA_SL_IEDECL DesignVariableInfo :
             ) const;
 
         /**
-         * \brief Returns the variable representationassociated with this info
+         * \brief Returns the variable representation associated with this info
          *        object.
          *
          * For example, if this is the 3rd DesignVariableInfo, then this method

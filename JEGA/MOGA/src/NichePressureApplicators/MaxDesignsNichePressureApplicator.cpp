@@ -90,8 +90,6 @@ using namespace eddy::utilities;
 
 
 
-
-
 /*
 ================================================================================
 Begin Namespace
@@ -632,13 +630,6 @@ MaxDesignsNichePressureApplicator::ApplyNichePressure(
         )
 
 }
-
-
-
-
-
-
-
 
 /*
 ================================================================================

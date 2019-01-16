@@ -232,7 +232,7 @@ class BitManipulator
     */
     public:
 
-        /// Returns the target known by this object (const).
+        /// Returns the target known by this object (constant).
         /**
          * The target must have been supplied to the constructor.  This allows
          * const-qualified access to it.

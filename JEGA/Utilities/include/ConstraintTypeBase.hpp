@@ -227,7 +227,7 @@ class JEGA_SL_IEDECL ConstraintTypeBase
         GetConstraintInfo(
             );
 
-        /// Returns the ConstraintInfo object known by this (const)
+        /// Returns the ConstraintInfo object known by this (constant)
         /**
          * \return The ConstraintInfo for which this is the type.
          */
@@ -371,7 +371,7 @@ class JEGA_SL_IEDECL ConstraintTypeBase
             const Design& des2
             ) const;
 
-        /// This method attempts to evalutate this constraint for "des".
+        /// This method attempts to evaluate this constraint for "des".
         /**
          * This may not be possible.  Generally, only linear constraints
          * can be evaluated in this way.  The method returns true if the

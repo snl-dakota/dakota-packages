@@ -416,16 +416,16 @@ DiscreteDesignVariableNature::GetMinRep(
 
 var_rep_t
 DiscreteDesignVariableNature::GetRandomRep(
-    double lb,
-    double ub
+    var_rep_t lb,
+    var_rep_t ub
     ) const
 {
     EDDY_FUNC_DEBUGSCOPE
     return static_cast<var_rep_t>(
         RandomNumberGenerator::UniformInt<DoubleVector::size_type>(
             // if anything, shrink the range.
-            static_cast<size_t>(Math::Ceil(lb)),
-            static_cast<size_t>(Math::Floor(ub))
+            static_cast<size_t>(Math::Ceil(static_cast<double>(lb))),
+            static_cast<size_t>(Math::Floor(static_cast<double>(ub)))
             )
         );
 }
@@ -443,7 +443,7 @@ DiscreteDesignVariableNature::GetRepOf(
 
     return (it==this->_disVals.end()) ?
         -numeric_limits<var_rep_t>::max() :
-        distance(this->_disVals.begin(), it);
+        static_cast<var_rep_t>(distance(this->_disVals.begin(), it));
 }
 
 double

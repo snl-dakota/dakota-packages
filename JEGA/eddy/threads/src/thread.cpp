@@ -151,7 +151,9 @@ thread::sleep(
     unsigned int msecs
     )
 {
-    struct timespec ts = { msecs/1000, (msecs%1000)*1000000 };
+    struct timespec ts = {
+		msecs/1000, static_cast<long>((msecs%1000)*1000000)
+		};
 
 #if defined(EDDY_WINDOWS)
     pthread_delay_np(&ts);
@@ -180,39 +182,39 @@ thread::cancel(
 } // thread::cancel
 
 void
-thread::set_asynch_cancelation(
+thread::set_asynch_cancellation(
     )
 {
-    set_cancelation(PTHREAD_CANCEL_ASYNCHRONOUS);
+    set_cancellation(PTHREAD_CANCEL_ASYNCHRONOUS);
 
-} // thread::set_asynch_cancelation
+} // thread::set_asynch_cancellation
 
 void
-thread::set_deferred_cancelation(
+thread::set_deferred_cancellation(
     )
 {
-    set_cancelation(PTHREAD_CANCEL_DEFERRED);
+    set_cancellation(PTHREAD_CANCEL_DEFERRED);
 
-} // thread::set_deferred_cancelation
+} // thread::set_deferred_cancellation
 
 void
-thread::disable_cancelation(
+thread::disable_cancellation(
     )
 {
-    set_cancelation(PTHREAD_CANCEL_DISABLE);
+    set_cancellation(PTHREAD_CANCEL_DISABLE);
 
-} // thread::disable_cancelation
+} // thread::disable_cancellation
 
 void
-thread::enable_cancelation(
+thread::enable_cancellation(
     )
 {
-    set_cancelation(PTHREAD_CANCEL_ENABLE);
+    set_cancellation(PTHREAD_CANCEL_ENABLE);
 
-} // thread::enable_cancelation
+} // thread::enable_cancellation
 
 void
-thread::restore_cancelation_state(
+thread::restore_cancellation_state(
     )
 {
     pthread_t self = pthread_self();
@@ -221,7 +223,7 @@ thread::restore_cancelation_state(
         &old_cancel_types()[&self]
         );
 
-} // thread::restore_cancelation_state
+} // thread::restore_cancellation_state
 
 const thread&
 thread::operator =(
@@ -277,7 +279,7 @@ Subclass Visible Methods
 */
 
 void
-thread::set_cancelation(
+thread::set_cancellation(
     int state
     )
 {

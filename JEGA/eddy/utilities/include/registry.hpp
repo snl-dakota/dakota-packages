@@ -226,7 +226,7 @@ class registry
     */
     public:
 
-        /// Get an iterator to the first element in the container (const)
+        /// Get an iterator to the first element in the container (constant)
         /**
          * \return An iterator to the first element or end if none.
          */
@@ -234,7 +234,7 @@ class registry
         begin(
             ) const;
 
-        /// Get an iterator to the last element in the container (const)
+        /// Get an iterator to the last element in the container (constant)
         /**
          * \return An iterator to one past the last element.
          */
@@ -285,7 +285,7 @@ class registry
         /// Adds value to the registry if it is not already present.
         /**
          * \param value The value to register in this registry.
-         * \return True if \a value is successfully registeredand false
+         * \return True if \a value is successfully registered and false
          *         otherwise.  Failure occurs if \a value is already registered.
          */
         bool
@@ -307,7 +307,7 @@ class registry
 
         /**
          * \brief Returns an iterator pointing to \a value in the registry or
-         *        end if not found (const).
+         *        end if not found (constant).
          *
          * \param value The value to find in this registry.
          * \return Iterator to \a value or end if not found.

@@ -164,7 +164,7 @@ class JEGA_SL_IEDECL Design
             /// Indicates that a Design has been evaluated.
             /**
              * The variables and constraints of an evaluated design must be
-             * valid and correct unless the Illconditioned attribute is also
+             * valid and correct unless the Ill-conditioned attribute is also
              * set.
              */
             Evaluated = 0,
@@ -808,7 +808,7 @@ class JEGA_SL_IEDECL Design
 
         /// Returns true if evaluation failed for this Design.
         /**
-         * \return true if this Design has the Illconditioned attribute
+         * \return true if this Design has the Ill-conditioned attribute
          *         bit set and false otherwise.
          */
         inline
@@ -997,9 +997,9 @@ class JEGA_SL_IEDECL Design
             bool lval
             );
 
-        /// Marks this Design as being illconditioned.
+        /// Marks this Design as being ill-conditioned.
         /**
-         * \param lval True to set the Illconditioned bit and false to
+         * \param lval True to set the Ill-conditioned bit and false to
          *             unset it.
          */
         inline

@@ -6,7 +6,7 @@
 
     CONTENTS:
 
-        Implemntation of class EqualityConstraintType.
+        Implementation of class EqualityConstraintType.
 
     NOTES:
 

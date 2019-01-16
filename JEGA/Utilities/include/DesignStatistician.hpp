@@ -1068,12 +1068,12 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * After this operation, \a from will contain only non-illconditioned
+         * After this operation, \a from will contain only non-ill-conditioned
          * Designs.
          *
          * \param from The container from which to separate out all the
-         *             illconditioned into a new container.
-         * \return The new container containing only the illconditioned of
+         *             ill-conditioned into a new container.
+         * \return The new container containing only the ill-conditioned of
          *         \a from.
          */
         template <typename Set_T>
@@ -1100,12 +1100,12 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * After this operation, \a from will contain only non-illconditioned
+         * After this operation, \a from will contain only non-ill-conditioned
          * Designs.
          *
          * \param from The container from which to separate out all the
-         *             illconditioned into a new container.
-         * \return The new container containing only the illconditioned of
+         *             ill-conditioned into a new container.
+         * \return The new container containing only the ill-conditioned of
          *         \a from.
          */
         template <typename FromSet_T, typename IntoSet_T>
@@ -1127,17 +1127,17 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * After this operation, \a from will contain only non-illconditioned
+         * After this operation, \a from will contain only non-ill-conditioned
          * Designs between the locations of the iterators \a first and \a end.
          *
          * \param from The container from which to separate out all the
-         *             illconditioned in the supplied range into a new
+         *             ill-conditioned in the supplied range into a new
          *             container.
          * \param first The location in \a from at which to begin separating
-         *              the illconditioned.  \a first may be separated out.
+         *              the ill-conditioned.  \a first may be separated out.
          * \param end One past the last location in \a from at which to stop
          *            separating.  \a end will not be separated out.
-         * \return The new container containing only the illconditioned of
+         * \return The new container containing only the ill-conditioned of
          *         the specified range of \a from.
          */
         template <typename Set_T>
@@ -1166,17 +1166,17 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * After this operation, \a from will contain only non-illconditioned
+         * After this operation, \a from will contain only non-ill-conditioned
          * Designs between the locations of the iterators \a first and \a end.
          *
          * \param from The container from which to separate out all the
-         *             illconditioned in the supplied range into a new
+         *             ill-conditioned in the supplied range into a new
          *             container.
          * \param first The location in \a from at which to begin separating
-         *              the illconditioned.  \a first may be separated out.
+         *              the ill-conditioned.  \a first may be separated out.
          * \param end One past the last location in \a from at which to stop
          *            separating.  \a end will not be separated out.
-         * \return The new container containing only the illconditioned of
+         * \return The new container containing only the ill-conditioned of
          *         the specified range of \a from.
          */
         template <typename FromSet_T, typename IntoSet_T>
@@ -1200,12 +1200,12 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * After this operation, \a from will contain only illconditioned
+         * After this operation, \a from will contain only ill-conditioned
          * Designs.
          *
          * \param from The container from which to separate out all the
-         *             non-illconditioned into a new container.
-         * \return The new container containing only the illconditioned of
+         *             non-ill-conditioned into a new container.
+         * \return The new container containing only the ill-conditioned of
          *         \a from.
          */
         template <typename Set_T>
@@ -1232,12 +1232,12 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * After this operation, \a from will contain only illconditioned
+         * After this operation, \a from will contain only ill-conditioned
          * Designs.
          *
          * \param from The container from which to separate out all the
-         *             non-illconditioned into a new container.
-         * \return The new container containing only the illconditioned of
+         *             non-ill-conditioned into a new container.
+         * \return The new container containing only the ill-conditioned of
          *         \a from.
          */
         template <typename FromSet_T, typename IntoSet_T>
@@ -1259,17 +1259,17 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * After this operation, \a from will contain only illconditioned
+         * After this operation, \a from will contain only ill-conditioned
          * Designs between the locations of the iterators \a first and \a end.
          *
          * \param from The container from which to separate out all the
-         *             non-illconditioned in the supplied range into a new
+         *             non-ill-conditioned in the supplied range into a new
          *             container.
          * \param first The location in \a from at which to begin separating
-         *              the non-illconditioned.  \a first may be separated out.
+         *              the non-ill-conditioned.  \a first may be separated out.
          * \param end One past the last location in \a from at which to stop
          *            separating.  \a end will not be separated out.
-         * \return The new container containing only the non-illconditioned of
+         * \return The new container containing only the non-ill-conditioned of
          *         the specified range of \a from.
          */
         template <typename Set_T>
@@ -1298,17 +1298,17 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * After this operation, \a from will contain only illconditioned
+         * After this operation, \a from will contain only ill-conditioned
          * Designs between the locations of the iterators \a first and \a end.
          *
          * \param from The container from which to separate out all the
-         *             non-illconditioned in the supplied range into a new
+         *             non-ill-conditioned in the supplied range into a new
          *             container.
          * \param first The location in \a from at which to begin separating
-         *              the non-illconditioned.  \a first may be separated out.
+         *              the non-ill-conditioned.  \a first may be separated out.
          * \param end One past the last location in \a from at which to stop
          *            separating.  \a end will not be separated out.
-         * \return The new container containing only the non-illconditioned of
+         * \return The new container containing only the non-ill-conditioned of
          *         the specified range of \a from.
          */
         template <typename FromSet_T, typename IntoSet_T>
@@ -1716,7 +1716,7 @@ class DesignStatistician
             );
 
         /**
-         * \brief Finds the illconditioned in \a from and adds them in a new
+         * \brief Finds the ill-conditioned in \a from and adds them in a new
          *        container.
          *
          * Set_T must be default constructible and support an insert
@@ -1725,8 +1725,8 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * \param from The container in which to find illconditioned Designs.
-         * \return A new container holding only the illconditioned found in
+         * \param from The container in which to find ill-conditioned Designs.
+         * \return A new container holding only the ill-conditioned found in
          *         \a from.
          */
         template <typename Set_T>
@@ -1737,7 +1737,7 @@ class DesignStatistician
             );
 
         /**
-         * \brief Finds the illconditioned from the range [first, end) and adds
+         * \brief Finds the ill-conditioned from the range [first, end) and adds
          *        them into a new container.
          *
          * Set_T must be default constructible and support an insert
@@ -1747,11 +1747,11 @@ class DesignStatistician
          * checks the Design::IsIllconditioned method for each.
          *
          * \param first The iterator to the first Design in the range in which
-         *              to search for illconditioned.  \a first will be
+         *              to search for ill-conditioned.  \a first will be
          *              considered.
          * \param end An iterator to one past the last Design in the range in
          *            which to search.  \a end will not be considered.
-         * \return A new container holding only the illconditioned found in the
+         * \return A new container holding only the ill-conditioned found in the
          *         specified range.
          */
         template <typename Set_T>
@@ -1763,7 +1763,7 @@ class DesignStatistician
             );
 
         /**
-         * \brief Finds the illconditioned in \a from and adds them in a new
+         * \brief Finds the ill-conditioned in \a from and adds them in a new
          *        container.
          *
          * Both parameterized container types must hold pointers to Design
@@ -1777,8 +1777,8 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * \param from The container in which to find illconditioned Designs.
-         * \return A new container holding only the illconditioned found in
+         * \param from The container in which to find ill-conditioned Designs.
+         * \return A new container holding only the ill-conditioned found in
          *        \a from.
          */
         template <typename FromSet_T, typename IntoSet_T>
@@ -1789,7 +1789,7 @@ class DesignStatistician
             );
 
         /**
-         * \brief Finds the illconditioned from the range [first, end) and adds
+         * \brief Finds the ill-conditioned from the range [first, end) and adds
          *        them into a new container.
          *
          * Both parameterized container types must hold pointers to Design
@@ -1804,11 +1804,11 @@ class DesignStatistician
          * checks the Design::IsIllconditioned method for each.
          *
          * \param first The iterator to the first Design in the range in which
-         *              to search for illconditioned.  \a first will be
+         *              to search for ill-conditioned.  \a first will be
          *              considered.
          * \param end An iterator to one past the last Design in the range in
          *            which to search.  \a end will not be considered.
-         * \return A new container holding only the illconditioned found in the
+         * \return A new container holding only the ill-conditioned found in the
          *         specified range.
          */
         template <typename FwdIt, typename IntoSet_T>
@@ -1820,7 +1820,7 @@ class DesignStatistician
             );
 
         /**
-         * \brief Finds the non-illconditioned in \a from and adds them in a
+         * \brief Finds the non-ill-conditioned in \a from and adds them in a
          *        new container.
          *
          * Set_T must be default constructible and support an insert
@@ -1829,9 +1829,9 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * \param from The container in which to find non-illconditioned
+         * \param from The container in which to find non-ill-conditioned
          *        Designs.
-         * \return A new container holding only the non-illconditioned found in
+         * \return A new container holding only the non-ill-conditioned found in
          *         \a from.
          */
         template <typename Set_T>
@@ -1842,7 +1842,7 @@ class DesignStatistician
             );
 
         /**
-         * \brief Finds the non-illconditioned from the range [first, end) and
+         * \brief Finds the non-ill-conditioned from the range [first, end) and
          *        adds them into a new container.
          *
          * Set_T must be default constructible and support an insert
@@ -1852,11 +1852,11 @@ class DesignStatistician
          * checks the Design::IsIllconditioned method for each.
          *
          * \param first The iterator to the first Design in the range in which
-         *              to search for non-illconditioned.  \a first will be
+         *              to search for non-ill-conditioned.  \a first will be
          *              considered.
          * \param end An iterator to one past the last Design in the range in
          *            which to search.  \a end will not be considered.
-         * \return A new container holding only the non-illconditioned found in
+         * \return A new container holding only the non-ill-conditioned found in
          *         the specified range.
          */
         template <typename Set_T>
@@ -1868,7 +1868,7 @@ class DesignStatistician
             );
 
         /**
-         * \brief Finds the non-illconditioned in \a from and adds them in a
+         * \brief Finds the non-ill-conditioned in \a from and adds them in a
          *        new container.
          *
          * Both parameterized container types must hold pointers to Design
@@ -1882,9 +1882,9 @@ class DesignStatistician
          * This method does not do any evaluation of the Designs.  It simply
          * checks the Design::IsIllconditioned method for each.
          *
-         * \param from The container in which to find non-illconditioned
+         * \param from The container in which to find non-ill-conditioned
          *             Designs.
-         * \return A new container holding only the non-illconditioned found in
+         * \return A new container holding only the non-ill-conditioned found in
          *         \a from.
          */
         template <typename FromSet_T, typename IntoSet_T>
@@ -1895,7 +1895,7 @@ class DesignStatistician
             );
 
         /**
-         * \brief Finds the non-illconditioned from the range [first, end) and
+         * \brief Finds the non-ill-conditioned from the range [first, end) and
          *        adds them into a new container.
          *
          * Both parameterized container types must hold pointers to Design
@@ -1910,11 +1910,11 @@ class DesignStatistician
          * checks the Design::IsIllconditioned method for each.
          *
          * \param first The iterator to the first Design in the range in which
-         *              to search for non-illconditioned.  \a first will be
+         *              to search for non-ill-conditioned.  \a first will be
          *              considered.
          * \param end An iterator to one past the last Design in the range in
          *            which to search.  \a end will not be considered.
-         * \return A new container holding only the non-illconditioned found in
+         * \return A new container holding only the non-ill-conditioned found in
          *         the specified range.
          */
         template <typename FwdIt, typename IntoSet_T>
@@ -2285,8 +2285,8 @@ class DesignStatistician
          * checks the Design::IsIllconditioned method for each.
          *
          * \param in The container of Designs in which to count the
-         *           illconditioned.
-         * \return The number of illconditioned Designs found in \a in.
+         *           ill-conditioned.
+         * \return The number of ill-conditioned Designs found in \a in.
          */
         template <typename Set_T>
         inline static
@@ -2303,10 +2303,10 @@ class DesignStatistician
          * checks the Design::IsIllconditioned method for each.
          *
          * \param first An iterator to the first Design in the range in which
-         *              to count the illconditioned. \a first may be counted.
+         *              to count the ill-conditioned. \a first may be counted.
          * \param end An iterator to one past the last Design in the range in
          *            which to count. \a end will not be counted.
-         * \return The number of illconditioned Designs found in the range.
+         * \return The number of ill-conditioned Designs found in the range.
          */
         template <typename FwdIt>
         inline static
@@ -2325,8 +2325,8 @@ class DesignStatistician
          * checks the Design::IsIllconditioned method for each.
          *
          * \param in The container of Designs in which to count the
-         *           non-illconditioned.
-         * \return The number of non-illconditioned Designs found in \a in.
+         *           non-ill-conditioned.
+         * \return The number of non-ill-conditioned Designs found in \a in.
          */
         template <typename Set_T>
         inline static
@@ -2343,11 +2343,11 @@ class DesignStatistician
          * checks the Design::IsIllconditioned method for each.
          *
          * \param first An iterator to the first Design in the range in which
-         *              to count the non-illconditioned. \a first may be
+         *              to count the non-ill-conditioned. \a first may be
          *              counted.
          * \param end An iterator to one past the last Design in the range in
          *            which to count. \a end will not be counted.
-         * \return The number of non-illconditioned Designs found in the range.
+         * \return The number of non-ill-conditioned Designs found in the range.
          */
         template <typename FwdIt>
         inline static
@@ -2845,9 +2845,9 @@ class DesignStatistician
          * Set_T must be a forward iteratable STL compliant container
          * supplying methods to begin and end.
          *
-         * \param in The container in which to find the first illconditioned
+         * \param in The container in which to find the first ill-conditioned
          *           Design.
-         * \return An iterator to the first illconditioned design found in
+         * \return An iterator to the first ill-conditioned design found in
          *         \a cont.
          */
         template <typename Set_T>
@@ -2865,11 +2865,11 @@ class DesignStatistician
          * dereferenced.
          *
          * \param first An iterator to the first Design to consider when
-         *              finding an illconditioned one.  \a first may be
+         *              finding an ill-conditioned one.  \a first may be
          *              returned.
          * \param end An iterator to one past the last Design to consider when
-         *            finding an illconditioned one.
-         * \return Returns an iterator to the first illconditioned Design in
+         *            finding an ill-conditioned one.
+         * \return Returns an iterator to the first ill-conditioned Design in
          *         the range [first, end) or end if none.
          */
         template <typename FwdIt>
@@ -2888,8 +2888,8 @@ class DesignStatistician
          * supplying methods to begin and end.
          *
          * \param in The container in which to find the first
-         *           non-illconditioned Design.
-         * \return An iterator to the first non-illconditioned design found in
+         *           non-ill-conditioned Design.
+         * \return An iterator to the first non-ill-conditioned design found in
          *         \a cont.
          */
         template <typename Set_T>
@@ -2907,11 +2907,11 @@ class DesignStatistician
          * dereferenced.
          *
          * \param first An iterator to the first Design to consider when
-         *              finding a non-illconditioned one.  \a first may be
+         *              finding a non-ill-conditioned one.  \a first may be
          *              returned.
          * \param end An iterator to one past the last Design to consider when
-         *            finding a non-illconditioned one.
-         * \return Returns an iterator to the first non-illconditioned Design
+         *            finding a non-ill-conditioned one.
+         * \return Returns an iterator to the first non-ill-conditioned Design
          *         in the range [first, end) or end if none.
          */
         template <typename FwdIt>

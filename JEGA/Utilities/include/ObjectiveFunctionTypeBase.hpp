@@ -223,7 +223,7 @@ class JEGA_SL_IEDECL ObjectiveFunctionTypeBase
         GetObjectiveFunctionInfo(
             );
 
-        /// Returns the ObjectiveFunctionInfo object known by this (const)
+        /// Returns the ObjectiveFunctionInfo object known by this (constant)
         /**
          * \return The ObjectiveFunctionInfo for which this is the type.
          */
@@ -362,7 +362,7 @@ class JEGA_SL_IEDECL ObjectiveFunctionTypeBase
             ) const = 0;
 
         /**
-         * \brief This method attempts to evalutate this objective function for
+         * \brief This method attempts to evaluate this objective function for
          *        \a des.
          *
          * This may not be possible.  Generally, only linear objective

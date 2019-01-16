@@ -220,7 +220,7 @@ public ref class MDriver :
          *        number generator.
          *
          * This is not necessarily the same as the value provided to the
-         * InitializeJEGA method.  When that method is provided with a sentinal
+         * InitializeJEGA method.  When that method is provided with a sentinel
          * seed value, a seed is generated based on the clock and the time.
          * Therefore, this method provides access to whatever value was
          * actually used.
@@ -237,7 +237,7 @@ public ref class MDriver :
          *        for log messages.
          *
          * This will be the same name that was provided to the InitializeJEGA
-         * method.  It is provided as a convenience so that that information
+         * method.  It is provided as a convenience so that the information
          * does not have to be remembered externally.
          *
          * \return The name of the file to which the global log is logging if
@@ -292,7 +292,7 @@ public ref class MDriver :
          * \brief Allows access to the proxied JEGA front end Driver wrapped by
          *        this object.
          *
-         * \returm The JEGA::FrontEnd::Driver that is underlying this managed
+         * \return The JEGA::FrontEnd::Driver that is underlying this managed
          *         wrapper.
          */
         JEGA::FrontEnd::Driver&
@@ -346,7 +346,7 @@ public ref class MDriver :
          * \param rSeed The seed to supply the random number generator.  A
          *              supplied value of 0 causes the seed to be randomized
          *              by time() and clock().
-         * \return The seed that was acutally used in re-seeding.  This may be
+         * \return The seed that was actually used in re-seeding.  This may be
          *         the value passed in or if 0 is supplied, it will be the value
          *         generated using time() and clock().
          */

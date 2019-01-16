@@ -60,6 +60,7 @@ Includes
 #include <../Utilities/include/JEGAConfig.hpp>
 
 #include <cfloat>
+#include <type_traits>
 #include <utilities/include/Math.hpp>
 #include <../Utilities/include/Logging.hpp>
 #include <utilities/include/EDDY_DebugScope.hpp>
@@ -102,8 +103,46 @@ namespace JEGA {
 Static Member Data Definitions
 ================================================================================
 */
+struct YesIntCaster
+{
+    inline static long long Cast(var_rep_t val)
+    {
+        return static_cast<long long>(val);
+    }
+};
+
+struct NoIntCaster
+{
+    inline static var_rep_t Cast(var_rep_t val)
+    {
+        return val;
+    }
+};
+
+struct IntRepTRNG
+{
+    inline static var_rep_t RNG(var_rep_t lb, var_rep_t ub)
+    {
+        typedef std::conditional<
+            std::is_integral<var_rep_t>::value, NoIntCaster, YesIntCaster
+            >::type caster;
+
+        return static_cast<var_rep_t>(RandomNumberGenerator::UniformInt(
+            caster::Cast(lb), caster::Cast(ub)
+            ));
+    }
+};
 
 
+struct RealRepTRNG
+{
+    inline static var_rep_t RNG(var_rep_t lb, var_rep_t ub)
+    {
+        return static_cast<var_rep_t>(
+            RandomNumberGenerator::UniformReal(lb, ub)
+            );
+    }
+};
 
 
 
@@ -197,12 +236,17 @@ ContinuumDesignVariableNature::GetMinRep(
 
 var_rep_t
 ContinuumDesignVariableNature::GetRandomRep(
-    double lb,
-    double ub
+    var_rep_t lb,
+    var_rep_t ub
     ) const
 {
     EDDY_FUNC_DEBUGSCOPE
-    return static_cast<var_rep_t>(RandomNumberGenerator::UniformReal(lb, ub));
+
+    typedef std::conditional<
+        std::is_integral<var_rep_t>::value, IntRepTRNG, RealRepTRNG
+        >::type rng_t;
+
+    return static_cast<var_rep_t>(rng_t::RNG(lb, ub));
 }
 
 var_rep_t
@@ -408,7 +452,9 @@ ContinuumDesignVariableNature::GetNearestValidValue(
 
     // The best guess that this nature can make is
     // to return something in bounds
-    return Math::Max(Math::Min(value, this->GetMaxValue()), this->GetMinValue());
+    return Math::Max(
+        Math::Min(value, this->GetMaxValue()), this->GetMinValue()
+        );
 }
 
 var_rep_t

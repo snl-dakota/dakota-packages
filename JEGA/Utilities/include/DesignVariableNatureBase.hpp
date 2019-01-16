@@ -193,7 +193,7 @@ class JEGA_SL_IEDECL DesignVariableNatureBase
         GetType(
             );
 
-        /// Returns the DesignVariableTypeBase known by this object (const)
+        /// Returns the DesignVariableTypeBase known by this object (constant)
         /**
          * \return The type that is used in conjunction with this nature to
          *         define the behavior of a variable.
@@ -380,8 +380,8 @@ class JEGA_SL_IEDECL DesignVariableNatureBase
         virtual
         var_rep_t
         GetRandomRep(
-            double lb,
-            double ub
+            var_rep_t lb,
+            var_rep_t ub
             ) const = 0;
 
         /**
@@ -673,7 +673,7 @@ class JEGA_SL_IEDECL DesignVariableNatureBase
         /// Override to return true if the nature of this variable is Discrete.
         /**
          * This method exists because Discrete and Continuum natures are
-         * the two most common and so it is convienient to directly
+         * the two most common and so it is convenient to directly
          * poll for them.
          *
          * \return True if this design variable has a discrete nature and false
@@ -689,7 +689,7 @@ class JEGA_SL_IEDECL DesignVariableNatureBase
          *        Continuum.
          *
          * This method exists because Discrete and Continuum natures are
-         * the two most common and so it is convienient to directly
+         * the two most common and so it is convenient to directly
          * poll for them.
          *
          * \return True if this design variable has a continuum nature and

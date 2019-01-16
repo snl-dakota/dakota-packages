@@ -221,7 +221,7 @@ class keyed_registry
     */
     public:
 
-        /// Get an iterator to the first element in the container (const)
+        /// Get an iterator to the first element in the container (constant)
         /**
          * \return An iterator to the first element or end if none.
          */
@@ -229,7 +229,7 @@ class keyed_registry
         begin(
             ) const;
 
-        /// Get an iterator to the last element in the container (const)
+        /// Get an iterator to the last element in the container (constant)
         /**
          * \return An iterator to one past the last element.
          */
@@ -310,7 +310,7 @@ class keyed_registry
 
         /**
          * \brief Returns an iterator pointing to key-value pair in the
-         *        registry or end() if not found (const).
+         *        registry or end() if not found (constant).
          *
          * \param key The key whose key,value pair is to be found in this
          *            registry.

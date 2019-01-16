@@ -388,7 +388,7 @@ class MOGAConverger :
 
 
         /**
-         * \brief Flushes the previous set then refills it with with duplicates
+         * \brief Flushes the previous set then refills it with duplicates
          *        of the Designs in the supplied set.
          *
          * \param newSet The set of Designs to use in updating the \a _prevParSet.

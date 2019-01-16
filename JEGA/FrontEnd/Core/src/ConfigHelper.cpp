@@ -64,7 +64,7 @@ Includes
 
 #include <../Utilities/include/DesignTarget.hpp>
 
-// Design Variable Info Relavant Includes
+// Design Variable Info Relevant Includes
 #include <../Utilities/include/DesignVariableInfo.hpp>
 #include <../Utilities/include/RealDesignVariableType.hpp>
 #include <../Utilities/include/BooleanDesignVariableType.hpp>
@@ -72,7 +72,7 @@ Includes
 #include <../Utilities/include/ContinuumDesignVariableNature.hpp>
 #include <../Utilities/include/DiscreteDesignVariableNature.hpp>
 
-// Objective Function Info Relavant Includes
+// Objective Function Info Relevant Includes
 #include <../Utilities/include/ObjectiveFunctionInfo.hpp>
 #include <../Utilities/include/MinimizeObjectiveFunctionType.hpp>
 #include <../Utilities/include/MaximizeObjectiveFunctionType.hpp>
@@ -81,7 +81,7 @@ Includes
 #include <../Utilities/include/SeekRangeObjectiveFunctionType.hpp>
 #include <../Utilities/include/NonLinearObjectiveFunctionNature.hpp>
 
-// Constraint Info Relavant Includes
+// Constraint Info Relevant Includes
 #include <../Utilities/include/ConstraintInfo.hpp>
 #include <../Utilities/include/EqualityConstraintType.hpp>
 #include <../Utilities/include/LinearConstraintNature.hpp>

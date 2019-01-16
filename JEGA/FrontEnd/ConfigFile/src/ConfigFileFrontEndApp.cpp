@@ -1488,11 +1488,22 @@ ConfigFileFrontEndApp::Run(
         this->ValidateAllInput();
 
         // All programs must initialize JEGA once and only once.
-        Driver::InitializeJEGA(
-            CFFE_GETVAR(_globLogFile),
-            this->ResolveLogLevel(CFFE_GETVAR(_globLogLevel)),
-            static_cast<unsigned int>(CFFE_GETVAR(_rndSeed))
-            );
+        if(!Driver::IsJEGAInitialized())
+        {
+            Driver::InitializeJEGA(
+                CFFE_GETVAR(_globLogFile),
+                this->ResolveLogLevel(CFFE_GETVAR(_globLogLevel)),
+                static_cast<unsigned int>(CFFE_GETVAR(_rndSeed))
+                );
+        }
+        else
+        {
+            //Driver::FlushGlobalLogStreams();
+            Driver::ResetGlobalLoggingLevel(
+                this->ResolveLogLevel(CFFE_GETVAR(_globLogLevel))
+                );
+            Driver::ReSeed(static_cast<unsigned int>(CFFE_GETVAR(_rndSeed)));
+        }
 
         this->LoadParameterDatabase();
         this->LoadProblemConfig();

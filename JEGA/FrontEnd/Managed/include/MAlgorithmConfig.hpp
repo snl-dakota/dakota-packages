@@ -399,7 +399,7 @@ public ref class MAlgorithmConfig :
          * \brief Allows access to the JEGA core algorithm configuration object
          *        wrapped by this managed type.
          *
-         * \return The JEGA front end algortihm config that will actually be
+         * \return The JEGA front end algorithm config that will actually be
          *         used by JEGA to configure an algorithm to be run.
          */
         const JEGA::FrontEnd::AlgorithmConfig&

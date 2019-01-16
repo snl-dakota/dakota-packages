@@ -116,7 +116,7 @@ UnconstrainedStatistician::Penalizer::CheckDesign(
         )
 
     JEGAIFLOG_CF_IT_G(illCond, lquiet(), UnconstrainedStatistician,
-        text_entry(lquiet(), "Applying penalty to illconditioned Design.  "
+        text_entry(lquiet(), "Applying penalty to ill-conditioned Design.  "
             "Result may be nonsensical.")
         )
 

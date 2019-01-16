@@ -285,7 +285,7 @@ condition::condition(
     if(pthread_condattr_init(&attributes) != 0)
         throw resource_error("condition::condition failed to init attributes.");
 
-    // if the seting of attributes fails, it means sharing is invalid
+    // if the setting of attributes fails, it means sharing is invalid
     if(pthread_condattr_setpshared(&attributes, sharing) != 0)
         throw logical_error("condition::condition invalid sharing argument");
 

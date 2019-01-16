@@ -312,10 +312,10 @@ class EDDY_SL_IEDECL mutex
                                       repeatedly by the owner and becomes
                                       unlocked when the owner unlocks it as
                                       many times as it locked it.
-            PTHREAD_MUTEX_ERRORCHECK - an errorcheck mutex checks for deadlock
+            PTHREAD_MUTEX_ERRORCHECK - an error check mutex checks for deadlock
                                        conditions that occur when a
                                        thread re-locks an already held mutex.
-                                       If a thread attempts to relock a mutex
+                                       If a thread attempts to re-lock a mutex
                                        that it already holds, the lock request
                                        fails with the EDEADLK error.
             PTHREAD_MUTEX_DEFAULT = PTHREAD_MUTEX_NORMAL
