@@ -1617,7 +1617,7 @@ class bit_mask_facade
 
         /// Statically downcasts this to a const most_derived_type&.
         /**
-         * \return \a casted casted to a const most_derived_type&.
+         * \return \a this casted to a const most_derived_type&.
          */
         inline
         const most_derived_type&
@@ -2446,7 +2446,7 @@ class bit_mask :
             clear();
 
             // Figure out how many bytes of information to copy over.
-            // it is the min of the number avaiable from other and the number
+            // it is the min of the number available from other and the number
             // this can hold.
 
             // First, figure out how many are available.
@@ -2878,7 +2878,7 @@ class dynamic_bit_mask :
 
 #ifdef sun
 
-            // continue to rip off chuncs of bits and putting them in our bits
+            // continue to rip off chunks of bits and putting them in our bits
             // array until either we have used all of the uint or all of the
             // bits array.
             size_type max_index = this->array_size() - 1;

@@ -306,8 +306,8 @@ class JEGA_SL_IEDECL DiscreteDesignVariableNature :
         virtual
         var_rep_t
         GetRandomRep(
-            double lb,
-            double ub
+            var_rep_t lb,
+            var_rep_t ub
             ) const;
 
         /// Returns the proper representation of \a value as a double.

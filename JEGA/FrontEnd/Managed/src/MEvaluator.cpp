@@ -141,7 +141,7 @@ class BaseEvaluator :
                 ret = this->_managedEvaluator->PerformEvaluation(des);
 
                 // if PerformEvaluation returned badly, we mark the
-                // design illconditioned.
+                // design ill-conditioned.
                 if(!ret) des.SetIllconditioned(true);
             }
             catch(...) {
@@ -149,7 +149,7 @@ class BaseEvaluator :
             }
 
             // Do base class evaluation finalization no matter what.
-            // It knows enough to properly handle illconditioned designs.
+            // It knows enough to properly handle ill-conditioned designs.
             return this->GeneticAlgorithmEvaluator::PostEvaluate(des) && ret;
         }
 
@@ -437,7 +437,7 @@ MEvaluator::PerformEvaluation(
                 "Managed Evaluator caught an exception thrown by the "
                 "evaluation functor reading \"" + ToStdStr(ex->Message) +
                 "\".  The design being evaluated will be considered "
-                "illconditioned."
+                "ill-conditioned."
                 )
             )
 
@@ -490,7 +490,7 @@ MEvaluator::PerformEvaluation(
                 "Managed Evaluator caught an exception thrown by the "
                 "evaluation functor reading \"" + ToStdStr(ex->Message) +
                 "\".  The designs being evaluated will be considered "
-                "illconditioned."
+                "ill-conditioned."
                 )
             )
 

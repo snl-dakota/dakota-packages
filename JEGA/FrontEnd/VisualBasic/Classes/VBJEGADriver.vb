@@ -100,7 +100,7 @@ Namespace JEGA.FrontEnd.VisualBasic
     ''' a call to <code>VBJEGADriver.InitializeJEGA</code>.  This should get
     ''' called once and only once.  Once that is done, the Driver can be used
     ''' in a number of ways and multiple Drivers can be operating
-    ''' simultaneously (from mutliple threads if JEGA was compiled with thread
+    ''' simultaneously (from multiple threads if JEGA was compiled with thread
     ''' awareness).  The most common way to use it is to create one with a
     ''' MProblemConfig or VBJEGAProblemConfigLoader as the constructor argument
     ''' in the usual VB syntax.  For example:
@@ -152,7 +152,7 @@ Namespace JEGA.FrontEnd.VisualBasic
     ''' MAlgorithmConfig object needed and load it by calling
     ''' <code>algConfigLoader.LoadConfiguration(newConfig)</code>.  It will
     ''' also create the necessary evaluator object from the supplied functor
-    ''' which must be done explicitely if using the first example.
+    ''' which must be done explicitly if using the first example.
     '''
     ''' You could use the driver to solve the same problem using multiple
     ''' algorithm configurations by repeating the above code over and over.  In

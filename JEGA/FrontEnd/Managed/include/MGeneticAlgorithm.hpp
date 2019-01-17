@@ -252,7 +252,7 @@ public ref class MGeneticAlgorithm :
         /**
          * This should return whatever this algorithm would claim to be the
          * optimal solutions if it had to stop on the spot.  This can be
-         * an expensive call and is meant primarly for use after the call
+         * an expensive call and is meant primarily for use after the call
          * to AlgorithmFinalize at which time this should return the final
          * solution found by the algorithm.
          *

@@ -419,7 +419,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetDesignTarget(
             );
 
-        /// Returns the DesignTarget known by this algorithm (const).
+        /// Returns the DesignTarget known by this algorithm (constant).
         /**
          * \return An immutable reference to the know DesignTarget.
          */
@@ -437,7 +437,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetOperatorSet(
             );
 
-        /// Returns the current operator set for this algorithm (const)
+        /// Returns the current operator set for this algorithm (constant)
         /**
          * \return An immutable reference to the contained operator set.
          */
@@ -446,7 +446,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetOperatorSet(
             ) const;
 
-        /// Returns the operator group being used by this algorithm (const).
+        /// Returns the operator group being used by this algorithm (constant).
         /**
          * \return An immutable reference to the operator group currently in
          *         use.
@@ -465,7 +465,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetPopulation(
             );
 
-        /// Returns the current population of Designs (const)
+        /// Returns the current population of Designs (constant)
         /**
          * \return An immutable reference to the current population of designs.
          */
@@ -483,7 +483,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetOffspring(
             );
 
-        /// Returns the current set of offspring Designs (const)
+        /// Returns the current set of offspring Designs (constant)
         /**
          * \return An immutable reference to the current set of children
          *         designs.
@@ -596,7 +596,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetLogger(
             ) const;
 
-        /// Returns the mutator being used by this algorithm (const).
+        /// Returns the mutator being used by this algorithm (constant).
         /**
          * \return An immutable reference to the current mutator.
          */
@@ -605,7 +605,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetMutator(
             ) const;
 
-        /// Returns the converger being used by this algorithm (const).
+        /// Returns the converger being used by this algorithm (constant).
         /**
          * \return An immutable reference to the current converger.
          */
@@ -614,7 +614,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetConverger(
             ) const;
 
-        /// Returns the crosser being used by this algorithm (const).
+        /// Returns the crosser being used by this algorithm (constant).
         /**
          * \return An immutable reference to the current crosser.
          */
@@ -623,7 +623,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetCrosser(
             ) const;
 
-        /// Returns the fitness assessor being used by this algorithm (const).
+        /// Returns the fitness assessor being used by this algorithm (constant).
         /**
          * \return An immutable reference to the current fitness assessor.
          */
@@ -632,7 +632,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetFitnessAssessor(
             ) const;
 
-        /// Returns the initializer being used by this algorithm (const).
+        /// Returns the initializer being used by this algorithm (constant).
         /**
          * \return An immutable reference to the current initializer.
          */
@@ -641,7 +641,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetInitializer(
             ) const;
 
-        /// Returns the selector being used by this algorithm (const).
+        /// Returns the selector being used by this algorithm (constant).
         /**
          * \return An immutable reference to the current selector.
          */
@@ -650,7 +650,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetSelector(
             ) const;
 
-        /// Returns the post processor being used by this algorithm (const).
+        /// Returns the post processor being used by this algorithm (constant).
         /**
          * \return An immutable reference to the current post processor.
          */
@@ -659,7 +659,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetPostProcessor(
             ) const;
 
-        /// Returns the evaluator being used by this algorithm (const).
+        /// Returns the evaluator being used by this algorithm (constant).
         /**
          * \return An immutable reference to the current evaluator.
          */
@@ -670,7 +670,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
 
         /**
          * \brief Returns the niche pressure applicator being used by this
-         *        algorithm (const).
+         *        algorithm (constant).
          *
          * \return An immutable reference to the current niche pressure
          *         applicator.
@@ -680,7 +680,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
         GetNichePressureApplicator(
             ) const;
 
-        /// Returns the main loop being used by this algorithm (const).
+        /// Returns the main loop being used by this algorithm (constant).
         /**
          * \return An immutable reference to the current main loop.
          */

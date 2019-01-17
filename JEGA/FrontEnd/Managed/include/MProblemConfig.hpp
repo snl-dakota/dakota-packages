@@ -197,35 +197,7 @@ public ref class MProblemConfig :
 
         /// A pointer to the actual underlying problem configuration object.
         JEGA::FrontEnd::ProblemConfig* _theConfig;
-
-
-    /*
-    ============================================================================
-    Mutators
-    ============================================================================
-    */
-    public:
-
-
-    protected:
-
-
-    private:
-
-
-    /*
-    ============================================================================
-    Accessors
-    ============================================================================
-    */
-    public:
-
-
-    protected:
-
-
-    private:
-
+        
 
     /*
     ============================================================================
@@ -574,6 +546,27 @@ public ref class MProblemConfig :
             );
 
         /**
+        * \brief Adds a linear, not-equality constraint to the target
+        *        using the supplied information.
+        *
+        * \param label The label for the new constraint description.
+        * \param target The value that this constraint cannot take on. Any other
+        *               value is acceptable.
+        * \param coeffs The coefficients for the linear equation of this
+        *               constraint.  If not supplied, the created info object
+        *               will be unable to evaluate itself.
+        * \return True if the new description is added successfully and false
+        *         if not.  This comes directly from the
+        *         ConfigHelper::AddLinearNotEqualityConstraint method.
+        */
+        bool
+        AddLinearNotEqualityConstraint(
+            System::String^ label,
+            double target,
+            DoubleVector^ coeffs
+            );
+
+        /**
          * \brief Adds a non-linear, single-sided inequality constraint to the
          *        target using the supplied information.
          *
@@ -608,6 +601,23 @@ public ref class MProblemConfig :
             System::String^ label,
             double target,
             double allowedViol
+            );
+
+        /**
+        * \brief Adds a non-linear, not-equality constraint to the target
+        *        using the supplied information.
+        *
+        * \param label The label for the new constraint description.
+        * \param target The value that this constraint cannot take on. Any other
+        *               value is acceptable
+        * \return True if the new description is added successfully and false
+        *         if not.  This comes directly from the
+        *         ConfigHelper::AddNonlinearNotEqualityConstraint method.
+        */
+        bool
+        AddNonlinearNotEqualityConstraint(
+            System::String^ label,
+            double target
             );
 
         /**

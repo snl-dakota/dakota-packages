@@ -402,9 +402,9 @@ public ref class MDesign
         SatisfiesConstraints(
             );
 
-        /// Marks this Design as being illconditioned.
+        /// Marks this Design as being ill-conditioned.
         /**
-         * \param lval True to set the Illconditioned bit and false to
+         * \param lval True to set the Ill-conditioned bit and false to
          *             unset it.
          */
         void
@@ -414,7 +414,7 @@ public ref class MDesign
 
         /// Returns true if evaluation failed for this Design.
         /**
-         * \return true if this Design has the Illconditioned attribute
+         * \return true if this Design has the Ill-conditioned attribute
          *         bit set and false otherwise.
          */
         bool

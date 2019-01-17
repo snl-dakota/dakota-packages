@@ -590,7 +590,7 @@ DesignFileReader::RecordValues(
             (*it)->GetRepOf(from.at(index++))
             );
 
-        // if the rep is not valid, this design is illconditioned
+        // if the rep is not valid, this design is ill-conditioned
         if(!(*it)->IsValidRep(rep)) into.SetIllconditioned(true);
 
         // continue on anyway and fill up the Design.

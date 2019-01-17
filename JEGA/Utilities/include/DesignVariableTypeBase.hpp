@@ -166,7 +166,7 @@ class JEGA_SL_IEDECL DesignVariableTypeBase
 
         /// This object is used to define the nature of the design variable.
         /**
-         * Some examples of natures are "Descrete" and "Continuum".
+         * Some examples of natures are "Discrete" and "Continuum".
          */
         DesignVariableNatureBase* _nature;
 
@@ -206,7 +206,7 @@ class JEGA_SL_IEDECL DesignVariableTypeBase
         GetDesignVariableInfo(
             );
 
-        /// Returns the DesignVariableInfo object known by this (const)
+        /// Returns the DesignVariableInfo object known by this (constant)
         /**
          * \return The DesignVariableInfo for which this is the type.
          */
@@ -713,7 +713,7 @@ class JEGA_SL_IEDECL DesignVariableTypeBase
         /// Returns true if the nature of this variable is Discrete.
         /**
          * This method exists because Discrete and Continuum natures are
-         * the two most common and so it is convienient to directly
+         * the two most common and so it is convenient to directly
          * poll for them.
          *
          * \return True if this design variable has a discrete nature and false
@@ -727,7 +727,7 @@ class JEGA_SL_IEDECL DesignVariableTypeBase
         /// Returns true if the nature of this variable is Continuum.
         /**
          * This method exists because Discrete and Continuum natures are
-         * the two most common and so it is convienient to directly
+         * the two most common and so it is convenient to directly
          * poll for them.
          *
          * \return True if this design variable has a continuum nature and

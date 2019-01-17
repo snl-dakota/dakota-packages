@@ -542,7 +542,7 @@ class JEGA_SL_IEDECL GeneticAlgorithmEvaluator :
          * typically called as the last step in the Evaluate methods.  It
          * is set up so that it can generally be returned directly from those
          * methods since if evaluation failed, the design should be marked
-         * illconditioned.
+         * ill-conditioned.
          *
          * \param des The Design class object that is being post-evaluated.
          * \return The conditioning status if \a des (true if des is NOT

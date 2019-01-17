@@ -476,7 +476,7 @@ class JEGA_SL_IEDECL ObjectiveFunctionInfo :
 
         /// Destructs an ObjectiveFunctionInfo object.
         /**
-         * This destructor destoys the type object.
+         * This destructor destroys the type object.
          */
         virtual
         ~ObjectiveFunctionInfo(

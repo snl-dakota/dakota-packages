@@ -304,8 +304,8 @@ class FitnessRecord
 
         /// Required override of the FitnessRecord base class.
         /**
-         * This implemenation uses the DesignValueMap base class for retrieval
-         * of the fitnesses assocated with supplied designs.
+         * This implementation uses the DesignValueMap base class for retrieval
+         * of the fitnesses associated with supplied designs.
          *
          * If the fitness of des cannot be determined from this record, then
          * -limits::max is returned.

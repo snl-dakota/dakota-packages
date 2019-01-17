@@ -152,7 +152,7 @@ Class Definition
 /**
  * The design variable values represented by this type are Boolean.
  * Although they are represented as real numbers, they are formatted
- * such that they are always true or false (1 or 0 respecitively).
+ * such that they are always true or false (1 or 0 respectively).
  */
 class BooleanDesignVariableType :
     public DesignVariableTypeBase

@@ -155,7 +155,7 @@ Class Definition
 /**
  * \brief A class to store a solution from JEGA for the managed project.
  *
- * This does not acutally wrap a JEGA class.   It is however built using
+ * This does not actually wrap a JEGA class.   It is however built using
  * a JEGA core Design class object and the interface to this class is similar
  * to that of a JEGA Design.
  */
@@ -397,7 +397,7 @@ public ref class MSolution
 
         /// Returns true if evaluation failed for this Solution.
         /**
-         * \return true if this Solution has the Illconditioned attribute
+         * \return true if this Solution has the Ill-conditioned attribute
          *         bit set and false otherwise.
          */
         inline

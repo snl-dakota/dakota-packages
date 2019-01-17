@@ -178,7 +178,7 @@ class SimpleFunctorEvaluator :
 
         /**
          * \brief A callback functor interface for classes that will perform
-         *        actual evaluations when this evalutator is called.
+         *        actual evaluations when this evaluator is called.
          *
          * Implementors must override the Evaluate method to perform the actual
          * evaluations of the objectives and constraints based on the design
@@ -465,7 +465,7 @@ class SimpleFunctorEvaluator :
          *
          * \param algorithm The GA for which this evaluator is being
          *                  constructed.
-         * \param theFunc The Funtor that will be used to acutally perform
+         * \param theFunc The Functor that will be used to actually perform
          *                evaluations.
          */
         SimpleFunctorEvaluator(

@@ -140,7 +140,7 @@ Class Definition
 
 /// A nature for continuum design variables.
 /**
- * A continuum is defined by merriam webster as:
+ * A continuum is defined by Merriam Webster as:
  *
  * \verbatim
     "a coherent whole characterized as a collection,
@@ -284,8 +284,8 @@ class JEGA_SL_IEDECL ContinuumDesignVariableNature :
         virtual
         var_rep_t
         GetRandomRep(
-            double lb,
-            double ub
+            var_rep_t lb,
+            var_rep_t ub
             ) const;
 
         /// Returns the proper representation of \a value as a double.

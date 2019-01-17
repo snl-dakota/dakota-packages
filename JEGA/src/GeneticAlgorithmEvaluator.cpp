@@ -683,7 +683,7 @@ GeneticAlgorithmEvaluator::MergeInjectedDesigns(
                 text_entry(
                     lquiet(),
                     this->GetName() + ": encountered and skipped an "
-                    "illconditioned injection design.  The design was not "
+                    "ill-conditioned injection design.  The design was not "
                     "merged into the group."
                     )
                 )
@@ -827,7 +827,7 @@ GeneticAlgorithmEvaluator::Evaluate(
     JEGAIFLOG_II(nskipped > 0, this->GetLogger(), lquiet(), this,
         ostream_entry(lquiet(), this->GetName() + ": skipped evaluation of ")
             << nskipped << " designs because the maximum number of "
-               "evaluations was reached.  They were marked illconditioned."
+               "evaluations was reached.  They were marked ill-conditioned."
         )
 
     return twm.final_result();

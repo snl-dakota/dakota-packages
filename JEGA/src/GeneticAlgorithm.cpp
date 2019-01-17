@@ -601,7 +601,7 @@ GeneticAlgorithm::LogIllconditionedDesigns(
     {
         ostream_entry ent(lquiet(), this->GetName());
 
-        ent << ": Design Variable Values for Illconditioned "
+        ent << ": Design Variable Values for Ill-conditioned "
                "Designs:\n";
         
         for(
@@ -673,7 +673,7 @@ GeneticAlgorithm::ValidateVariableValues(
             {
                 JEGALOG_II(this->GetLogger(), lquiet(), this,
                     ostream_entry(lquiet(), this->GetName() + ": "
-                        "Non-correctable invalid value of ")
+                        "Non-correctable invalid variable rep of ")
                         << rep << " found for variable " << dvi.GetLabel()
                     )
                 des->SetIllconditioned(true);
@@ -687,10 +687,11 @@ GeneticAlgorithm::ValidateVariableValues(
             {
                 JEGALOG_II(this->GetLogger(), lquiet(), this,
                     ostream_entry(
-                        lquiet(), this->GetName() + ": Invalid value of "
+                        lquiet(), this->GetName() + ": Invalid variable rep of "
                         )
                         << rep << " found for variable " << dvi.GetLabel()
-                        << ".  Corrected to " << corrected << "."
+                        << ".  Corrected to " << corrected << " (value="
+                        << dvi.GetValueOf(corrected) << ")."
                     )
                 des->SetVariableRep(dv, corrected);
                 des->RemoveAsClone();
@@ -730,7 +731,7 @@ GeneticAlgorithm::ValidateVariableValues(
                         this->GetLogger(),
                         ostream_entry(lfatal(),
                             "Invalid variable representation found in "
-                            "non-illconditioned design after variable "
+                            "non-ill-conditioned design after variable "
                             "correction operation.  Variable ")
                                 << (*dvit)->GetLabel() << ", Representation "
                                 << (*dvit)->WhichRep(**dit)
@@ -1225,7 +1226,7 @@ GeneticAlgorithm::AlgorithmInitialize(
                 lquiet(), this->GetName() + ": encountered and flushed "
                 )
                 << nrem
-                << " illconditioned designs after evaluation of the initial "
+                << " ill-conditioned designs after evaluation of the initial "
                    "population."
                 )
     }

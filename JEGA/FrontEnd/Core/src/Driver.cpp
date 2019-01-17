@@ -463,7 +463,7 @@ Driver::ExtractAllData(
         this->LoadAlgorithm(*theGA, algConfig);
 
         // Add newLog to the list of logs that we are responsible for
-        // destroyting iff it is non-null.
+        // destroying iff it is non-null.
         if(newLog != 0x0)
             this->_myLogs.insert(GALoggerMap::value_type(theGA, newLog));
 

@@ -432,7 +432,7 @@ DesignStatistician::GetDesignVariableExtremes(
 {
     EDDY_FUNC_DEBUGSCOPE
 
-    // If from is emtpy, we cannot return anything sensible.
+    // If from is empty, we cannot return anything sensible.
     if(from.empty()) return eddy::utilities::extremes<var_rep_t>();
 
     // retrieve the number of objective functions.

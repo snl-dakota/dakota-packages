@@ -146,7 +146,7 @@ In-Namespace File Scope Typedefs
 
 /**
  * \brief A container for all the information objects describing a set of
- *        Design varaibles.
+ *        Design variables.
  */
 typedef
 std::vector<DesignVariableInfo*>
@@ -367,7 +367,7 @@ class JEGA_SL_IEDECL DesignTarget
     */
     public:
 
-        /// Gets the discarded Design's stored in this (const).
+        /// Gets the discarded Design's stored in this (constant).
         /**
          * This method uses mutex protection to protect this set from
          * multi-thread corruption.  A lock is placed on the associated mutex.
@@ -465,7 +465,7 @@ class JEGA_SL_IEDECL DesignTarget
 
         /// Returns true if all variable values in \a des are in bounds.
         /**
-         * \param des The Design of which to test compilance with the side
+         * \param des The Design of which to test compliance with the side
          *            constraints.
          * \return true if \a des satisfies all side constraints and false
          *         otherwise.
@@ -477,7 +477,7 @@ class JEGA_SL_IEDECL DesignTarget
 
         /// Returns true if all non-side constraints are satisfied by des".
         /**
-         * \param des The Design of which to test compilance with the
+         * \param des The Design of which to test compliance with the
          *            functional constraints of the problem.
          * \return true if \a des satisfies all non-side constraints and false
          *         otherwise.
@@ -524,7 +524,7 @@ class JEGA_SL_IEDECL DesignTarget
          * Since the target stores discards under certain circumstances, it is
          * possible to get them back.  It is only safe to call this for designs
          * that you have discovered by iterating the discards group after a
-         * checkout and prior to a checkin.
+         * checkout and prior to a check-in.
          *
          * \param des The now again wanted Design.
          * \return True if the design was in fact a stored discard and no longer
@@ -552,7 +552,7 @@ class JEGA_SL_IEDECL DesignTarget
          * \param info The new design variable information object to add to
          *             this target.
          *
-         * \return True if \a info is successfully added and false othewise.
+         * \return True if \a info is successfully added and false otherwise.
          *      The only current fail conditions are:
          *          - a null "info".
          *          - an "info" built for a different target.
@@ -567,7 +567,7 @@ class JEGA_SL_IEDECL DesignTarget
          * \param info The new constraint information object to add to
          *             this target.
          *
-         * \return True if \a info is successfully added and false othewise.
+         * \return True if \a info is successfully added and false otherwise.
          *      The only current fail conditions are:
          *          - a null "info".
          *          - an "info" built for a different target.
@@ -582,7 +582,7 @@ class JEGA_SL_IEDECL DesignTarget
          * \param info The new objective information object to add to this
          *             target.
          *
-         * \return True if \a info is successfully added and false othewise.
+         * \return True if \a info is successfully added and false otherwise.
          *      The only current fail conditions are:
          *          - a null "info".
          *          - an "info" built for a different target.

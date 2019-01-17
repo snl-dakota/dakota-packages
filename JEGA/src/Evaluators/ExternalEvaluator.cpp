@@ -397,7 +397,7 @@ ExternalEvaluator::Evaluate(
 
     // it opened so read it and record the results in the design.  If we
     // don't find enough, issue a logging message and mark this design
-    // illconditioned.
+    // ill-conditioned.
     size_t ind = 0;
     for(ind=0; ind<nof && !ifile.eof(); ++ind)
     {
@@ -411,7 +411,7 @@ ExternalEvaluator::Evaluate(
         des.SetObjective(ind, temp);
     }
 
-    // if we didn't get all objectives, we are illconditioned.
+    // if we didn't get all objectives, we are ill-conditioned.
     if(ind != nof)
     {
         des.SetIllconditioned(true);
@@ -420,7 +420,7 @@ ExternalEvaluator::Evaluate(
             ostream_entry(lquiet(), this->GetName() + ": Found ")
                 << ind << " objectives in response file \"" << inFName
                 << "\" which is fewer than the required " << nof
-                << ".  The current design is being marked illconditioned "
+                << ".  The current design is being marked ill-conditioned "
                    "and will be discarded."
                 )
 
@@ -441,7 +441,7 @@ ExternalEvaluator::Evaluate(
             des.SetConstraint(ind, temp);
         }
 
-        // if we didn't get all constraints, we are illconditioned.
+        // if we didn't get all constraints, we are ill-conditioned.
         if(ind != ncn)
         {
             des.SetIllconditioned(true);
@@ -450,7 +450,7 @@ ExternalEvaluator::Evaluate(
                 ostream_entry(lquiet(), this->GetName() + ": Found ")
                     << ind << " constraints in response file \"" << inFName
                     << "\" which is fewer than the required " << ncn
-                    << ".  The current design is being marked illconditioned "
+                    << ".  The current design is being marked ill-conditioned "
                        "and will be discarded."
                     )
         }

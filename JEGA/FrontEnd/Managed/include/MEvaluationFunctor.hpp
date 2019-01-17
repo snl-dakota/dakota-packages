@@ -180,9 +180,9 @@ public interface class MEvaluationFunctor
          * \return Your method should return true if the evaluation completed
          *         successfully and false otherwise.  This provides you a
          *         mechanism to reject certain design configurations as
-         *         "un-evaluatable".  If you return false, the objectives and
+         *         "un-evaluable".  If you return false, the objectives and
          *         constraints will be ignored and the solution point will be
-         *         marked as illconditioned.
+         *         marked as ill-conditioned.
          */
         virtual
         bool

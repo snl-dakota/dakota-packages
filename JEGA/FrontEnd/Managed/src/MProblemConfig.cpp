@@ -104,37 +104,11 @@ Static Member Data Definitions
 
 
 
-
-/*
-================================================================================
-Mutators
-================================================================================
-*/
-
-
-
-
-
-
-
-/*
-================================================================================
-Accessors
-================================================================================
-*/
-
-
-
-
-
-
-
 /*
 ================================================================================
 Public Methods
 ================================================================================
 */
-
 const ProblemConfig&
 MProblemConfig::Manifest(
     )
@@ -205,7 +179,7 @@ MProblemConfig::AddContinuumRealVariable(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddContinuumRealVariable(
+    return this->_theConfig->AddContinuumRealVariable(
         ToStdStr(label), lowerBound, upperBound, precision
         );
 }
@@ -217,7 +191,7 @@ MProblemConfig::AddDiscreteRealVariable(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddDiscreteRealVariable(
+    return this->_theConfig->AddDiscreteRealVariable(
         ToStdStr(label), ToStdDoubleVector(values)
         );
 }
@@ -230,7 +204,7 @@ MProblemConfig::AddContinuumIntegerVariable(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddContinuumIntegerVariable(
+    return this->_theConfig->AddContinuumIntegerVariable(
         ToStdStr(label), lowerBound, upperBound
         );
 }
@@ -242,7 +216,7 @@ MProblemConfig::AddDiscreteIntegerVariable(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddDiscreteIntegerVariable(
+    return this->_theConfig->AddDiscreteIntegerVariable(
         ToStdStr(label), ToStdIntVector(values)
         );
 }
@@ -253,7 +227,7 @@ MProblemConfig::AddBooleanVariable(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddBooleanVariable(ToStdStr(label));
+    return this->_theConfig->AddBooleanVariable(ToStdStr(label));
 }
 
 bool
@@ -263,7 +237,7 @@ MProblemConfig::AddLinearMinimizeObjective(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddLinearMinimizeObjective(
+    return this->_theConfig->AddLinearMinimizeObjective(
         ToStdStr(label), ToStdDoubleVector(coeffs)
         );
 }
@@ -275,7 +249,7 @@ MProblemConfig::AddLinearMaximizeObjective(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddLinearMaximizeObjective(
+    return this->_theConfig->AddLinearMaximizeObjective(
         ToStdStr(label), ToStdDoubleVector(coeffs)
         );
 }
@@ -288,7 +262,7 @@ MProblemConfig::AddLinearSeekValueObjective(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddLinearSeekValueObjective(
+    return this->_theConfig->AddLinearSeekValueObjective(
         ToStdStr(label), value, ToStdDoubleVector(coeffs)
         );
 }
@@ -302,9 +276,8 @@ MProblemConfig::AddLinearSeekRangeObjective(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddLinearSeekRangeObjective(
-        ToStdStr(label), lowerBound, upperBound,
-        ToStdDoubleVector(coeffs)
+    return this->_theConfig->AddLinearSeekRangeObjective(
+        ToStdStr(label), lowerBound, upperBound, ToStdDoubleVector(coeffs)
         );
 }
 
@@ -314,7 +287,7 @@ MProblemConfig::AddNonlinearMinimizeObjective(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddNonlinearMinimizeObjective(ToStdStr(label));
+    return this->_theConfig->AddNonlinearMinimizeObjective(ToStdStr(label));
 }
 
 bool
@@ -323,7 +296,7 @@ MProblemConfig::AddNonlinearMaximizeObjective(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddNonlinearMaximizeObjective(ToStdStr(label));
+    return this->_theConfig->AddNonlinearMaximizeObjective(ToStdStr(label));
 }
 
 bool
@@ -333,7 +306,9 @@ MProblemConfig::AddNonlinearSeekValueObjective(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddNonlinearSeekValueObjective(ToStdStr(label), value);
+    return this->_theConfig->AddNonlinearSeekValueObjective(
+        ToStdStr(label), value
+        );
 }
 
 bool
@@ -344,7 +319,7 @@ MProblemConfig::AddNonlinearSeekRangeObjective(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddNonlinearSeekRangeObjective(
+    return this->_theConfig->AddNonlinearSeekRangeObjective(
         ToStdStr(label), lowerBound, upperBound
         );
 }
@@ -357,7 +332,7 @@ MProblemConfig::AddLinearInequalityConstraint(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddLinearInequalityConstraint(
+    return this->_theConfig->AddLinearInequalityConstraint(
         ToStdStr(label), upperLimit, ToStdDoubleVector(coeffs)
         );
 }
@@ -371,7 +346,7 @@ MProblemConfig::AddLinearEqualityConstraint(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddLinearEqualityConstraint(
+    return this->_theConfig->AddLinearEqualityConstraint(
         ToStdStr(label), target, allowedViol, ToStdDoubleVector(coeffs)
         );
 }
@@ -385,8 +360,21 @@ MProblemConfig::AddLinearTwoSidedInequalityConstraint(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddLinearTwoSidedInequalityConstraint(
+    return this->_theConfig->AddLinearTwoSidedInequalityConstraint(
         ToStdStr(label), lowerLimit, upperLimit, ToStdDoubleVector(coeffs)
+        );
+}
+
+bool
+MProblemConfig::AddLinearNotEqualityConstraint(
+    System::String^ label,
+    double target,
+    DoubleVector^ coeffs
+    )
+{
+    EDDY_FUNC_DEBUGSCOPE
+    return this->_theConfig->AddLinearNotEqualityConstraint(
+        ToStdStr(label), target, ToStdDoubleVector(coeffs)
         );
 }
 
@@ -397,7 +385,7 @@ MProblemConfig::AddNonlinearInequalityConstraint(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddNonlinearInequalityConstraint(
+    return this->_theConfig->AddNonlinearInequalityConstraint(
         ToStdStr(label), upperLimit
         );
 }
@@ -410,7 +398,7 @@ MProblemConfig::AddNonlinearEqualityConstraint(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddNonlinearEqualityConstraint(
+    return this->_theConfig->AddNonlinearEqualityConstraint(
         ToStdStr(label), target, allowedViol
         );
 }
@@ -423,8 +411,20 @@ MProblemConfig::AddNonlinearTwoSidedInequalityConstraint(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    return _theConfig->AddNonlinearTwoSidedInequalityConstraint(
+    return this->_theConfig->AddNonlinearTwoSidedInequalityConstraint(
         ToStdStr(label), lowerLimit, upperLimit
+        );
+}
+
+bool
+MProblemConfig::AddNonlinearNotEqualityConstraint(
+    System::String^ label,
+    double target
+    )
+{
+    EDDY_FUNC_DEBUGSCOPE
+    return this->_theConfig->AddNonlinearNotEqualityConstraint(
+        ToStdStr(label), target
         );
 }
 
@@ -456,8 +456,8 @@ MProblemConfig::DoDispose(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    delete _theConfig;
-    _theConfig = 0x0;
+    delete this->_theConfig;
+    this->_theConfig = 0x0;
 }
 
 

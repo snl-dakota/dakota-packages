@@ -153,7 +153,7 @@ RegionOfSpace::Intersects(
 
     if(&other == this) return true;
 
-    // An n-dimensional Euclidean retion intersects another if at least
+    // An n-dimensional Euclidean region intersects another if at least
     // one of it's corners lies within the other.  There are 2^n corners
     // where n is the dimensionality.  The Corners are defined as the set of
     // all possible extreme vectors such as all maxs, all mins, or any

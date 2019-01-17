@@ -176,7 +176,7 @@ Class Definition
 /**
  * \brief The main driver class of the JEGA front end project.
  *
- * This class serves as the driver of JEGA.  It allows a user to initalize JEGA
+ * This class serves as the driver of JEGA.  It allows a user to initialize JEGA
  * and execute algorithms.  An instance of this class is intimately linked to
  * a problem configuration.  Therefore, a single instance of a Driver can only
  * solve a single problem but can do it multiple times using different
@@ -381,7 +381,7 @@ class JEGA_SL_IEDECL Driver
          * \param rSeed The seed to supply the random number generator.  The
          *              default value of 0 causes the seed to be randomized
          *              by time() and clock().
-         * \return The seed that was acutally used in re-seeding.  This may be
+         * \return The seed that was actually used in re-seeding.  This may be
          *         the value passed in or if the default is supplied, it will be
          *         the value generated using time() and clock().
          */

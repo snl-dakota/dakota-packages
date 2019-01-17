@@ -238,6 +238,41 @@ typedef F_TYPE obj_val_t;
 typedef G_TYPE con_val_t;
 
 
+template<
+    typename KeyT,
+    typename ValT,
+	typename PredT = std::less<KeyT>,
+	typename AllocT = std::allocator<std::pair<const KeyT, ValT> >
+    >
+class icmap : public std::map<KeyT, ValT, PredT, AllocT>
+{
+    private:
+
+        typedef icmap<KeyT, ValT, PredT, AllocT> my_type;
+        typedef std::map<KeyT, ValT, PredT, AllocT> base_type;
+
+    public:
+	    icmap() : base_type() {}
+        icmap(const typename icmap::size_type&) : base_type() {};
+};
+
+template<
+    typename ValT,
+	typename PredT = std::less<ValT>,
+	typename AllocT = std::allocator<ValT>
+    >
+class icset : public std::set<ValT, PredT, AllocT>
+{
+    private:
+
+        typedef icset<ValT, PredT, AllocT> my_type;
+        typedef std::set<ValT, PredT, AllocT> base_type;
+            
+    public:
+	    icset() : base_type() {}
+        icset(const typename icset::size_type&) : base_type() {};
+};
+
 /*
 ================================================================================
 End Namespace

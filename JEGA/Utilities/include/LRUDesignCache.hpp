@@ -313,7 +313,7 @@ class LRUDesignCache
     */
     public:
 
-        ///// Returns the last element in the container (const)
+        ///// Returns the last element in the container (constant)
         ///**
         // * Calling this on an empty container will result in a crash or at
         // * least undefined behavior.
@@ -325,7 +325,7 @@ class LRUDesignCache
         //back(
         //    ) const;
 
-        ///// Returns the first element in the container (const)
+        ///// Returns the first element in the container (constant)
         ///**
         // * Calling this on an empty container will result in a crash or at
         // * least undefined behavior.
@@ -337,7 +337,7 @@ class LRUDesignCache
         //front(
         //    ) const;
 
-        ///// Returns the last element in the container (const)
+        ///// Returns the last element in the container (constant)
         ///**
         // * Calling this on an empty container will result in a crash or at
         // * least undefined behavior.
@@ -349,7 +349,7 @@ class LRUDesignCache
         //back(
         //    );
 
-        ///// Returns the first element in the container (const)
+        ///// Returns the first element in the container (constant)
         ///**
         // * Calling this on an empty container will result in a crash or at
         // * least undefined behavior.
@@ -550,7 +550,7 @@ class LRUDesignCache
          * The design is written in tab-delimited flat file format.  No matter
          * what, all design variables are written.  After that, objective and
          * constraint values are written iff the design has been evaluated and
-         * is not illconditioned.
+         * is not ill-conditioned.
          *
          * \param des The design to write into the supplied "stream".
          * \param stream The stream into which to write the designs of this

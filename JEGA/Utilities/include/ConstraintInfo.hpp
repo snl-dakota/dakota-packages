@@ -340,7 +340,7 @@ class JEGA_SL_IEDECL ConstraintInfo :
          * See the overload for more information.
          *
          * \param of The value for which to compute the violation percentage.
-         * \return The percentage vioation of the supplied value for this
+         * \return The percentage violation of the supplied value for this
          *         constraint.
          */
         double
@@ -500,7 +500,7 @@ class JEGA_SL_IEDECL ConstraintInfo :
         GetAverageViolation(
             ) const;
 
-        /// This method attempts to evalutate this constraint for \a des.
+        /// This method attempts to evaluate this constraint for \a des.
         /**
          * This may not be possible.  Generally, only linear constraints
          * can be evaluated in this way.  The method returns true if the
@@ -599,7 +599,7 @@ class JEGA_SL_IEDECL ConstraintInfo :
 
         /// Destructs a ConstraintInfo object.
         /**
-         * This destructor destoys the type object.
+         * This destructor destroys the type object.
          */
         virtual
         ~ConstraintInfo(

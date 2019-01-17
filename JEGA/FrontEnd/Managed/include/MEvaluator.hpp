@@ -272,7 +272,7 @@ public ref class MEvaluator :
     public:
 
         /**
-         * \brief Executes the evalution of \a des using the known evaluation
+         * \brief Executes the evaluation of \a des using the known evaluation
          *        functor.
          *
          * \param des The Design class object to be evaluated.
@@ -346,8 +346,8 @@ public ref class MEvaluator :
             );
 
         ///**
-        // * \brief Executes the evalution of a Design using the known evaluation
-        // *        functor.
+        // * \brief Executes the evaluation of a Design using the known
+        // *        evaluation functor.
         // *
         // * \return True if the evaluation succeeds and false otherwise.
         // */

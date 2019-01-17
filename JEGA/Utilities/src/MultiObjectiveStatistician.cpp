@@ -673,7 +673,7 @@ MultiObjectiveStatistician::ComputeDominatingCounts(
 {
     EDDY_FUNC_DEBUGSCOPE
 
-    // if designs is empty, there is nothign to do.
+    // if designs is empty, there is nothing to do.
     if(designs.empty()) return DesignCountMap();
 
     // start by breaking "designs" into feasible and infeasible
@@ -732,7 +732,7 @@ MultiObjectiveStatistician::ComputeDominationCounts(
 {
     EDDY_FUNC_DEBUGSCOPE
 
-    // if designs is empty, there is nothign to do.
+    // if designs is empty, there is nothing to do.
     if(designs.empty()) return DesignDoubleCountMap();
 
     // start by breaking "designs" into feasible and infeasible
