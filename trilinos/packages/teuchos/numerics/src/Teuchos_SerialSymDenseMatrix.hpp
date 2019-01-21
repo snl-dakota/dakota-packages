@@ -649,7 +649,7 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::swap(
 
   // assign values from this to B
   B.values_       = values_;
-  B.numRows_      = numRowCols_;   B.stride_ = stride_;
+  B.numRowCols_   = numRowCols_;   B.stride_ = stride_;
   B.valuesCopied_ = valuesCopied_; B.upper_  = upper_;
   B.UPLO_         = UPLO_;
 
