@@ -148,14 +148,20 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # ${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT and
 # ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.  See Trilinos GitHub #362.
 
-ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
-SET(${PACKAGE_NAME}_ENABLE_LONG_LONG_INT_DEFAULT ${${PROJECT_NAME}_ENABLE_CXX11})
+set(TEUCHOS_LONG_LONG_DESC
+  "This option is DEPRECATED. Teuchos will ignore this option. Teuchos requires C++11, and long long comes with C++11, so you will always get long long. If you want to change the set of global ordinal types that Tpetra enables, set a Tpetra option, not a Teuchos option.")
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT
   HAVE_TEUCHOS_LONG_LONG_INT
-  "Enable Teuchos features for the 'long long' data type.  This is ON by default if and only if C++11 is enabled.  Please remember that 'long long' only entered the C++ language standard with C++11, even though many compilers supported it before."
-  ${${PACKAGE_NAME}_ENABLE_LONG_LONG_INT_DEFAULT}
+  ${TEUCHOS_LONG_LONG_DESC}
+  ON
   )
+IF(NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
+  MESSAGE(WARNING
+      "${PACKAGE_NAME}_ENABLE_LONG_LONG_INT=\
+       ${${PACKAGE_NAME}_ENABLE_LONG_LONG_INT}.\
+       ${TEUCHOS_LONG_LONG_DESC}")
+ENDIF()
 
 IF(WIN32 AND NOT CYGWIN AND NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
   # Can only provide __int64 support if it will not clash with 
@@ -319,6 +325,13 @@ IF (HAVE_TEUCHOS_DOUBLE_TO_ARPREC AND HAVE_TEUCHOS_DOUBLE_TO_QD)
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_STACKED_TIMER_IN_TIME_MONITOR
+  HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+  "Adds timings from TimeMonitor to the StackedTimer object."
+  ON
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_GLOBALLY_REDUCE_UNITTEST_RESULTS
   HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS
   "Set the Teuchos::UnitTestRepository to globally reduce test pass/fail results across all MPI ranks."
@@ -403,7 +416,7 @@ ELSE(TRIBITS_PROCESSING_PACKAGE)
 
 # This CMakeLists.txt file is being processed as the TriBITS projects's base
 # CMakeLists.txt file!  (See comments at bottom of this file.)
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
 PROJECT(${PROJECT_NAME} NONE)
 SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/tribits"
