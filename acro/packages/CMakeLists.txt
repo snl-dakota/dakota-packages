@@ -26,10 +26,11 @@ endfunction()
 
 FindOptionalLibrary(CPLEX)
 
+# BMA, 20190422: Disabled as Acro (at least acro-dakota) doesn't require BLAS
 #FindOptionalLibrary(BLAS)
-include(FindBLAS)
-set( HAVE_BLAS ${BLAS_FOUND} 
-     CACHE BOOL "Enable interfaces to system BLAS" )
+##include(FindBLAS)
+##set( HAVE_BLAS ${BLAS_FOUND} 
+##     CACHE BOOL "Enable interfaces to system BLAS" )
 
 include(CheckIncludeFiles)
 # appears no acro sources depend on this define any longer
