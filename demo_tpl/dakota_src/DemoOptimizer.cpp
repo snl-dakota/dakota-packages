@@ -7,7 +7,7 @@
     _______________________________________________________________________ */
 
 //- Class:       DemoTPLOptimizer
-//- Description: Wrapper class for DemoTPL
+//- Description: Wrapper class for Demo_Opt
 //- Owner:       Russell Hooper
 //- Checked by:  
 
@@ -15,9 +15,8 @@
 #include "DemoOptimizer.hpp"
 #include "ProblemDescDB.hpp"
 
-// DemoTPL headers
-#include "initialize.hpp"
-#include "execute.hpp"
+// Demo_Opt headers
+#include "demo_opt.hpp"
 
 //
 // - DemoTPLOptimizer implementation
@@ -29,29 +28,55 @@ namespace Dakota {
 /** Implementation of DemoTPLOptimizer class. */
 
 
-// Standard constructor for DemoTPLOptimizer.  Sets up DemoTPL solver based on
+// Standard constructor for DemoTPLOptimizer.  Sets up Demo_Opt solver based on
 // information from the problem database.
 DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
-  Optimizer(problem_db, model, std::shared_ptr<TraitsBase>(new DemoTPLTraits()))
+  Optimizer(problem_db, model, std::shared_ptr<TraitsBase>(new DemoOptTraits())),
+  demoOpt(std::make_shared<Demo_Opt>())
 {
-  /* no-op */
+  set_demo_parameters();
 }
 
 
+// -----------------------------------------------------------------
 
 // core_run redefines the Optimizer virtual function to perform the
-// optimization using DemoTPL and catalogue the results.
+// optimization using Demo_Opt and catalogue the results.
 void DemoTPLOptimizer::core_run()
 {
-  Demo_TPL::execute(true);
+  demoOpt->execute(true);
 } // core_run
 
 
+// -----------------------------------------------------------------
 
 void DemoTPLOptimizer::initialize_run()
 {
   Optimizer::initialize_run();
-  Demo_TPL::initialize(true);
+  demoOpt->initialize(true);
 }
+
+
+// -----------------------------------------------------------------
+
+void DemoTPLOptimizer::set_demo_parameters()
+{
+  // Check for native Demo_Opt input file.
+  String adv_opts_file = probDescDB.get_string("method.advanced_options_file");
+  if (!adv_opts_file.empty())
+  {
+    if (!boost::filesystem::exists(adv_opts_file))
+    {
+      Cerr << "\nError: Demo_Opt options_file '" << adv_opts_file
+	   << "' specified, but file not found.\n";
+      abort_handler(METHOD_ERROR);
+    }
+  }
+
+  demoOpt->set_solver_options(adv_opts_file, true);
+
+} // set_demo_parameters
+
+// -----------------------------------------------------------------
 
 } // namespace Dakota

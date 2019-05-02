@@ -1,12 +1,10 @@
 ## DEMO_TPL library sources.
 set(demo_tpl_HEADERS
-  execute.hpp
-  initialize.hpp
+  demo_opt.hpp
 )
 
 set(demo_tpl_SOURCES
-  execute.cpp
-  initialize.cpp
+  demo_opt.cpp
 )
 
 ## Set the DEMO_TPL library name.

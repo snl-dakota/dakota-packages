@@ -7,20 +7,37 @@
     _______________________________________________________________________ */
 
 //- Class:       namespaced free function
-//- Description: Demo TPL execute
+//- Description: Demo TPL initialize
 //- Owner:       Russell Hooper
 //- Checked by:  ...
 
 /** ... description ...
  * */
 
-#ifndef DEMO_EXECUTE_H
-#define DEMO_EXECUTE_H
+#ifndef DEMO_INITIALIZE_H
+#define DEMO_INITIALIZE_H
 
-namespace Demo_TPL
+#include <string>
+class Demo_Opt
 {
-  // A simple executino free function for now
-  bool execute(bool verbose = false);
-}
+  public:
+
+    // Default ctor
+    Demo_Opt() {}
+
+    // Allow specification of options filename
+    bool set_solver_options(const std::string & filename, bool verbose = false);
+
+    // A simple initialization method
+    bool initialize(bool verbose = false);
+
+    // A simple initialization method
+    bool execute(bool verbose = false);
+
+
+  private:
+
+    std::string options_file_;
+};
 
 #endif

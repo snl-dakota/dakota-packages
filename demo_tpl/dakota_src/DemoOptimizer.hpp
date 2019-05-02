@@ -7,7 +7,7 @@
     _______________________________________________________________________ */
 
 //- Class:       DemoTPLOptimizer
-//- Description: Wrapper class for DemoTPL
+//- Description: Wrapper class for Demo_Opt
 //- Owner:       Russell Hooper
 //- Checked by:  
 
@@ -19,54 +19,55 @@
 
 // Dakota headers
 #include "DakotaOptimizer.hpp"
-//#include "DakotaModel.hpp"
-//#include "DakotaTraitsBase.hpp"
 
-// DemoTPL headers
-//#include "initialize.hpp"
-//#include "execute.hpp"
+// Demo_Opt TPL headers
+#include "demo_opt.hpp"
 
 namespace Dakota {
 
 // -----------------------------------------------------------------
 /** DemoTPLOptimizer specializes DakotaOptimizer to show the steps needed
- *  to construct and run a DemoTPL solver */
+ *  to construct and run a Demo_Opt solver */
 
 class DemoTPLOptimizer : public Optimizer
 {
-public:
+  public:
 
-  //
-  //- Heading: Constructors and destructor
-  //
+    //
+    //- Heading: Constructors and destructor
+    //
 
-  /// Standard constructor
-  DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model);
+    /// Standard constructor
+    DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model);
 
-  /// Destructor
-  ~DemoTPLOptimizer() {}
+    /// Destructor
+    ~DemoTPLOptimizer() {}
 
-  //
-  //- Heading: Virtual member function redefinitions
-  //
+    //
+    //- Heading: Virtual member function redefinitions
+    //
 
-  /// Initializes the DemoTPL optimizer
-  void initialize_run() override;
+    /// Initializes the Demo_Opt optimizer
+    void initialize_run() override;
 
-  /// Executes the DemoTPL solver
-  void core_run() override;
+    /// Executes the Demo_Opt solver
+    void core_run() override;
 
-protected:
+  protected:
+
+    void set_demo_parameters();
+
+    std::shared_ptr<Demo_Opt> demoOpt;
 
 }; // class DemoTPLOptimizer
 
 
 // -----------------------------------------------------------------
-/** DemoTPLTraits defines the types of problems and data formats DemoTPL
+/** DemoOptTraits defines the types of problems and data formats Demo_Opt
     supports by overriding the default traits accessors in
     TraitsBase. */
 
-class DemoTPLTraits: public TraitsBase
+class DemoOptTraits: public TraitsBase
 {
 public:
 
@@ -75,12 +76,12 @@ public:
   //
 
   /// Default constructor
-  DemoTPLTraits() { }
+  DemoOptTraits() { }
 
   /// Destructor
-  virtual ~DemoTPLTraits() { }
+  virtual ~DemoOptTraits() { }
 
-  /// DemoTPL default data type to be used by Dakota data adapters
+  /// Demo_Opt default data type to be used by Dakota data adapters
   typedef std::vector<Real> VecT;
 
   //
@@ -92,7 +93,7 @@ public:
   /// Return flag indicating support for continuous variables
   //bool supports_continuous_variables() { return true; }
 
-}; // class DemoTPLTraits
+}; // class DemoOptTraits
 
 } // namespace Dakota
 
