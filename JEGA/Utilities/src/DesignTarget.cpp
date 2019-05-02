@@ -449,7 +449,7 @@ DesignTarget::RecordAllConstraintViolations(
     EDDY_FUNC_DEBUGSCOPE
 
     for(ConstraintInfoVector::const_iterator it(this->_cnInfos.begin());
-         it!=this->_cnInfos.end(); ++it)
+        it!=this->_cnInfos.end(); ++it)
             (*it)->RecordViolation(des);
 }
 
