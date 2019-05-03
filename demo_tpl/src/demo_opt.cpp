@@ -34,9 +34,15 @@ Demo_Opt::set_solver_options(const std::string & filename, bool verbose)
 bool
 Demo_Opt::initialize(bool verbose)
 {
-
   if( verbose )
+  {
     std::cout << "Doing Demo_TPL::initialize." << std::endl;
+    std::cout << "Registered int parameters :\n";
+    for( auto ip : int_params_ )
+      std::cout << ip.second << std::endl;
+    for( auto dp : dbl_params_ )
+      std::cout << dp.second << std::endl;
+  }
 
   return true;
 }
@@ -46,7 +52,6 @@ Demo_Opt::initialize(bool verbose)
 bool
 Demo_Opt::execute(bool verbose)
 {
-
   if( verbose )
     std::cout << "Doing Demo_TPL::execute." << std::endl;
 

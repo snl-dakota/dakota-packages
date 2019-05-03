@@ -24,6 +24,24 @@
 
 namespace Dakota {
 
+  class SimpleQuadratic
+  {
+    public :
+
+      SimpleQuadratic(const Real k=1.0) :
+        kVal(k)
+    { }
+
+      Real compute_obj(const Real x)
+      {
+        return 0.5*(kVal-x)*(kVal-x);
+      }
+
+    private:
+
+      Real kVal;
+  };
+
 // -----------------------------------------------------------------
 /** Implementation of DemoTPLOptimizer class. */
 
@@ -98,6 +116,14 @@ void DemoTPLOptimizer::set_demo_parameters()
   const Real& objective_target
     = probDescDB.get_real("method.solution_target");
   //  demoOpt->set_solver_options("Objective Target", objective_target);
+
+  using IOPTS = Demo_Opt::SOLVE_OPTIONS_INT;
+  using DOPTS = Demo_Opt::SOLVE_OPTIONS_DBL;
+
+  demoOpt->set_param( IOPTS::MAX_EVALS,  max_evaluations  );
+  demoOpt->set_param( IOPTS::MAX_ITERS,  max_iterations   );
+  demoOpt->set_param( DOPTS::CONV_TOL,   min_f_change     );
+  demoOpt->set_param( DOPTS::OBJ_TARGET, objective_target );
 
   // Check for native Demo_Opt input file.
   String adv_opts_file = probDescDB.get_string("method.advanced_options_file");
