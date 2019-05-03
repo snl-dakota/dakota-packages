@@ -56,6 +56,7 @@ class DemoTPLOptimizer : public Optimizer
   protected:
 
     void set_demo_parameters();
+    void initialize_variables_and_constraints();
 
     std::shared_ptr<Demo_Opt> demoOpt;
 
@@ -83,6 +84,10 @@ public:
 
   /// Demo_Opt default data type to be used by Dakota data adapters
   typedef std::vector<Real> VecT;
+
+  /// This is needed to handle constraints
+  inline static double noValue()
+  { return std::numeric_limits<Real>::max(); }
 
   //
   //- Heading: Virtual member function redefinitions

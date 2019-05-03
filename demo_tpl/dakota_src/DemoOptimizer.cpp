@@ -61,6 +61,17 @@ void DemoTPLOptimizer::initialize_run()
 
 void DemoTPLOptimizer::set_demo_parameters()
 {
+  int max_evaluations
+    = probDescDB.get_int("method.max_function_evaluations");
+  int max_iterations
+    = probDescDB.get_int("method.max_iterations");
+  const Real& min_f_change
+    = probDescDB.get_real("method.convergence_tolerance");
+  const Real& min_var_change
+    = probDescDB.get_real("method.variable_tolerance");
+  const Real& objective_target
+    = probDescDB.get_real("method.solution_target");
+
   // Check for native Demo_Opt input file.
   String adv_opts_file = probDescDB.get_string("method.advanced_options_file");
   if (!adv_opts_file.empty())
@@ -78,5 +89,20 @@ void DemoTPLOptimizer::set_demo_parameters()
 } // set_demo_parameters
 
 // -----------------------------------------------------------------
+
+void DemoTPLOptimizer::initialize_variables_and_constraints()
+{
+
+  // just do continuous variables; use iteratedModel method to get number
+  // of variables rather than internal Dakota variable names
+  int num_total_vars = numContinuousVars; // + numDiscreteIntVars + numDiscreteRealVars + numDiscreteStringVars;
+  std::vector<Real> init_point(num_total_vars);
+  std::vector<Real> lower(num_total_vars), upper(num_total_vars);
+
+  // need traits; just do bounds for now, not linear/nonlinear
+  get_variables(iteratedModel, init_point);
+  get_variable_bounds_from_dakota<DemoOptTraits>( lower, upper );
+
+} // initialize_variables_and_constraints
 
 } // namespace Dakota
