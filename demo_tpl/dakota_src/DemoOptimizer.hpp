@@ -29,7 +29,8 @@ namespace Dakota {
 /** DemoTPLOptimizer specializes DakotaOptimizer to show the steps needed
  *  to construct and run a Demo_Opt solver */
 
-class DemoTPLOptimizer : public Optimizer
+class DemoTPLOptimizer : public Optimizer,
+                         public Demo_Opt::ObjectiveFn
 {
   public:
 
@@ -52,6 +53,9 @@ class DemoTPLOptimizer : public Optimizer
 
     /// Executes the Demo_Opt solver
     void core_run() override;
+
+    /// Inherits Demo_TPL::ObjectiveFn
+    Real compute_obj(const double & x, bool verbose) const override;
 
   protected:
 

@@ -50,9 +50,13 @@ namespace Dakota {
 // information from the problem database.
 DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
   Optimizer(problem_db, model, std::shared_ptr<TraitsBase>(new DemoOptTraits())),
+  Demo_Opt::ObjectiveFn(),
   demoOpt(std::make_shared<Demo_Opt>())
 {
   set_demo_parameters();
+
+  // Register ouself as the callback interface for objective fn evaluations
+  demoOpt->register_obj_fn(this);
 }
 
 
@@ -67,8 +71,7 @@ void DemoTPLOptimizer::core_run()
   demoOpt->execute(true);
 
   if (!localObjectiveRecast) {
-    double best_f;
-    //    demoOpt->getOptimalF(best_f);
+    double best_f = demoOpt->get_best_f();
 
     const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
     RealVector best_fns(numFunctions);
@@ -77,8 +80,7 @@ void DemoTPLOptimizer::core_run()
     bestResponseArray.front().function_values(best_fns);
   }
 
-  std::vector<double> best_x(numContinuousVars);
-  //  demoOpt->getOptimalVars(best_x);
+  std::vector<double> best_x = demoOpt->get_best_x();
   set_variables< std::vector<double> >(best_x, iteratedModel, bestVariablesArray.front());
 
 } // core_run
@@ -143,19 +145,20 @@ void DemoTPLOptimizer::initialize_variables_and_constraints()
   // of variables rather than internal Dakota variable names
   int num_total_vars = numContinuousVars;
   std::vector<Real> init_point(num_total_vars);
-  std::vector<Real> lower(num_total_vars), upper(num_total_vars);
-
-  //  demoOpt->set_problem_data("Number Variables", num_total_vars);
+  std::vector<Real> lower(num_total_vars),
+                    upper(num_total_vars);
 
   // need traits; just do bounds for now, not linear/nonlinear
   get_variables(iteratedModel, init_point);
-  //  demoOpt->set_problem_data("Initial Guess", init_point);
-
   get_variable_bounds_from_dakota<DemoOptTraits>( lower, upper );
-  //  demoOpt->set_problem_data("Lower Bounds", lower);
-  //  demoOpt->set_problem_data("Upper Bounds", upper);
+
+  demoOpt->set_problem_data(init_point,   //  "Initial Guess"
+                            lower     ,   //  "Lower Bounds"
+                            upper      ); //  "Upper Bounds"
 
 } // initialize_variables_and_constraints
+
+// -----------------------------------------------------------------
 
 void DemoTPLOptimizer::evaluate_function(const std::vector<double> x,
 					 double& f)
@@ -170,5 +173,18 @@ void DemoTPLOptimizer::evaluate_function(const std::vector<double> x,
        iteratedModel.current_response().function_value(0);
 
 } // evaluate_function
+
+// -----------------------------------------------------------------
+
+Real
+DemoTPLOptimizer::compute_obj(const double & x, bool verbose) const
+{
+  SimpleQuadratic obj;
+  Real val = obj.compute_obj(x);
+  if( verbose )
+    Cout << "DemoTPLOptimizer::compute_obj: F("<<x<<") = " << val << std::endl;
+
+  return val;
+}
 
 } // namespace Dakota
