@@ -44,7 +44,25 @@ DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
 // optimization using Demo_Opt and catalogue the results.
 void DemoTPLOptimizer::core_run()
 {
+  initialize_variables_and_constraints();
+
   demoOpt->execute(true);
+
+  if (!localObjectiveRecast) {
+    double best_f;
+    //    demoOpt->getOptimalF(best_f);
+
+    const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
+    RealVector best_fns(numFunctions);
+    best_fns[0] = (!max_sense.empty() && max_sense[0]) ?
+      -best_f : best_f;
+    bestResponseArray.front().function_values(best_fns);
+  }
+
+  std::vector<double> best_x(numContinuousVars);
+  //  demoOpt->getOptimalVars(best_x);
+  set_variables< std::vector<double> >(best_x, iteratedModel, bestVariablesArray.front());
+
 } // core_run
 
 
@@ -63,14 +81,23 @@ void DemoTPLOptimizer::set_demo_parameters()
 {
   int max_evaluations
     = probDescDB.get_int("method.max_function_evaluations");
+  //  demoOpt->set_solver_options("Maximum Evaluations", max_evaluations);
+
   int max_iterations
     = probDescDB.get_int("method.max_iterations");
+  //  demoOpt->set_solver_options("Maximum Iterations", max_iters);
+
   const Real& min_f_change
     = probDescDB.get_real("method.convergence_tolerance");
+  //  demoOpt->set_solver_options("Function Tolerance", min_f_change);
+
   const Real& min_var_change
     = probDescDB.get_real("method.variable_tolerance");
+  //  demoOpt->set_solver_options("Step Tolerance", min_var_change);
+
   const Real& objective_target
     = probDescDB.get_real("method.solution_target");
+  //  demoOpt->set_solver_options("Objective Target", objective_target);
 
   // Check for native Demo_Opt input file.
   String adv_opts_file = probDescDB.get_string("method.advanced_options_file");
@@ -95,13 +122,19 @@ void DemoTPLOptimizer::initialize_variables_and_constraints()
 
   // just do continuous variables; use iteratedModel method to get number
   // of variables rather than internal Dakota variable names
-  int num_total_vars = numContinuousVars; // + numDiscreteIntVars + numDiscreteRealVars + numDiscreteStringVars;
+  int num_total_vars = numContinuousVars;
   std::vector<Real> init_point(num_total_vars);
   std::vector<Real> lower(num_total_vars), upper(num_total_vars);
 
+  //  demoOpt->set_problem_data("Number Variables", num_total_vars);
+
   // need traits; just do bounds for now, not linear/nonlinear
   get_variables(iteratedModel, init_point);
+  //  demoOpt->set_problem_data("Initial Guess", init_point);
+
   get_variable_bounds_from_dakota<DemoOptTraits>( lower, upper );
+  //  demoOpt->set_problem_data("Lower Bounds", lower);
+  //  demoOpt->set_problem_data("Upper Bounds", upper);
 
 } // initialize_variables_and_constraints
 

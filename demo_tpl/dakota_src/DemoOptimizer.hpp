@@ -83,7 +83,7 @@ public:
   virtual ~DemoOptTraits() { }
 
   /// Demo_Opt default data type to be used by Dakota data adapters
-  typedef std::vector<Real> VecT;
+  typedef std::vector<double> VecT;
 
   /// This is needed to handle constraints
   inline static double noValue()
@@ -93,7 +93,8 @@ public:
   //- Heading: Virtual member function redefinitions
   //
 
-  // By default we do not support anything
+  /// Return the flag indicating whether method supports continuous variables
+  bool supports_continuous_variables() { return true; }
 
   /// Return flag indicating support for continuous variables
   //bool supports_continuous_variables() { return true; }
