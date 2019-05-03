@@ -99,31 +99,24 @@ void DemoTPLOptimizer::set_demo_parameters()
 {
   int max_evaluations
     = probDescDB.get_int("method.max_function_evaluations");
-  //  demoOpt->set_solver_options("Maximum Evaluations", max_evaluations);
+  demoOpt->set_param("Maximum Evaluations", max_evaluations);
 
   int max_iterations
     = probDescDB.get_int("method.max_iterations");
-  //  demoOpt->set_solver_options("Maximum Iterations", max_iters);
+  demoOpt->set_param("Maximum Iterations", max_iterations);
 
   const Real& min_f_change
     = probDescDB.get_real("method.convergence_tolerance");
-  //  demoOpt->set_solver_options("Function Tolerance", min_f_change);
+  demoOpt->set_param("Function Tolerance", min_f_change);
 
   const Real& min_var_change
     = probDescDB.get_real("method.variable_tolerance");
-  //  demoOpt->set_solver_options("Step Tolerance", min_var_change);
+  demoOpt->set_param("Step Tolerance", min_var_change);
 
   const Real& objective_target
     = probDescDB.get_real("method.solution_target");
-  //  demoOpt->set_solver_options("Objective Target", objective_target);
+  demoOpt->set_param("Objective Target", objective_target);
 
-  using IOPTS = Demo_Opt::SOLVE_OPTIONS_INT;
-  using DOPTS = Demo_Opt::SOLVE_OPTIONS_DBL;
-
-  demoOpt->set_param( IOPTS::MAX_EVALS,  max_evaluations  );
-  demoOpt->set_param( IOPTS::MAX_ITERS,  max_iterations   );
-  demoOpt->set_param( DOPTS::CONV_TOL,   min_f_change     );
-  demoOpt->set_param( DOPTS::OBJ_TARGET, objective_target );
 
   // Check for native Demo_Opt input file.
   String adv_opts_file = probDescDB.get_string("method.advanced_options_file");

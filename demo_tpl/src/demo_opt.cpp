@@ -39,9 +39,9 @@ Demo_Opt::initialize(bool verbose)
     std::cout << "Doing Demo_TPL::initialize." << std::endl;
     std::cout << "Registered int parameters :\n";
     for( auto ip : int_params_ )
-      std::cout << ip.second << std::endl;
+      std::cout << ip.first << " = " << ip.second << std::endl;
     for( auto dp : dbl_params_ )
-      std::cout << dp.second << std::endl;
+      std::cout << dp.first << " = " << dp.second << std::endl;
   }
 
   return true;
