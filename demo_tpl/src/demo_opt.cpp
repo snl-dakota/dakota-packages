@@ -16,6 +16,7 @@
 #include <cmath>
 #include <iomanip>
 #include <limits>
+#include <random>
 
 // Demo TPL headers
 #include "demo_opt.hpp"
@@ -77,6 +78,7 @@ Demo_Opt::execute(bool verbose)
   assert( int_params_.count("Maximum Evaluations") > 0 );
   int max_evals = int_params_["Maximum Evaluations"];
 
+  int num_params = (int)init_vals_.size();
   best_x_.clear();
   best_f_ = std::numeric_limits<double>::max();
 
@@ -84,31 +86,28 @@ Demo_Opt::execute(bool verbose)
   //double target = int_params_["Objective Target"];
   double target = 0.0; // based on the SimpleQuadratic
 
-  int num_samples = 2+static_cast<int>(pow(max_evals, 1.0/init_vals_.size()));
-  std::vector<double> dp(init_vals_.size());
+  std::default_random_engine generator;
+  std::vector< std::uniform_real_distribution<double> > distributions;
   for( size_t i=0; i<init_vals_.size(); ++i )
-    dp[i] = (upper_bnds_[i] - lower_bnds_[i])/num_samples;
-  //std::cout << "I'd like to perform " << num_samples << " in each of " << dp.size() << "dimensions." << std::endl;
+    distributions.push_back(std::uniform_real_distribution<double>(lower_bnds_[i],upper_bnds_[i]));
 
   // Hard-coded to a single parameter for now...
-  double x, fn, best_x;
-  for( int i=0; i<=num_samples; ++i )
+  std::vector<double> x(num_params);
+  double fn;
+  for( int i=0; i<=max_evals; ++i )
   {
-    x = lower_bnds_[0] + i*dp[0];
+    for( int np=0; np<num_params; ++np )
+      x[i] = distributions[i](generator);
     fn = obj_fn_callback_->compute_obj(x, false);
     if( fabs(fn-target) < best_f_ )
     {
-      best_x = x;
+      best_x_ = x;
       best_f_ = fabs(fn-target);
     }
   }
 
   if( verbose )
-    std::cout << "Found best_x = " << best_x << " with best_f_ = " << best_f_ << std::endl;
-
-  best_x_.push_back(best_x);
-  for( size_t i=1; i<init_vals_.size(); ++i )
-    best_x_.push_back(0.0); // need to fix this for multiple params
+    std::cout << "Found best_f_ = " << best_f_ << std::endl;
 
   return true;
 }

@@ -29,7 +29,7 @@ class Demo_Opt
     class ObjectiveFn
     {
       public:
-        virtual double compute_obj(const double & x, bool verbose = false) const = 0;
+        virtual double compute_obj(const std::vector<double> & x, bool verbose = false) = 0;
     };
 
     // Default ctor
@@ -50,7 +50,7 @@ class Demo_Opt
         { set_parameter_value(param, val); }
 
     // Register an objective fn callback interface
-    void register_obj_fn(const ObjectiveFn* obj_fn)
+    void register_obj_fn(ObjectiveFn* obj_fn)
       { obj_fn_callback_ = obj_fn; }
 
     // Specify problem data
@@ -79,7 +79,7 @@ class Demo_Opt
     std::map<std::string, int>    int_params_;
     std::map<std::string, double> dbl_params_;
 
-    const ObjectiveFn * obj_fn_callback_;
+    ObjectiveFn * obj_fn_callback_;
 
     std::vector<double> init_vals_;
     std::vector<double> lower_bnds_;

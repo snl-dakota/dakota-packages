@@ -55,7 +55,7 @@ class DemoTPLOptimizer : public Optimizer,
     void core_run() override;
 
     /// Inherits Demo_TPL::ObjectiveFn
-    Real compute_obj(const double & x, bool verbose) const override;
+    Real compute_obj(const std::vector<double> & x, bool verbose) override;
 
   protected:
 
@@ -101,9 +101,6 @@ public:
 
   /// Return the flag indicating whether method supports continuous variables
   bool supports_continuous_variables() { return true; }
-
-  /// Return flag indicating support for continuous variables
-  //bool supports_continuous_variables() { return true; }
 
 }; // class DemoOptTraits
 

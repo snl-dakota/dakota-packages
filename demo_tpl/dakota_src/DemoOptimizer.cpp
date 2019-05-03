@@ -24,23 +24,6 @@
 
 namespace Dakota {
 
-  class SimpleQuadratic
-  {
-    public :
-
-      SimpleQuadratic(const Real k=1.0) :
-        kVal(k)
-    { }
-
-      Real compute_obj(const Real x)
-      {
-        return 0.5*(kVal-x)*(kVal-x);
-      }
-
-    private:
-
-      Real kVal;
-  };
 
 // -----------------------------------------------------------------
 /** Implementation of DemoTPLOptimizer class. */
@@ -177,14 +160,26 @@ void DemoTPLOptimizer::evaluate_function(const std::vector<double> x,
 // -----------------------------------------------------------------
 
 Real
-DemoTPLOptimizer::compute_obj(const double & x, bool verbose) const
+DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
 {
-  SimpleQuadratic obj;
-  Real val = obj.compute_obj(x);
-  if( verbose )
-    Cout << "DemoTPLOptimizer::compute_obj: F("<<x<<") = " << val << std::endl;
 
-  return val;
+  if( 0 )
+  {
+    Real obj;
+    evaluate_function(x, obj);
+    return obj;
+  }
+
+  if( 1 )
+  {
+    for(size_t i=0; i<iteratedModel.cv(); ++i)
+      iteratedModel.continuous_variable(x[i], i);
+    ActiveSet eval_set(iteratedModel.current_response().active_set());
+    eval_set.request_values(1);
+    iteratedModel.evaluate(eval_set);
+
+    return iteratedModel.current_response().function_value(0);
+  }
 }
 
 } // namespace Dakota
