@@ -157,4 +157,18 @@ void DemoTPLOptimizer::initialize_variables_and_constraints()
 
 } // initialize_variables_and_constraints
 
+void DemoTPLOptimizer::evaluate_function(const std::vector<double> x,
+					 double& f)
+{
+  set_variables<std::vector<double> >(x, iteratedModel, iteratedModel.current_variables());
+
+  iteratedModel.evaluate();// default active s
+  const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
+
+  f = (!max_sense.empty() && max_sense[0]) ?
+      -iteratedModel.current_response().function_value(0) :
+       iteratedModel.current_response().function_value(0);
+
+} // evaluate_function
+
 } // namespace Dakota
