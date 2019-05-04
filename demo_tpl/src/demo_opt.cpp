@@ -97,7 +97,8 @@ Demo_Opt::execute(bool verbose)
   for( int i=0; i<=max_evals; ++i )
   {
     for( int np=0; np<num_params; ++np )
-      x[i] = distributions[i](generator);
+      x[np] = distributions[np](generator);
+    //      x[i] = distributions[i](generator);
     fn = obj_fn_callback_->compute_obj(x, false);
     if( fabs(fn-target) < best_f_ )
     {

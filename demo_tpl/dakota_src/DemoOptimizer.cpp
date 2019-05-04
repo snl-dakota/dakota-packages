@@ -82,17 +82,11 @@ void DemoTPLOptimizer::initialize_run()
 
 void DemoTPLOptimizer::set_demo_parameters()
 {
-  int max_evaluations
-    = probDescDB.get_int("method.max_function_evaluations");
-  demoOpt->set_param("Maximum Evaluations", max_evaluations);
+  demoOpt->set_param("Maximum Evaluations", maxFunctionEvals);
 
-  int max_iterations
-    = probDescDB.get_int("method.max_iterations");
-  demoOpt->set_param("Maximum Iterations", max_iterations);
+  demoOpt->set_param("Maximum Iterations", maxIterations);
 
-  const Real& min_f_change
-    = probDescDB.get_real("method.convergence_tolerance");
-  demoOpt->set_param("Function Tolerance", min_f_change);
+  demoOpt->set_param("Function Tolerance", convergenceTol);
 
   const Real& min_var_change
     = probDescDB.get_real("method.variable_tolerance");
@@ -101,7 +95,6 @@ void DemoTPLOptimizer::set_demo_parameters()
   const Real& objective_target
     = probDescDB.get_real("method.solution_target");
   demoOpt->set_param("Objective Target", objective_target);
-
 
   // Check for native Demo_Opt input file.
   String adv_opts_file = probDescDB.get_string("method.advanced_options_file");
