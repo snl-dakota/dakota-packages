@@ -61,8 +61,6 @@ class DemoTPLOptimizer : public Optimizer,
 
     void set_demo_parameters();
     void initialize_variables_and_constraints();
-    void evaluate_function(const std::vector<double> x,
-			   double& f);
 
     std::shared_ptr<Demo_Opt> demoOpt;
 

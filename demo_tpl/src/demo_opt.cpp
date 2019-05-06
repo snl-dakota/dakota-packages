@@ -78,33 +78,37 @@ Demo_Opt::execute(bool verbose)
   assert( int_params_.count("Maximum Evaluations") > 0 );
   int max_evals = int_params_["Maximum Evaluations"];
 
+  assert( dbl_params_.count("Function Tolerance") > 0 );
+  double fn_tol = dbl_params_["Function Tolerance"];
+
   int num_params = (int)init_vals_.size();
   best_x_.clear();
   best_f_ = std::numeric_limits<double>::max();
 
   //assert( dbl_params_.count("Objective Target") > 0 );
   //double target = int_params_["Objective Target"];
-  double target = 0.0; // based on the SimpleQuadratic
+  double target = 0.0;
 
   std::default_random_engine generator;
   std::vector< std::uniform_real_distribution<double> > distributions;
   for( size_t i=0; i<init_vals_.size(); ++i )
     distributions.push_back(std::uniform_real_distribution<double>(lower_bnds_[i],upper_bnds_[i]));
 
-  // Hard-coded to a single parameter for now...
+  // Crude "optimization" based on random sampling over parameter space
   std::vector<double> x(num_params);
   double fn;
-  for( int i=0; i<=max_evals; ++i )
+  int i = 0;
+  while( i<=max_evals && best_f_>fn_tol )
   {
     for( int np=0; np<num_params; ++np )
       x[np] = distributions[np](generator);
-    //      x[i] = distributions[i](generator);
     fn = obj_fn_callback_->compute_obj(x, false);
     if( fabs(fn-target) < best_f_ )
     {
       best_x_ = x;
       best_f_ = fabs(fn-target);
     }
+    ++i;
   }
 
   if( verbose )

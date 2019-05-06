@@ -136,43 +136,20 @@ void DemoTPLOptimizer::initialize_variables_and_constraints()
 
 // -----------------------------------------------------------------
 
-void DemoTPLOptimizer::evaluate_function(const std::vector<double> x,
-					 double& f)
+Real
+DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
 {
+
   set_variables<std::vector<double> >(x, iteratedModel, iteratedModel.current_variables());
 
   iteratedModel.evaluate();// default active s
   const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
 
-  f = (!max_sense.empty() && max_sense[0]) ?
-      -iteratedModel.current_response().function_value(0) :
-       iteratedModel.current_response().function_value(0);
+  double f = (!max_sense.empty() && max_sense[0]) ?
+             -iteratedModel.current_response().function_value(0) :
+              iteratedModel.current_response().function_value(0);
 
-} // evaluate_function
-
-// -----------------------------------------------------------------
-
-Real
-DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
-{
-
-  if( 0 )
-  {
-    Real obj;
-    evaluate_function(x, obj);
-    return obj;
-  }
-
-  if( 1 )
-  {
-    for(size_t i=0; i<iteratedModel.cv(); ++i)
-      iteratedModel.continuous_variable(x[i], i);
-    ActiveSet eval_set(iteratedModel.current_response().active_set());
-    eval_set.request_values(1);
-    iteratedModel.evaluate(eval_set);
-
-    return iteratedModel.current_response().function_value(0);
-  }
+  return f;
 }
 
 } // namespace Dakota
