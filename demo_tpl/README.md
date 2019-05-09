@@ -91,3 +91,14 @@ requirements for:
     endif(HAVE_DEMO_TPL)
    <... end snip ...>
  ```
+
+ 
+
+# Modifying Daktoa to use the _Demo_  TPL
+
+
+## Passing Options
+
+## Exchanging Paramters and Reponses
+
+
