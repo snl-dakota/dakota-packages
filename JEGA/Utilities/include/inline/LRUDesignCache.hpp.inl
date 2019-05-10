@@ -255,7 +255,7 @@ LRUDesignCache::erase(
     )
 {
     if(this->_doCache) this->_lruList.remove(key);
-    this->_data.erase(key);
+    return this->_data.erase(key);
 }
 
 inline
