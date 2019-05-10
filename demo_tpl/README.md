@@ -94,11 +94,172 @@ requirements for:
 
  
 
-# Modifying Daktoa to use the _Demo_  TPL
+# Modifying Dakota to use the _Demo_  TPL
 
+ Before making concrete changes, it is often helpful to create a simple
+ Dakota test which will serve to guide the process.  This is akin to
+ test-driven development which essentially creates a test which fails
+ until everything has been implemented to allow it to run and pass. An
+ candidate test for the current activity could be the following:
+
+ ```
+   # File $DAKTOA_SRC/test/dakota_demo_tpl.in
+    method,
+        demo_tpl
+        convergence_tolerance = 0.05
+
+    variables,
+        continuous_design = 3
+        initial_point      -1.0    1.5   2.0
+        upper_bounds	   10.0   10.0  10.0
+        lower_bounds       -10.0  -10.0 -10.0
+        descriptors	    'x1'  'x2'  'x3'
+
+    interface,
+        system
+        analysis_driver = 'text_book'
+
+    responses,
+        objective_functions = 1
+        no_gradients
+        no_hessians
+   ```
+ For this test to run, we will need to be able to pass parsed options
+ to the _Demo_ TPL and exchange parameters and response values between
+ Dakota and _Demo_ TPL.  These details are presented in the following
+ two sections.
 
 ## Passing Options
 
-## Exchanging Paramters and Reponses
+ Dakota maintains a master list of hierarchical options in its
+ $DAKTOA_SRC/src/dakota.xml file.  Several common options associated
+ with optimizers are already supported and then only need to be exposed
+ within the correct hierarchy (scope).  To both expose the `demo_tpl`
+ optimizer and associate the `convergence_tolerance` option with it,
+ the dakota.xml file would be modified as follows:
+
+ ```
+   # File $DAKTOA_SRC/src/dakota.xml
+
+   ... snip ...
+    <!-- **** TOPLEVEL *** -->
+    <keyword id="method" name="method" minOccurs="1" maxOccurs="unbounded" code="{N_mdm3(start,0,stop)}" label="Method" >
+
+     ... snip ...
+      <!-- Primary method selection alternation -->
+      <oneOf label="Method (Iterative Algorithm)">
+
+       ... snip ...
+
+        <keyword  id="demo_tpl" name="demo_tpl" code="{N_mdm(utype,methodName_DEMO_TPL)}" label="demo_tpl" help="" minOccurs="1" group="Optimization: Local" >
+          &default_convergence_tolerance;
+        </keyword>
+
+       ... end snip ...
+     ... end snip ...
+   ... end snip ...
+ ```
+
+ Dakota's current parser system next needs to connect this change to
+ it's internal options database and to its list of methods.  This is
+ accomplished by modifying a few files as follows, eg
+
+ ```
+   # File $DAKTOA_SRC/src/NIDRProblemDescDB.cpp
+   <... snip ...>
+     MP2s(methodName,ROL),      // existing method
+     MP2s(methodName,DEMO_TPL), // -----  our new demo_tpl method -----
+     MP2s(methodName,NL2SOL),   // existing method
+   <... end snip ...>
+ ```
+
+ ```
+   # File $DAKTOA_SRC/src/DataMethod.hpp
+   <... snip ...>
+       GENIE_OPT_DARTS, GENIE_DIRECT,
+       // Place Demo Opt TPL here based on current state of non-gradient flavor
+       DEMO_TPL,                // -----  our new demo_tpl method -----
+       // Gradient-based Optimizers / Minimizers:
+       NONLINEAR_CG, OPTPP_CG, OPTPP_Q_NEWTON, OPTPP_FD_NEWTON, OPTPP_NEWTON,
+   <... end snip ...>
+ ```
+
+
+ ```
+   # File $DAKTOA_SRC/src/DataIterator.cpp
+   <... snip ...>
+        #ifdef HAVE_DEMO_TPL
+        #include "DemoOptimizer.hpp"
+        #endif
+   <... end snip ...>
+
+        Iterator* Iterator::get_iterator(ProblemDescDB& problem_db, Model& model)
+        {
+          unsigned short method_name = problem_db.get_ushort("method.algorithm");
+   <... snip ...>
+        #ifdef HAVE_DEMO_TPL
+            case DEMO_TPL:      // -----  our new demo_tpl method -----
+              return new DemoTPLOptimizer(problem_db, model); break;
+        #endif
+            default:
+              switch (method_name) {
+   <... end snip ...>
+
+
+        /// bimap between method enums and strings; only used in this
+        /// compilation unit
+        static UShortStrBimap method_map =
+          boost::assign::list_of<UShortStrBimap::relation>
+          (HYBRID,                          "hybrid")
+   <... snip ...>
+          (DEMO_TPL,                        "demo_tpl")
+          ;
+   <... end snip ...>
+ ```
+
+ The next time Dakota is configured with the option `-D ENABLE_SPEC_MAINT:BOOL=ON`
+ defined Dakota will automatically generate a file, $DAKTOA_SRC/src/dakota.input.nspec,
+ based on the dakota.xml file.
+
+ Once Dakota has been compiled with these changes, the simple test input
+ file should parse and attempt to call the DemoTPLOptimizer::core_run()
+ method to perform the optimization of the Dakota "text_book" example
+ problem.
+
+### Passing A Native Options File
+
+ For new TPLs supporting many or somewhat specialized options, it is
+ not feasible to extend Dakota's native parser options for all of these.
+ Instead, a pass-through approach based on passing an options file native
+ to the TPL can be specified in the Dakota input file.  Using the above
+ test, the method block would be augmented as follows:
+
+ ```
+   # File $DAKTOA_SRC/test/dakota_demo_tpl.in
+    method,
+        demo_tpl
+        convergence_tolerance = 0.05
+        options_file = "demo_tpl.opts"
+ ```
+
+ To expose this option to Dakota, the new daktoa.xml content would
+ consist of the following:
+
+ ```
+   # File $DAKTOA_SRC/src/dakota.xml
+
+   ... snip ...
+
+        <keyword  id="demo_tpl" name="demo_tpl" code="{N_mdm(utype,methodName_DEMO_TPL)}" label="demo_tpl" help="" minOccurs="1" group="Optimization: Local" >
+          &default_convergence_tolerance;
+	  <keyword  id="options_file" name="options_file" code="{N_mdm(str,advancedOptionsFilename)}" label="Advanced Options File"  minOccurs="0" default="no advanced options file" >
+	    <param type="INPUT_FILE" />
+	  </keyword>
+        </keyword>
+
+   ... end snip ...
+ ```
+
+## Exchanging Parameters and Reponses
 
 
