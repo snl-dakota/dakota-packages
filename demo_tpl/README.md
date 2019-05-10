@@ -262,4 +262,37 @@ requirements for:
 
 ## Exchanging Parameters and Reponses
 
+ Like any TPL, the _Demo_ TPL will need to exchange parameter and
+ obective function values with Dakota.  For purposes of demonstration,
+ an example interface between Dakota and the _Demo_ TPL can be seen
+ in $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.hpp (with
+ corresponding .cpp in the same directory).  Within these files is 
+ a key callback interface used by the _Demo_ TPL to obtain objective function
+ values for given parater values (3 in the test above), eg:
+
+ ```
+   # File $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.cpp
+
+    Real
+    DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
+    {
+      set_variables<std::vector<double> >(x, iteratedModel, iteratedModel.current_variables());
+
+      iteratedModel.evaluate();// default active s
+      const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
+
+      double f = (!max_sense.empty() && max_sense[0]) ?
+                 -iteratedModel.current_response().function_value(0) :
+                  iteratedModel.current_response().function_value(0);
+
+      return f;
+    }
+ ```
+
+ In this instance, the _Demo_ TPL uses `std::vector<double>` as its native
+ parameter vector data type and is calling back to the example problem
+ via an interface to Dakota to obtain a single `double` (aliased to `Real`
+ in Dakota) obective function value for a given set of parameter values.
+ These data exchanges are facilitated by used of "data adapters" supplied
+ by Dakota with the `set_variables<>(...)` helper utilized in this case.
 
