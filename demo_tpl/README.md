@@ -106,7 +106,7 @@ requirements for:
    # File $DAKTOA_SRC/test/dakota_demo_tpl.in
     method,
         demo_tpl
-        convergence_tolerance = 0.05
+        options_file = "demo_tpl.opts"
 
     variables,
         continuous_design = 3
@@ -116,7 +116,7 @@ requirements for:
         descriptors	    'x1'  'x2'  'x3'
 
     interface,
-        system
+        direct
         analysis_driver = 'text_book'
 
     responses,
@@ -132,11 +132,14 @@ requirements for:
 ## Passing Options
 
  Dakota maintains a master list of hierarchical options in its
- $DAKTOA_SRC/src/dakota.xml file.  Several common options associated
- with optimizers are already supported and then only need to be exposed
- within the correct hierarchy (scope).  To both expose the `demo_tpl`
- optimizer and associate the `convergence_tolerance` option with it,
- the dakota.xml file would be modified as follows:
+ $DAKTOA_SRC/src/dakota.xml file.  Several common options associated with
+ optimizers are already supported and then only need to be exposed within
+ the correct hierarchy (scope).  Initially, however, it is often best to
+ simply pass a native options file directly to a TPL.  Dakaota supprts
+ this approach via the `options_file` specification as shown in the test
+ input file.  To both expose the `demo_tpl` optimizer and associate the
+ `options_file` specification with it, the dakota.xml file would be
+ modified as follows:
 
  ```
    # File $DAKTOA_SRC/src/dakota.xml
@@ -152,7 +155,9 @@ requirements for:
        ... snip ...
 
         <keyword  id="demo_tpl" name="demo_tpl" code="{N_mdm(utype,methodName_DEMO_TPL)}" label="demo_tpl" help="" minOccurs="1" group="Optimization: Local" >
-          &default_convergence_tolerance;
+          <keyword  id="options_file" name="options_file" code="{N_mdm(str,advancedOptionsFilename)}" label="Advanced Options File"  minOccurs="0" default="no advanced options file" >
+            <param type="INPUT_FILE" />
+          </keyword>
         </keyword>
 
        ... end snip ...
@@ -226,39 +231,6 @@ requirements for:
  method to perform the optimization of the Dakota "text_book" example
  problem.
 
-### Passing A Native Options File
-
- For new TPLs supporting many or somewhat specialized options, it is
- not feasible to extend Dakota's native parser options for all of these.
- Instead, a pass-through approach based on passing an options file native
- to the TPL can be specified in the Dakota input file.  Using the above
- test, the method block would be augmented as follows:
-
- ```
-   # File $DAKTOA_SRC/test/dakota_demo_tpl.in
-    method,
-        demo_tpl
-        convergence_tolerance = 0.05
-        options_file = "demo_tpl.opts"
- ```
-
- To expose this option to Dakota, the new daktoa.xml content would
- consist of the following:
-
- ```
-   # File $DAKTOA_SRC/src/dakota.xml
-
-   ... snip ...
-
-        <keyword  id="demo_tpl" name="demo_tpl" code="{N_mdm(utype,methodName_DEMO_TPL)}" label="demo_tpl" help="" minOccurs="1" group="Optimization: Local" >
-          &default_convergence_tolerance;
-	  <keyword  id="options_file" name="options_file" code="{N_mdm(str,advancedOptionsFilename)}" label="Advanced Options File"  minOccurs="0" default="no advanced options file" >
-	    <param type="INPUT_FILE" />
-	  </keyword>
-        </keyword>
-
-   ... end snip ...
- ```
 
 ## Exchanging Parameters and Reponses
 
