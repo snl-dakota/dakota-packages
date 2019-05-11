@@ -59,18 +59,26 @@ class DemoTPLOptimizer : public Optimizer,
 
   protected:
 
-    void set_demo_parameters();
-    void initialize_variables_and_constraints();
+  /// Helper functions to pass Dakota set-up data to TPL.
+  void set_demo_parameters();
+  void initialize_variables_and_constraints();
 
-    std::shared_ptr<Demo_Opt> demoOpt;
+  /// Instaintiation of demo optimizer object.
+  std::shared_ptr<Demo_Opt> demoOpt;
 
 }; // class DemoTPLOptimizer
 
 
 // -----------------------------------------------------------------
-/** DemoOptTraits defines the types of problems and data formats Demo_Opt
-    supports by overriding the default traits accessors in
-    TraitsBase. */
+/** Traits are the means by which information about what the TPL
+    supports is communicated to Dakota for internal use.
+    DemoOptTraits defines the types of problems and data formats
+    Demo_Opt supports by overriding the default traits accessors in
+    TraitsBase.  By default, nothing is supported, and the TPL
+    integrator must explicitly turn on the traits for any supported
+    features.  This simple example only supports continuous variables.
+    Examples showing other features will be added in future updates to
+    this demo. */
 
 class DemoOptTraits: public TraitsBase
 {
