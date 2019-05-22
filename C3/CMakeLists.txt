@@ -48,10 +48,17 @@ else ()
     set(compiler_flags "-g -Wall -Wextra -O2 -std=c99 -fno-omit-frame-pointer")
     set(CMAKE_C_COMPILER "cc")
 
+    # BMA note: in Dakota we won't be able to do find_package on these
+    # until Dakota adopts the CMake find convention
     find_package(BLAS REQUIRED)
     find_package(LAPACK REQUIRED)
     include_directories(${BLAS_INCLUDE_DIR}, ${LAPACK_INCLUDE_DIR})
     set(blas_lapack ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+    # Hardwired addition of ATLAS For RHEL7; choosing serial version if needed
+    find_library(atlas_lib NAMES atlas satlas PATHS "/usr/lib64/atlas/")
+    message(STATUS "C3 using ATLAS: ${atlas_lib}")
+    list(INSERT blas_lapack 0 "${atlas_lib}")
+    message(STATUS "C3 total blas_lapack link: ${blas_lapack}")
 
 endif()
 
