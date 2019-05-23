@@ -56,8 +56,14 @@ FortranCInterface_HEADER(include/cblas_config.h MACRO_NAMESPACE OPTPP_)
 
 if (NOT BUILD_IN_TRILINOS)
 
-  # First probe for system-installed Trilinos, respecting Trilinos_DIR if set
-  find_package(Trilinos QUIET)
+
+  # Workaround to skip finding system Trilinos until this probe is
+  # simplified and follows find_package semantics. Double negative to
+  # preserve historical behavior without overcomplicating things.
+  if(NOT DAKOTA_NO_FIND_TRILINOS)
+    # First probe for system-installed Trilinos, respecting Trilinos_DIR if set
+    find_package(Trilinos QUIET)
+  endif()
 
   if(Trilinos_FOUND)
     if(Trilinos_DIR)

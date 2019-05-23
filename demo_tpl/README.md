@@ -1,22 +1,28 @@
 
-This is a simple Demo which serves as a working example for bringing a new 
-Third-Party-Library (TPL) into Dakota.  The Demo will serve to show minimal
-requirements for:
+This is a simple Demo which serves as a working example for bringing a
+new Third-Party-Library (TPL) into Dakota.  The Demo will serve to
+show minimal requirements for:
 
  - building the Demo library under Dakota via Cmake
- - exposing Demo functionality, eg initialzation and execution, to Dakota
+ - exposing Demo functionality, eg initialization and execution, to Dakota
  - exposing Demo options to Dakota
  - transferring data, variables and responses, between Demo and Dakota
 
+Following this Demo, a developer should be able to integrate an
+optimization TPL/method that is derivative-free, operates over
+continuous variables, and supports bound constraints.
+
 # Building _Demo_ under Dakota using Cmake
 
- This section shows how to include the relevant parts of the `Demo` TPL as a library 
- that Dakota builds and includes as part of its own native Cmake build.
+ This section shows how to include the relevant parts of the `Demo`
+ TPL as a library that Dakota builds and includes as part of its own
+ native Cmake build.
 
- Assuming the _Demo_ tpl source code has been placed alongside other Dakota TPLs in
- `$DAKTOA_SRC/packages/external/demo_tpl`, a simple _CMakeLists.txt_ file can be created
- at this location to allow Dakota to include it within its own Cmake setup.  An minimal
- example might include:
+ Assuming the _Demo_ tpl source code has been placed alongside other
+ Dakota TPLs in `$DAKTOA_SRC/packages/external/demo_tpl`, a simple
+ _CMakeLists.txt_ file can be created at this location to allow Dakota
+ to include it within its own Cmake setup.  An minimal example might
+ include:
  
  ```
    # File $DAKTOA_SRC/packages/external/demo_tpl/CMakeLists.txt
@@ -24,9 +30,10 @@ requirements for:
    project("DEMO_TPL" CXX)
    SUBDIRS(src)
   ```
- In the src subdirectory of demo_tpl would be another _CMakeLists.txt_ file which essentially
- identifies the relevant source code to be compiled into a library along with defining the 
- library which Daktoa will later include, eg
+ In the src subdirectory of demo_tpl would be another _CMakeLists.txt_
+ file which essentially identifies the relevant source code to be
+ compiled into a library along with defining the library which Daktoa
+ will later include, eg
 
  ```
    # File $DAKTOA_SRC/packages/external/demo_tpl/src/CMakeLists.txt
@@ -54,7 +61,8 @@ requirements for:
  At this point, Dakota's _CMakeLists.txt_ files will need to be
  modified to include the _Demo_ tpl library.  The following modified
  can be used to bring in the _Demo_ TPL conditioned on having `-D
- HAVE_DEMO_TPL:BOOL=ON` defined when invoking cmake to configure Dakota:
+ HAVE_DEMO_TPL:BOOL=ON` defined when invoking cmake to configure
+ Dakota:
 
  ```
    # File $DAKTOA_SRC/packages/CMakeLists.txt
@@ -96,17 +104,18 @@ requirements for:
 
 # Modifying Dakota to use the _Demo_  TPL
 
- Before making concrete changes, it is often helpful to create a simple
- Dakota test which will serve to guide the process.  This is akin to
- test-driven development which essentially creates a test which fails
- until everything has been implemented to allow it to run and pass. An
- candidate test for the current activity could be the following:
+ Before making concrete changes, it is often helpful to create a
+ simple Dakota test which will serve to guide the process.  This is
+ akin to test-driven development which essentially creates a test
+ which fails until everything has been implemented to allow it to run
+ and pass. An candidate test for the current activity could be the
+ following:
 
  ```
    # File $DAKTOA_SRC/test/dakota_demo_tpl.in
     method,
         demo_tpl
-        convergence_tolerance = 0.05
+        options_file = "demo_tpl.opts"
 
     variables,
         continuous_design = 3
@@ -116,7 +125,7 @@ requirements for:
         descriptors	    'x1'  'x2'  'x3'
 
     interface,
-        system
+        direct
         analysis_driver = 'text_book'
 
     responses,
@@ -133,10 +142,13 @@ requirements for:
 
  Dakota maintains a master list of hierarchical options in its
  $DAKTOA_SRC/src/dakota.xml file.  Several common options associated
- with optimizers are already supported and then only need to be exposed
- within the correct hierarchy (scope).  To both expose the `demo_tpl`
- optimizer and associate the `convergence_tolerance` option with it,
- the dakota.xml file would be modified as follows:
+ with optimizers are already supported and then only need to be
+ exposed within the correct hierarchy (scope).  Initially, however, it
+ is often best to simply pass a native options file directly to a TPL.
+ Dakaota supprts this approach via the `options_file` specification as
+ shown in the test input file.  To both expose the `demo_tpl`
+ optimizer and associate the `options_file` specification with it, the
+ dakota.xml file would be modified as follows:
 
  ```
    # File $DAKTOA_SRC/src/dakota.xml
@@ -152,7 +164,9 @@ requirements for:
        ... snip ...
 
         <keyword  id="demo_tpl" name="demo_tpl" code="{N_mdm(utype,methodName_DEMO_TPL)}" label="demo_tpl" help="" minOccurs="1" group="Optimization: Local" >
-          &default_convergence_tolerance;
+          <keyword  id="options_file" name="options_file" code="{N_mdm(str,advancedOptionsFilename)}" label="Advanced Options File"  minOccurs="0" default="no advanced options file" >
+            <param type="INPUT_FILE" />
+          </keyword>
         </keyword>
 
        ... end snip ...
@@ -217,58 +231,26 @@ requirements for:
    <... end snip ...>
  ```
 
- The next time Dakota is configured with the option `-D ENABLE_SPEC_MAINT:BOOL=ON`
- defined Dakota will automatically generate a file, $DAKTOA_SRC/src/dakota.input.nspec,
- based on the dakota.xml file.
+ The next time Dakota is configured with the option `-D
+ ENABLE_SPEC_MAINT:BOOL=ON` defined Dakota will automatically generate
+ a file, $DAKTOA_SRC/src/dakota.input.nspec, based on the dakota.xml
+ file.
 
- Once Dakota has been compiled with these changes, the simple test input
- file should parse and attempt to call the DemoTPLOptimizer::core_run()
- method to perform the optimization of the Dakota "text_book" example
- problem.
+ Once Dakota has been compiled with these changes, the simple test
+ input file should parse and attempt to call the
+ DemoTPLOptimizer::core_run() method to perform the optimization of
+ the Dakota "text_book" example problem.
 
-### Passing A Native Options File
-
- For new TPLs supporting many or somewhat specialized options, it is
- not feasible to extend Dakota's native parser options for all of these.
- Instead, a pass-through approach based on passing an options file native
- to the TPL can be specified in the Dakota input file.  Using the above
- test, the method block would be augmented as follows:
-
- ```
-   # File $DAKTOA_SRC/test/dakota_demo_tpl.in
-    method,
-        demo_tpl
-        convergence_tolerance = 0.05
-        options_file = "demo_tpl.opts"
- ```
-
- To expose this option to Dakota, the new daktoa.xml content would
- consist of the following:
-
- ```
-   # File $DAKTOA_SRC/src/dakota.xml
-
-   ... snip ...
-
-        <keyword  id="demo_tpl" name="demo_tpl" code="{N_mdm(utype,methodName_DEMO_TPL)}" label="demo_tpl" help="" minOccurs="1" group="Optimization: Local" >
-          &default_convergence_tolerance;
-	  <keyword  id="options_file" name="options_file" code="{N_mdm(str,advancedOptionsFilename)}" label="Advanced Options File"  minOccurs="0" default="no advanced options file" >
-	    <param type="INPUT_FILE" />
-	  </keyword>
-        </keyword>
-
-   ... end snip ...
- ```
 
 ## Exchanging Parameters and Reponses
 
  Like any TPL, the _Demo_ TPL will need to exchange parameter and
  obective function values with Dakota.  For purposes of demonstration,
- an example interface between Dakota and the _Demo_ TPL can be seen
- in $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.hpp (with
- corresponding .cpp in the same directory).  Within these files is 
- a key callback interface used by the _Demo_ TPL to obtain objective function
- values for given parater values (3 in the test above), eg:
+ an example interface between Dakota and the _Demo_ TPL can be seen in
+ $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.hpp (with
+ corresponding .cpp in the same directory).  Within these files is a
+ key callback interface used by the _Demo_ TPL to obtain objective
+ function values for given parater values (3 in the test above), eg:
 
  ```
    # File $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.cpp
@@ -289,10 +271,54 @@ requirements for:
     }
  ```
 
- In this instance, the _Demo_ TPL uses `std::vector<double>` as its native
- parameter vector data type and is calling back to the example problem
- via an interface to Dakota to obtain a single `double` (aliased to `Real`
- in Dakota) obective function value for a given set of parameter values.
- These data exchanges are facilitated by used of "data adapters" supplied
- by Dakota with the `set_variables<>(...)` helper utilized in this case.
+ In this instance, the _Demo_ TPL uses `std::vector<double>` as its
+ native parameter vector data type and is calling back to the example
+ problem via an interface to Dakota to obtain a single `double`
+ (aliased to `Real` in Dakota) obective function value for a given set
+ of parameter values.  These data exchanges are facilitated by used of
+ "data adapters" supplied by Dakota with the `set_variables<>(...)`
+ helper utilized in this case.
 
+ Similarly, Dakota must provide initial parameter values to the TPL
+ and retrieve final objective function and variable values from the
+ TPL.  The initial values for parameters and bound constraints can be
+ obtained from Dakota with the `get_variables<>(...)` helpers.  This
+ example returns the values to a standard vector of doubles (Reals).
+ Those values can then be passed on the TPL using TPL API.
+
+ ```
+   # File $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.cpp
+
+  int num_total_vars = numContinuousVars;
+  std::vector<Real> init_point(num_total_vars);
+  std::vector<Real> lower(num_total_vars),
+                    upper(num_total_vars);
+
+  get_variables(iteratedModel, init_point);
+  get_variable_bounds_from_dakota<DemoOptTraits>( lower, upper );
+ ```
+
+ The TPL should be able to return and optimal objective function value
+ and the corresponding variable values via its API.  As has been the
+ case throughout, the data should be doubles.  The following code take
+ the returned values and set the Dakota data structures that contain
+ final objective and variable values.  It adjusts the sign of the
+ objective based on whether minimize or maximize has been specified in
+ the Dakota input file (minimize is the default).
+
+ ```
+   # File $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.cpp
+
+    double best_f = demoOpt->get_best_f();
+
+    const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
+    RealVector best_fns(numFunctions);
+    best_fns[0] = (!max_sense.empty() && max_sense[0]) ?
+      -best_f : best_f;
+    bestResponseArray.front().function_values(best_fns);
+  }
+
+  std::vector<double> best_x = demoOpt->get_best_x();
+
+  set_variables< std::vector<double> >(best_x, iteratedModel, bestVariablesArray.front());
+```

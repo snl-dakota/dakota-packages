@@ -12,15 +12,28 @@
 //- Checked by:  
 
 // Dakota headers
-#include "DemoOptimizer.hpp"
+// This header file provides the database that holds options specified
+// in the Dakota input file.
+
 #include "ProblemDescDB.hpp"
 
 // Demo_Opt headers
+// There are two sets of source files needed for integrating a TPL
+// into Dakota: the source code for the TPL and the source files that
+// provide the interface between Dakota and the TPL.  This source file
+// and the first header comprise the interface.  The second header is
+// associated the the TPL source.  Replace the second header with any
+// necessary header files from the TPL that is being integrated.
+
+#include "DemoOptimizer.hpp"
 #include "demo_opt.hpp"
 
 //
 // - DemoTPLOptimizer implementation
 //
+
+// All of the interface source should be included in the Dakota
+// namespace.
 
 namespace Dakota {
 
@@ -28,17 +41,40 @@ namespace Dakota {
 // -----------------------------------------------------------------
 /** Implementation of DemoTPLOptimizer class. */
 
+// Standard constructor for DemoTPLOptimizer.  Sets up Demo_Opt solver
+// based on information from the database.  problem_db and model are
+// Dakota objects from which various information can be accessed.  No
+// additional implementation is needed in the wrapper.  DemoOptTraits
+// is also a Dakot object, but it requires some additional
+// implementation; instructions are in DemoOptimizer.hpp.
 
-// Standard constructor for DemoTPLOptimizer.  Sets up Demo_Opt solver based on
-// information from the problem database.
+// Demo_Opt and demoOpt are specific to the TPL being integrated.  In
+// this example, the assumption is that the TPL is object oriented and
+// that its main class (Demo_Opt) has a function evaluation method
+// (ObjectiveFn()) that needs to be implemented.  The TPL solver
+// (demoOpt) is instantiated.  TPLs do not have to be in C++, nor to
+// the necessary objects have to be instantiated/initialized in the
+// constructor as long as they are created before they are accessed.
+
 DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
   Optimizer(problem_db, model, std::shared_ptr<TraitsBase>(new DemoOptTraits())),
   Demo_Opt::ObjectiveFn(),
   demoOpt(std::make_shared<Demo_Opt>())
 {
+  // Call a helper function to set method parameters.  It is
+  // implemented later in this source file.
+
   set_demo_parameters();
 
-  // Register ouself as the callback interface for objective fn evaluations
+  // Register ourself as the callback interface for objective function
+  // evaluations.  This assumes that the TPL makes a function call to
+  // do objective function evaluations, and a pointer to the function
+  // must be provided to the TPL.  This code should be replaced with
+  // whatever mechanism the TPL being integrated uses for setting that
+  // function pointer.  There are other ways that objective functions
+  // can be implemented that will be added to future versions of this
+  // example.
+
   demoOpt->register_obj_fn(this);
 }
 
@@ -46,30 +82,63 @@ DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
 // -----------------------------------------------------------------
 
 // core_run redefines the Optimizer virtual function to perform the
-// optimization using Demo_Opt and catalogue the results.
+// optimization using Demo_Opt and catalogue the results.  core_run
+// will be called by Dakota, and core_run will call the TPL optimizer.
+
 void DemoTPLOptimizer::core_run()
 {
+  // Call a helper function to set the initial values of the
+  // variables.  It is implemented later in this source file.
+
   initialize_variables_and_constraints();
+
+  // Invoke the TPL's method to actually perform the optimization.
+  // This code should be replaced by whatever the TPL's mechanism is
+  // for running its solver.
 
   demoOpt->execute(true);
 
+  // The TPL should provide the optimal value of the objective
+  // function and the associated variable values.  For the purposes of
+  // this example, the values should be returned to standard C++ data
+  // types, double for the function value and std::vector<double> for
+  // the variable values.
+
   if (!localObjectiveRecast) {
+    // Replace this line with however the TPL being integrated returns
+    // the optimal function value.  To use this demo with minimal
+    // changes, the returned value needs to be (converted to) a
+    // double.
     double best_f = demoOpt->get_best_f();
 
+    // If the TPL defaults to doing minimization, no need to do
+    // anything with this code.  It manages needed sign changes
+    // depending on whether minimize or maximize has been specified in
+    // the Dakota input file.
     const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
     RealVector best_fns(numFunctions);
     best_fns[0] = (!max_sense.empty() && max_sense[0]) ?
       -best_f : best_f;
     bestResponseArray.front().function_values(best_fns);
   }
-
+    // Replace this line with however the TPL being integrated returns
+    // the optimal variable values.  To use this demo with minimal
+    // changes, the returned value needs to be (converted to) a
+    // std::vector<double>.
   std::vector<double> best_x = demoOpt->get_best_x();
+
+  // Set Dakota optimal value data.
   set_variables< std::vector<double> >(best_x, iteratedModel, bestVariablesArray.front());
 
 } // core_run
 
 
 // -----------------------------------------------------------------
+
+// Dakota will call initialize_run() for any one-time setup.  If the
+// TPL being integrated requires such, it should be implemented here.
+// Replace the demoOpt method call with any initialization (or call to
+// initialization)needed.
 
 void DemoTPLOptimizer::initialize_run()
 {
@@ -80,23 +149,17 @@ void DemoTPLOptimizer::initialize_run()
 
 // -----------------------------------------------------------------
 
+// This helper function sets the TPL algorithmic parameters.  For this
+// initial example, the only mechanism to do this is for the TPL to
+// directly read in a file with the information.  The formatting and
+// reading of the file are the TPL's responsibility.  The file name is
+// specified in the Dakota input file.  This code extracts the
+// filename and passes it to the TPL.
+
 void DemoTPLOptimizer::set_demo_parameters()
 {
-  demoOpt->set_param("Maximum Evaluations", maxFunctionEvals);
-
-  demoOpt->set_param("Maximum Iterations", maxIterations);
-
-  demoOpt->set_param("Function Tolerance", convergenceTol);
-
-  const Real& min_var_change
-    = probDescDB.get_real("method.variable_tolerance");
-  demoOpt->set_param("Step Tolerance", min_var_change);
-
-  const Real& objective_target
-    = probDescDB.get_real("method.solution_target");
-  demoOpt->set_param("Objective Target", objective_target);
-
-  // Check for native Demo_Opt input file.
+  // Check for native Demo_Opt input file.  The file name needs to be
+  // included in the Dakota input file.
   String adv_opts_file = probDescDB.get_string("method.advanced_options_file");
   if (!adv_opts_file.empty())
   {
@@ -108,25 +171,39 @@ void DemoTPLOptimizer::set_demo_parameters()
     }
   }
 
+  // Replace this line by whatever the TPL being integrated uses to
+  // set its input file name.
+
   demoOpt->set_solver_options(adv_opts_file, true);
 
 } // set_demo_parameters
 
 // -----------------------------------------------------------------
 
+// This helper function gets the initial values of the variables and
+// the values of the bound constraints.  They are returned in standard
+// C++ data types.  The values are passed on to the TPL.
+
 void DemoTPLOptimizer::initialize_variables_and_constraints()
 {
 
-  // just do continuous variables; use iteratedModel method to get number
-  // of variables rather than internal Dakota variable names
+  // Get the number of variables, the initial values, and the values
+  // of bound constraints.  They are returned to standard C++ data
+  // types.  This example considers only continuous variables.  Other
+  // types of variables and constraints will be added at a later time.
+  // Note that double is aliased to Real in Dakota.
   int num_total_vars = numContinuousVars;
   std::vector<Real> init_point(num_total_vars);
   std::vector<Real> lower(num_total_vars),
                     upper(num_total_vars);
 
-  // need traits; just do bounds for now, not linear/nonlinear
+  // More on DemoOptTraits can be found in DemoOptimizer.hpp.
   get_variables(iteratedModel, init_point);
   get_variable_bounds_from_dakota<DemoOptTraits>( lower, upper );
+
+  // Replace this line by whatever the TPL being integrated uses to
+  // ingest variable values and bounds, including any data type
+  // conversion needed.
 
   demoOpt->set_problem_data(init_point,   //  "Initial Guess"
                             lower     ,   //  "Lower Bounds"
@@ -136,15 +213,27 @@ void DemoTPLOptimizer::initialize_variables_and_constraints()
 
 // -----------------------------------------------------------------
 
+// This is the implementation of the objective function evaluation.
+// This assumes a function callback approach, i.e., the TPL optimizer
+// calls this function whenever it needs an evaluation done.  Other
+// ways to interface to function will be added in the future.  This
+// interface should be replaced with what ever interface the TPL uses.
+
 Real
 DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
 {
-
+  // Tell Dakota what variable values to use for the function
+  // valuation.  x must be (converted to) a std::vector<double> to use
+  // this demo with minimal changes.
   set_variables<std::vector<double> >(x, iteratedModel, iteratedModel.current_variables());
 
-  iteratedModel.evaluate();// default active s
-  const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
+  // Evaluate the function at the specified x.
+  iteratedModel.evaluate();
 
+  // Retrieve the the function value and sign it appropriately based
+  // on whether minimize or maximize has been specified in the Dakota
+  // input file.
+  const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
   double f = (!max_sense.empty() && max_sense[0]) ?
              -iteratedModel.current_response().function_value(0) :
               iteratedModel.current_response().function_value(0);
