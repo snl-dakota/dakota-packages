@@ -32,6 +32,13 @@ class Demo_Opt
         virtual double compute_obj(const std::vector<double> & x, bool verbose = false) = 0;
     };
 
+    class NonlinearEqFn
+    {
+      public:
+        virtual void compute_nlneq(std::vector<double> &c, const std::vector<double> &x, bool verbose = false) = 0;
+        virtual int get_num_nlneq(bool verbose = false) = 0;
+    };
+
     // Default ctor
     Demo_Opt() {}
 
@@ -53,6 +60,10 @@ class Demo_Opt
     void register_obj_fn(ObjectiveFn* obj_fn)
       { obj_fn_callback_ = obj_fn; }
 
+    // Register an nonlinear equality fn callback interface
+    void register_nln_eq_fn(NonlinearEqFn* obj)
+      { nlneq_fn_callback_ = obj; }
+
     // Specify problem data
     void set_problem_data(const std::vector<double> &,   //  "Initial Guess"
                           const std::vector<double> &,   //  "Lower Bounds"
@@ -65,6 +76,10 @@ class Demo_Opt
     // Get best current objective values
     double get_best_f() const
       { return best_f_;}
+
+    // Get best nonlinear equality constraint values
+    const std::vector<double> & get_best_nln_eqs() const
+      { return best_nln_eqs_;}
 
 
   private:
@@ -79,7 +94,8 @@ class Demo_Opt
     std::map<std::string, int>    int_params_;
     std::map<std::string, double> dbl_params_;
 
-    ObjectiveFn * obj_fn_callback_;
+    ObjectiveFn   * obj_fn_callback_;
+    NonlinearEqFn * nlneq_fn_callback_;
 
     std::vector<double> init_vals_;
     std::vector<double> lower_bnds_;
@@ -87,6 +103,7 @@ class Demo_Opt
 
     std::vector<double> best_x_;
     double best_f_;
+    std::vector<double> best_nln_eqs_;
 };
 
 #endif

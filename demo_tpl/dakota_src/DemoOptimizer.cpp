@@ -67,15 +67,16 @@ DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
   set_demo_parameters();
 
   // Register ourself as the callback interface for objective function
-  // evaluations.  This assumes that the TPL makes a function call to
-  // do objective function evaluations, and a pointer to the function
-  // must be provided to the TPL.  This code should be replaced with
-  // whatever mechanism the TPL being integrated uses for setting that
-  // function pointer.  There are other ways that objective functions
-  // can be implemented that will be added to future versions of this
-  // example.
+  // evaluations and nonlinear equality constraints.  This assumes that
+  // the TPL makes a function call to do objective function evaluations,
+  // and a pointer to the function must be provided to the TPL.  This code
+  // should be replaced with whatever mechanism the TPL being integrated
+  // uses for setting that function pointer.  There are other ways that
+  // objective functions can be implemented that will be added to future
+  // versions of this example.
 
   demoOpt->register_obj_fn(this);
+  demoOpt->register_nln_eq_fn(this);
 }
 
 
@@ -116,9 +117,17 @@ void DemoTPLOptimizer::core_run()
     // depending on whether minimize or maximize has been specified in
     // the Dakota input file.
     const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
-    RealVector best_fns(numFunctions);
+    RealVector best_fns(numFunctions+numNonlinearEqConstraints);
     best_fns[0] = (!max_sense.empty() && max_sense[0]) ?
       -best_f : best_f;
+
+    // Get best Nonlinear Equality Constraints - This is ripe for creating/using an adapter...
+    if( numNonlinearEqConstraints > 0 )
+    {
+      auto best_nln_eqs = demoOpt->get_best_nln_eqs();
+      std::copy( best_nln_eqs.begin(), best_nln_eqs.end(), &best_fns(0)+1);
+    }
+
     bestResponseArray.front().function_values(best_fns);
   }
     // Replace this line with however the TPL being integrated returns
@@ -252,5 +261,35 @@ DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
 
   return f;
 }
+
+// -----------------------------------------------------------------
+
+// This is the implementation of the nonlinear equality constraint evaluation.
+// This assumes a function callback approach, i.e., the TPL optimizer
+// calls this function whenever it needs an evaluation done.  Other
+// ways to interface to function will be added in the future.  This
+// interface should be replaced with what ever interface the TPL uses.
+
+int
+DemoTPLOptimizer::get_num_nlneq(bool verbose)
+{
+  return iteratedModel.num_nonlinear_eq_constraints();
+}
+
+void
+DemoTPLOptimizer::compute_nlneq(std::vector<Real> &c, const std::vector<Real> &x, bool verbose)
+{
+  // Tell Dakota what variable values to use for the nonlinear constraint
+  // evaluations.  x must be (converted to) a std::vector<double> to use
+  // this demo with minimal changes.
+  set_variables<std::vector<double> >(x, iteratedModel, iteratedModel.current_variables());
+
+  // Evaluate the function at the specified x.
+  iteratedModel.evaluate();
+
+  // Use an adapter to copy data
+  get_nonlinear_eq_constraints( iteratedModel, c, -1.0 );
+
+} // nonlinear eq constraints value
 
 } // namespace Dakota

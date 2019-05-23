@@ -30,7 +30,8 @@ namespace Dakota {
  *  to construct and run a Demo_Opt solver */
 
 class DemoTPLOptimizer : public Optimizer,
-                         public Demo_Opt::ObjectiveFn
+                         public Demo_Opt::ObjectiveFn,
+                         public Demo_Opt::NonlinearEqFn
 {
   public:
 
@@ -56,6 +57,9 @@ class DemoTPLOptimizer : public Optimizer,
 
     /// Inherits Demo_TPL::ObjectiveFn
     Real compute_obj(const std::vector<double> & x, bool verbose) override;
+
+    int get_num_nlneq(bool verbose) override;
+    void compute_nlneq(std::vector<double> & c, const std::vector<double> & x, bool verbose) override;
 
   protected:
 
@@ -107,6 +111,9 @@ public:
 
   /// Return the flag indicating whether method supports continuous variables
   bool supports_continuous_variables() { return true; }
+
+  /// Return the flag indicating whether method supports nonlinear equality constrinats
+  bool supports_nonlinear_equality() { return true; }
 
 }; // class DemoOptTraits
 

@@ -98,17 +98,32 @@ Demo_Opt::execute(bool verbose)
 
   // Crude "optimization" based on random sampling over parameter space
   std::vector<double> x(num_params);
+
   double fn;
+  std::vector<double> nln_eqs;
+  if( nlneq_fn_callback_ )
+    nln_eqs.resize( nlneq_fn_callback_->get_num_nlneq() );
+
   int i = 0;
   while( i<=max_evals && best_f_>fn_tol )
   {
     for( int np=0; np<num_params; ++np )
       x[np] = distributions[np](generator);
+    // Get objective fn
     fn = obj_fn_callback_->compute_obj(x, false);
+    // Get nonlinear equality constraints values if applicable
+    if( nlneq_fn_callback_ )
+    {
+      nlneq_fn_callback_->compute_nlneq(nln_eqs, x, false);
+      for( auto eqval : nln_eqs )
+        fn += fabs(eqval);
+    }
+
     if( fabs(fn-target) < best_f_ )
     {
       best_x_ = x;
       best_f_ = fabs(fn-target);
+      best_nln_eqs_ = nln_eqs;
     }
     ++i;
   }
