@@ -158,6 +158,18 @@ void DemoTPLOptimizer::initialize_run()
 
 void DemoTPLOptimizer::set_demo_parameters()
 {
+  int    max_fn_evals;
+  int    max_iters;
+  double conv_tol;
+  double min_var_chg;
+  double obj_target;
+
+  get_common_stopping_criteria(max_fn_evals, max_iters, conv_tol, min_var_chg, obj_target );
+
+  demoOpt->set_param("Maximum Evaluations", max_fn_evals);
+  demoOpt->set_param("Maximum Iterations",  max_iters);
+  demoOpt->set_param("Function Tolerance",  obj_target);
+
   // Check for native Demo_Opt input file.  The file name needs to be
   // included in the Dakota input file.
   String adv_opts_file = probDescDB.get_string("method.advanced_options_file");

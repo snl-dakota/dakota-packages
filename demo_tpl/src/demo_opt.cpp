@@ -75,11 +75,13 @@ Demo_Opt::execute(bool verbose)
   if( verbose )
     std::cout << "Doing Demo_Opt::execute." << std::endl;
 
-  assert( int_params_.count("Maximum Evaluations") > 0 );
-  int max_evals = int_params_["Maximum Evaluations"];
+  int max_evals = 100;
+  if( int_params_.count("Maximum Evaluations") > 0 )
+    max_evals = int_params_["Maximum Evaluations"];
 
-  assert( dbl_params_.count("Function Tolerance") > 0 );
-  double fn_tol = dbl_params_["Function Tolerance"];
+  double fn_tol = 1.e-4;
+  if( dbl_params_.count("Function Tolerance") > 0 )
+    fn_tol = dbl_params_["Function Tolerance"];
 
   int num_params = (int)init_vals_.size();
   best_x_.clear();
