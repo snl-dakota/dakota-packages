@@ -6,7 +6,7 @@
     For more information, see the README file in the top Dakota directory.
     _______________________________________________________________________ */
 
-//- Class:       namespaced free function
+//- Class:       Demo_Opt
 //- Description: Demo TPL initialize
 //- Owner:       Russell Hooper
 //- Checked by:  ...
@@ -26,17 +26,27 @@ class Demo_Opt
 {
   public:
 
+    // API (Pure virtual) callback for objective Fn (only one for now)
     class ObjectiveFn
     {
       public:
         virtual double compute_obj(const std::vector<double> & x, bool verbose = false) = 0;
     };
 
+    // API (Pure virtual) callback for Nonlinear Equality Constaints
     class NonlinearEqFn
     {
       public:
         virtual void compute_nlneq(std::vector<double> &c, const std::vector<double> &x, bool verbose = false) = 0;
         virtual int get_num_nlneq(bool verbose = false) = 0;
+    };
+
+    // API (Pure virtual) callback for Nonlinear Inequality Constaints
+    class NonlinearIneqFn
+    {
+      public:
+        virtual void compute_nlnineq(std::vector<double> &c, const std::vector<double> &x, bool verbose = false) = 0;
+        virtual int get_num_nlnineq(bool verbose = false) = 0;
     };
 
     // Default ctor
@@ -63,6 +73,10 @@ class Demo_Opt
     // Register an nonlinear equality fn callback interface
     void register_nln_eq_fn(NonlinearEqFn* obj)
       { nlneq_fn_callback_ = obj; }
+
+    // Register an nonlinear inequality fn callback interface
+    void register_nln_ineq_fn(NonlinearIneqFn* obj)
+      { nlnineq_fn_callback_ = obj; }
 
     // Specify problem data
     void set_problem_data(const std::vector<double> &,   //  "Initial Guess"
@@ -94,8 +108,9 @@ class Demo_Opt
     std::map<std::string, int>    int_params_;
     std::map<std::string, double> dbl_params_;
 
-    ObjectiveFn   * obj_fn_callback_;
-    NonlinearEqFn * nlneq_fn_callback_;
+    ObjectiveFn     * obj_fn_callback_;
+    NonlinearEqFn   * nlneq_fn_callback_;
+    NonlinearIneqFn * nlnineq_fn_callback_;
 
     std::vector<double> init_vals_;
     std::vector<double> lower_bnds_;

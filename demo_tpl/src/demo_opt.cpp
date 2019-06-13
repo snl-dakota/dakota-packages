@@ -103,6 +103,9 @@ Demo_Opt::execute(bool verbose)
   std::vector<double> nln_eqs;
   if( nlneq_fn_callback_ )
     nln_eqs.resize( nlneq_fn_callback_->get_num_nlneq() );
+  std::vector<double> nln_ineqs;
+  if( nlnineq_fn_callback_ )
+    nln_ineqs.resize( nlnineq_fn_callback_->get_num_nlnineq() );
 
   int i = 0;
   while( i<=max_evals && best_f_>fn_tol )
@@ -111,11 +114,20 @@ Demo_Opt::execute(bool verbose)
       x[np] = distributions[np](generator);
     // Get objective fn
     fn = obj_fn_callback_->compute_obj(x, false);
+
     // Get nonlinear equality constraints values if applicable
     if( nlneq_fn_callback_ )
     {
       nlneq_fn_callback_->compute_nlneq(nln_eqs, x, false);
       for( auto eqval : nln_eqs )
+        fn += fabs(eqval);
+    }
+
+    // Get nonlinear inequality constraints values if applicable
+    if( nlnineq_fn_callback_ )
+    {
+      nlnineq_fn_callback_->compute_nlnineq(nln_ineqs, x, false);
+      for( auto eqval : nln_ineqs )
         fn += fabs(eqval);
     }
 

@@ -31,7 +31,8 @@ namespace Dakota {
 
 class DemoTPLOptimizer : public Optimizer,
                          public Demo_Opt::ObjectiveFn,
-                         public Demo_Opt::NonlinearEqFn
+                         public Demo_Opt::NonlinearEqFn,
+                         public Demo_Opt::NonlinearIneqFn
 {
   public:
 
@@ -58,8 +59,13 @@ class DemoTPLOptimizer : public Optimizer,
     /// Inherits Demo_TPL::ObjectiveFn
     Real compute_obj(const std::vector<double> & x, bool verbose) override;
 
+    /// Inherits Demo_TPL::NonlinearEqFn
     int get_num_nlneq(bool verbose) override;
     void compute_nlneq(std::vector<double> & c, const std::vector<double> & x, bool verbose) override;
+
+    /// Inherits Demo_TPL::NonlinearIneqFn
+    int get_num_nlnineq(bool verbose) override;
+    void compute_nlnineq(std::vector<double> & c, const std::vector<double> & x, bool verbose) override;
 
   protected:
 
@@ -110,10 +116,17 @@ public:
   //
 
   /// Return the flag indicating whether method supports continuous variables
-  bool supports_continuous_variables() { return true; }
+  bool supports_continuous_variables() override { return true; }
 
   /// Return the flag indicating whether method supports nonlinear equality constrinats
-  bool supports_nonlinear_equality() { return true; }
+  bool supports_nonlinear_equality() override{ return true; }
+
+  /// Return the flag indicating whether method supports nonlinear equality constrinats
+  bool supports_nonlinear_inequality() override { return true; }
+
+  /// Return format for nonlinear inequality constraints
+  NONLINEAR_INEQUALITY_FORMAT nonlinear_inequality_format() override
+   { return NONLINEAR_INEQUALITY_FORMAT::ONE_SIDED_LOWER; }
 
 }; // class DemoOptTraits
 
