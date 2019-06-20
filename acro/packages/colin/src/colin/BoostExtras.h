@@ -20,7 +20,7 @@
 #define colin_BoostExtras_h
 
 #include <acro_config.h>
-#include <boost/last_value.hpp>
+#include <boost/signals2/last_value.hpp>
 
 namespace colin
 {
@@ -31,7 +31,7 @@ namespace boost_extras {
  *  order from which they were registered (i.e. Last in, First out).
  */
 template<typename Signature, // function type R (T1, T2, ..., TN)
-         typename Combiner = boost::last_value
+         typename Combiner = boost::signals2::last_value
              <typename boost::function_traits<Signature>::result_type>,
          typename Group = int,
          typename GroupCompare = std::less<Group>,
