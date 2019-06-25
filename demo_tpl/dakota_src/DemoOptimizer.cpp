@@ -28,6 +28,9 @@
 #include "DemoOptimizer.hpp"
 #include "demo_opt.hpp"
 
+// Trying out a new class for managing data transfers
+#include "DakotaTPLDataTransfer.hpp"
+
 //
 // - DemoTPLOptimizer implementation
 //
@@ -68,6 +71,11 @@ DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
 
   set_demo_parameters();
 
+
+  // Configure the new data transfer mechanism
+  dataTransferHandler.reset(new TPLDataTransfer()); 
+  dataTransferHandler->configure_data_adapters( methodTraits, model.user_defined_constraints() );
+
   // Register ourself as the callback interface for objective function
   // evaluations and nonlinear equality constraints.  This assumes that
   // the TPL makes a function call to do objective function evaluations,
@@ -78,8 +86,13 @@ DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
   // versions of this example.
 
   demoOpt->register_obj_fn(this);
-  demoOpt->register_nln_eq_fn(this);
-  demoOpt->register_nln_ineq_fn(this);
+
+  // Conditionally register ourself as a constraint callback depending
+  // on if the problem uses them
+  if( get_num_nln_eq(true) > 0 )
+    demoOpt->register_nln_eq_fn(this);
+  if( get_num_nln_ineq(true) > 0 )
+    demoOpt->register_nln_ineq_fn(this);
 }
 
 
@@ -274,13 +287,13 @@ DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
 // interface should be replaced with what ever interface the TPL uses.
 
 int
-DemoTPLOptimizer::get_num_nlneq(bool verbose)
+DemoTPLOptimizer::get_num_nln_eq(bool verbose)
 {
-  return iteratedModel.num_nonlinear_eq_constraints();
+  return dataTransferHandler->num_active_nonlin_ineq_constraints();
 }
 
 void
-DemoTPLOptimizer::compute_nlneq(std::vector<Real> &c, const std::vector<Real> &x, bool verbose)
+DemoTPLOptimizer::compute_nln_eq(std::vector<Real> &c, const std::vector<Real> &x, bool verbose)
 {
   // Tell Dakota what variable values to use for the nonlinear constraint
   // evaluations.  x must be (converted to) a std::vector<double> to use
@@ -291,6 +304,9 @@ DemoTPLOptimizer::compute_nlneq(std::vector<Real> &c, const std::vector<Real> &x
   iteratedModel.evaluate();
 
   // Use an adapter to copy data
+  // *************************************************************************
+  // ****** This will soon be replaced with use of dataTransferHandler *******
+  // *************************************************************************
   get_nonlinear_eq_constraints( iteratedModel, c, -1.0 );
 
 } // nonlinear eq constraints value
@@ -304,13 +320,13 @@ DemoTPLOptimizer::compute_nlneq(std::vector<Real> &c, const std::vector<Real> &x
 // interface should be replaced with what ever interface the TPL uses.
 
 int
-DemoTPLOptimizer::get_num_nlnineq(bool verbose)
+DemoTPLOptimizer::get_num_nln_ineq(bool verbose)
 {
-  return iteratedModel.num_nonlinear_ineq_constraints();
+  return dataTransferHandler->num_active_nonlin_ineq_constraints();
 }
 
 void
-DemoTPLOptimizer::compute_nlnineq(std::vector<Real> &c, const std::vector<Real> &x, bool verbose)
+DemoTPLOptimizer::compute_nln_ineq(std::vector<Real> &c, const std::vector<Real> &x, bool verbose)
 {
   // Tell Dakota what variable values to use for the nonlinear constraint
   // evaluations.  x must be (converted to) a std::vector<double> to use
@@ -320,8 +336,8 @@ DemoTPLOptimizer::compute_nlnineq(std::vector<Real> &c, const std::vector<Real> 
   // Evaluate the function at the specified x.
   iteratedModel.evaluate();
 
-  // Use an adapter to copy data
-  get_nonlinear_ineq_constraints( iteratedModel, c);
+  // Use an adapter to copy data from Dakota into Demo_Opt
+  dataTransferHandler->get_nonlinear_ineq_constraints(iteratedModel.current_response(), c);
 
 } // nonlinear ineq constraints value
 

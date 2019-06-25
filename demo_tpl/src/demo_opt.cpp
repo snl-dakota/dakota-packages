@@ -23,6 +23,14 @@
 
 // -----------------------------------------------------------------
 
+Demo_Opt::Demo_Opt() :
+  nlneq_fn_callback_(NULL),
+  nlnineq_fn_callback_(NULL)
+{
+}
+
+// -----------------------------------------------------------------
+
 bool
 Demo_Opt::set_solver_options(const std::string & filename, bool verbose)
 {
@@ -102,23 +110,26 @@ Demo_Opt::execute(bool verbose)
   double fn;
   std::vector<double> nln_eqs;
   if( nlneq_fn_callback_ )
-    nln_eqs.resize( nlneq_fn_callback_->get_num_nlneq() );
+    nln_eqs.resize( nlneq_fn_callback_->get_num_nln_eq() );
   std::vector<double> nln_ineqs;
   if( nlnineq_fn_callback_ )
-    nln_ineqs.resize( nlnineq_fn_callback_->get_num_nlnineq() );
+    nln_ineqs.resize( nlnineq_fn_callback_->get_num_nln_ineq() );
 
   int i = 0;
   while( i<=max_evals && best_f_>fn_tol )
   {
-    for( int np=0; np<num_params; ++np )
-      x[np] = distributions[np](generator);
+    if( i == 0 )
+      x = init_vals_;
+    else
+      for( int np=0; np<num_params; ++np )
+        x[np] = distributions[np](generator);
     // Get objective fn
     fn = obj_fn_callback_->compute_obj(x, false);
 
     // Get nonlinear equality constraints values if applicable
     if( nlneq_fn_callback_ )
     {
-      nlneq_fn_callback_->compute_nlneq(nln_eqs, x, false);
+      nlneq_fn_callback_->compute_nln_eq(nln_eqs, x, false);
       for( auto eqval : nln_eqs )
         fn += fabs(eqval);
     }
@@ -126,7 +137,7 @@ Demo_Opt::execute(bool verbose)
     // Get nonlinear inequality constraints values if applicable
     if( nlnineq_fn_callback_ )
     {
-      nlnineq_fn_callback_->compute_nlnineq(nln_ineqs, x, false);
+      nlnineq_fn_callback_->compute_nln_ineq(nln_ineqs, x, false);
       for( auto eqval : nln_ineqs )
         fn += fabs(eqval);
     }

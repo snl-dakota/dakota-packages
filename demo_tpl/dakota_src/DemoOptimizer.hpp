@@ -60,12 +60,12 @@ class DemoTPLOptimizer : public Optimizer,
     Real compute_obj(const std::vector<double> & x, bool verbose) override;
 
     /// Inherits Demo_TPL::NonlinearEqFn
-    int get_num_nlneq(bool verbose) override;
-    void compute_nlneq(std::vector<double> & c, const std::vector<double> & x, bool verbose) override;
+    int get_num_nln_eq(bool verbose) override;
+    void compute_nln_eq(std::vector<double> & c, const std::vector<double> & x, bool verbose) override;
 
     /// Inherits Demo_TPL::NonlinearIneqFn
-    int get_num_nlnineq(bool verbose) override;
-    void compute_nlnineq(std::vector<double> & c, const std::vector<double> & x, bool verbose) override;
+    int get_num_nln_ineq(bool verbose) override;
+    void compute_nln_ineq(std::vector<double> & c, const std::vector<double> & x, bool verbose) override;
 
   protected:
 
@@ -116,17 +116,20 @@ public:
   //
 
   /// Return the flag indicating whether method supports continuous variables
-  bool supports_continuous_variables() override { return true; }
+  bool supports_continuous_variables() override
+    { return true; }
 
   /// Return the flag indicating whether method supports nonlinear equality constrinats
-  bool supports_nonlinear_equality() override{ return true; }
+  bool supports_nonlinear_equality() override
+    { return true; }
 
-  /// Return the flag indicating whether method supports nonlinear equality constrinats
-  bool supports_nonlinear_inequality() override { return true; }
+  /// Return the flag indicating whether method supports nonlinear inequality constrinats
+  bool supports_nonlinear_inequality() override
+    { return true; }
 
   /// Return format for nonlinear inequality constraints
   NONLINEAR_INEQUALITY_FORMAT nonlinear_inequality_format() override
-   { return NONLINEAR_INEQUALITY_FORMAT::ONE_SIDED_LOWER; }
+    { return NONLINEAR_INEQUALITY_FORMAT::STANDARD; }
 
 }; // class DemoOptTraits
 

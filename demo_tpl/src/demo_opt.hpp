@@ -37,20 +37,20 @@ class Demo_Opt
     class NonlinearEqFn
     {
       public:
-        virtual void compute_nlneq(std::vector<double> &c, const std::vector<double> &x, bool verbose = false) = 0;
-        virtual int get_num_nlneq(bool verbose = false) = 0;
+        virtual int get_num_nln_eq(bool verbose = false) = 0;
+        virtual void compute_nln_eq(std::vector<double> &c, const std::vector<double> &x, bool verbose = false) = 0;
     };
 
     // API (Pure virtual) callback for Nonlinear Inequality Constaints
     class NonlinearIneqFn
     {
       public:
-        virtual void compute_nlnineq(std::vector<double> &c, const std::vector<double> &x, bool verbose = false) = 0;
-        virtual int get_num_nlnineq(bool verbose = false) = 0;
+        virtual int get_num_nln_ineq(bool verbose = false) = 0;
+        virtual void compute_nln_ineq(std::vector<double> &c, const std::vector<double> &x, bool verbose = false) = 0;
     };
 
     // Default ctor
-    Demo_Opt() {}
+    Demo_Opt();
 
     // Allow specification of options filename
     bool set_solver_options(const std::string & filename, bool verbose = false);
@@ -95,6 +95,10 @@ class Demo_Opt
     const std::vector<double> & get_best_nln_eqs() const
       { return best_nln_eqs_;}
 
+    // Get best nonlinear equality constraint values
+    const std::vector<double> & get_best_nln_ineqs() const
+      { return best_nln_ineqs_;}
+
 
   private:
 
@@ -119,6 +123,7 @@ class Demo_Opt
     std::vector<double> best_x_;
     double best_f_;
     std::vector<double> best_nln_eqs_;
+    std::vector<double> best_nln_ineqs_;
 };
 
 #endif
