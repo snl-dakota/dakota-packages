@@ -6,8 +6,8 @@
     For more information, see the README file in the top Dakota directory.
     _______________________________________________________________________ */
 
-//- Class:       namespaced free function
-//- Description: Demo TPL execute
+//- Class:       Demo_Opt TPL
+//- Description: A demo optimization TPL used as a pattern and for testing Dakota adapters
 //- Owner:       Russell Hooper
 //- Checked by:  ...
 
@@ -24,8 +24,8 @@
 // -----------------------------------------------------------------
 
 Demo_Opt::Demo_Opt() :
-  nlneq_fn_callback_(NULL),
-  nlnineq_fn_callback_(NULL)
+  nln_eq_fn_callback_(NULL),
+  nln_ineq_fn_callback_(NULL)
 {
 }
 
@@ -109,11 +109,11 @@ Demo_Opt::execute(bool verbose)
 
   double fn;
   std::vector<double> nln_eqs;
-  if( nlneq_fn_callback_ )
-    nln_eqs.resize( nlneq_fn_callback_->get_num_nln_eq() );
+  if( nln_eq_fn_callback_ )
+    nln_eqs.resize( nln_eq_fn_callback_->get_num_nln_eq() );
   std::vector<double> nln_ineqs;
-  if( nlnineq_fn_callback_ )
-    nln_ineqs.resize( nlnineq_fn_callback_->get_num_nln_ineq() );
+  if( nln_ineq_fn_callback_ )
+    nln_ineqs.resize( nln_ineq_fn_callback_->get_num_nln_ineq() );
 
   int i = 0;
   while( i<=max_evals && best_f_>fn_tol )
@@ -127,17 +127,17 @@ Demo_Opt::execute(bool verbose)
     fn = obj_fn_callback_->compute_obj(x, false);
 
     // Get nonlinear equality constraints values if applicable
-    if( nlneq_fn_callback_ )
+    if( nln_eq_fn_callback_ )
     {
-      nlneq_fn_callback_->compute_nln_eq(nln_eqs, x, false);
+      nln_eq_fn_callback_->compute_nln_eq(nln_eqs, x, false);
       for( auto eqval : nln_eqs )
         fn += fabs(eqval);
     }
 
     // Get nonlinear inequality constraints values if applicable
-    if( nlnineq_fn_callback_ )
+    if( nln_ineq_fn_callback_ )
     {
-      nlnineq_fn_callback_->compute_nln_ineq(nln_ineqs, x, false);
+      nln_ineq_fn_callback_->compute_nln_ineq(nln_ineqs, x, false);
       for( auto eqval : nln_ineqs )
         fn += fabs(eqval);
     }

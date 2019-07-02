@@ -28,9 +28,6 @@
 #include "DemoOptimizer.hpp"
 #include "demo_opt.hpp"
 
-// A new class for managing data transfers
-#include "DakotaTPLDataTransfer.hpp"
-
 //
 // - DemoTPLOptimizer implementation
 //
@@ -90,7 +87,7 @@ DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
   // NB: This relies on the traits defined by the TPL, which for Demo_Opt
   // implies the "standard" format for constraints.
   dataTransferHandler.reset(new TPLDataTransfer()); 
-  dataTransferHandler->configure_data_adapters( methodTraits, model.user_defined_constraints() );
+  dataTransferHandler->configure_data_adapters( methodTraits, model );
 
   // Register ourself as the callback interface for objective function
   // evaluations and nonlinear equality constraints.  This assumes that
@@ -178,7 +175,7 @@ void DemoTPLOptimizer::core_run()
   std::vector<double> best_x = demoOpt->get_best_x(); // TPL_SPECIFIC
 
   // Set Dakota optimal value data.
-  set_variables< std::vector<double> >(best_x, iteratedModel, bestVariablesArray.front());
+  set_variables<>(best_x, iteratedModel, bestVariablesArray.front());
 
 } // core_run
 
@@ -292,7 +289,7 @@ DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
   // Tell Dakota what variable values to use for the function
   // valuation.  x must be (converted to) a std::vector<double> to use
   // this demo with minimal changes.
-  set_variables<std::vector<double> >(x, iteratedModel, iteratedModel.current_variables());
+  set_variables<>(x, iteratedModel, iteratedModel.current_variables());
 
   // Evaluate the function at the specified x.
   iteratedModel.evaluate();
@@ -300,13 +297,11 @@ DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
   // Retrieve the the function value and sign it appropriately based
   // on whether minimize or maximize has been specified in the Dakota
   // input file.
-  const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
-  double f = (!max_sense.empty() && max_sense[0]) ?
-             -iteratedModel.current_response().function_value(0) :
-              iteratedModel.current_response().function_value(0);
+  double f = dataTransferHandler->get_response_value_from_dakota(iteratedModel.current_response());
 
   return f;
 }
+
 
 // -----------------------------------------------------------------
 
@@ -322,13 +317,16 @@ DemoTPLOptimizer::get_num_nln_eq(bool verbose)
   return dataTransferHandler->num_dakota_nonlin_eq_constraints();
 }
 
+
+// -----------------------------------------------------------------
+
 void
 DemoTPLOptimizer::compute_nln_eq(std::vector<Real> &c, const std::vector<Real> &x, bool verbose)
 {
   // Tell Dakota what variable values to use for the nonlinear constraint
   // evaluations.  x must be (converted to) a std::vector<double> to use
   // this demo with minimal changes.
-  set_variables<std::vector<double> >(x, iteratedModel, iteratedModel.current_variables());
+  set_variables<>(x, iteratedModel, iteratedModel.current_variables());
 
   // Evaluate the function at the specified x.
   iteratedModel.evaluate();
@@ -340,6 +338,7 @@ DemoTPLOptimizer::compute_nln_eq(std::vector<Real> &c, const std::vector<Real> &
   get_nonlinear_eq_constraints( iteratedModel, c, -1.0 );
 
 } // nonlinear eq constraints value
+
 
 // -----------------------------------------------------------------
 
@@ -361,7 +360,7 @@ DemoTPLOptimizer::compute_nln_ineq(std::vector<Real> &c, const std::vector<Real>
   // Tell Dakota what variable values to use for the nonlinear constraint
   // evaluations.  x must be (converted to) a std::vector<double> to use
   // this demo with minimal changes.
-  set_variables<std::vector<double> >(x, iteratedModel, iteratedModel.current_variables());
+  set_variables<>(x, iteratedModel, iteratedModel.current_variables());
 
   // Evaluate the function at the specified x.
   iteratedModel.evaluate();

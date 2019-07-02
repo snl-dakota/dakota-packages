@@ -72,11 +72,11 @@ class Demo_Opt
 
     // Register an nonlinear equality fn callback interface
     void register_nln_eq_fn(NonlinearEqFn* obj)
-      { nlneq_fn_callback_ = obj; }
+      { nln_eq_fn_callback_ = obj; }
 
     // Register an nonlinear inequality fn callback interface
     void register_nln_ineq_fn(NonlinearIneqFn* obj)
-      { nlnineq_fn_callback_ = obj; }
+      { nln_ineq_fn_callback_ = obj; }
 
     // Specify problem data
     void set_problem_data(const std::vector<double> &,   //  "Initial Guess"
@@ -113,8 +113,8 @@ class Demo_Opt
     std::map<std::string, double> dbl_params_;
 
     ObjectiveFn     * obj_fn_callback_;
-    NonlinearEqFn   * nlneq_fn_callback_;
-    NonlinearIneqFn * nlnineq_fn_callback_;
+    NonlinearEqFn   * nln_eq_fn_callback_;
+    NonlinearIneqFn * nln_ineq_fn_callback_;
 
     std::vector<double> init_vals_;
     std::vector<double> lower_bnds_;
