@@ -73,6 +73,10 @@ DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
 
 
   // Configure the new data transfer mechanism
+  // PDH: Clarification needed.  This assumes TPL is using default
+  // (i.e., standard) format for constraints?  I don't see that it's
+  // been specificied otherwise anywhere in the demo.  Assuming the
+  // default is fine; just want to be clear about it.
   dataTransferHandler.reset(new TPLDataTransfer()); 
   dataTransferHandler->configure_data_adapters( methodTraits, model.user_defined_constraints() );
 
@@ -189,6 +193,9 @@ void DemoTPLOptimizer::set_demo_parameters()
   double min_var_chg;
   double obj_target;
 
+  // Values for common stopping criteria can be obtained from Dakota.
+  // If user has provided values in the input file, those values will
+  // be returned.  Otherwise, Dakota defaults will be returned.
   get_common_stopping_criteria(max_fn_evals, max_iters, conv_tol, min_var_chg, obj_target );
 
   demoOpt->set_param("Maximum Evaluations", max_fn_evals);

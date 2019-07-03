@@ -138,6 +138,7 @@ continuous variables, and supports bound constraints.
  Dakota and _Demo_ TPL.  These details are presented in the following
  two sections.
 
+***** BEGIN CUT *****
 ## Passing Options
 
  Dakota maintains a master list of hierarchical options in its
@@ -240,7 +241,7 @@ continuous variables, and supports bound constraints.
  input file should parse and attempt to call the
  DemoTPLOptimizer::core_run() method to perform the optimization of
  the Dakota "text_book" example problem.
-
+***** END CUT *****
 
 ## Exchanging Parameters and Reponses
 
