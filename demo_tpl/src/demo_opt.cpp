@@ -144,9 +144,10 @@ Demo_Opt::execute(bool verbose)
 
     if( fabs(fn-target) < best_f_ )
     {
-      best_x_ = x;
-      best_f_ = fabs(fn-target);
-      best_nln_eqs_ = nln_eqs;
+      best_x_         = x;
+      best_f_         = fabs(fn-target);
+      best_nln_eqs_   = nln_eqs;
+      best_nln_ineqs_ = nln_ineqs;
     }
     ++i;
   }

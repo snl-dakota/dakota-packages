@@ -137,16 +137,24 @@ void DemoTPLOptimizer::core_run()
     // depending on whether minimize or maximize has been specified in
     // the Dakota input file.
     const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
-    RealVector best_fns(numFunctions+numNonlinearEqConstraints);
-    best_fns[0] = (!max_sense.empty() && max_sense[0]) ?
-      -best_f : best_f;
+    RealVector best_fns(iteratedModel.response_size());
 
-    // Get best Nonlinear Equality Constraints - This is ripe for creating/using an adapter...
+    // Get best (single) objcetive value respecting max/min expectations
+    best_fns[0] = (!max_sense.empty() && max_sense[0]) ?  -best_f : best_f;
+
+    // Get best Nonlinear Equality Constraints from TPL - needs an adapter...
     if( numNonlinearEqConstraints > 0 )
     {
       auto best_nln_eqs = demoOpt->get_best_nln_eqs();
       std::copy( best_nln_eqs.begin(), best_nln_eqs.end(), &best_fns(0)+1);
     }
+
+    // Get best Nonlinear Inequality Constraints from TPL
+    auto best_nln_ineqs = demoOpt->get_best_nln_ineqs();
+    dataTransferHandler->get_best_nonlinear_ineq_constraints_from_tpl(
+                                        best_nln_ineqs,
+                                        best_fns);
+
 
     bestResponseArray.front().function_values(best_fns);
   }
@@ -344,7 +352,7 @@ DemoTPLOptimizer::compute_nln_ineq(std::vector<Real> &c, const std::vector<Real>
   iteratedModel.evaluate();
 
   // Use an adapter to copy data from Dakota into Demo_Opt
-  dataTransferHandler->get_nonlinear_ineq_constraints(iteratedModel.current_response(), c);
+  dataTransferHandler->get_nonlinear_ineq_constraints_from_dakota(iteratedModel.current_response(), c);
 
 } // nonlinear ineq constraints value
 
