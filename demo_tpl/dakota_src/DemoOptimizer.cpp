@@ -28,12 +28,26 @@
 #include "DemoOptimizer.hpp"
 #include "demo_opt.hpp"
 
-// Trying out a new class for managing data transfers
+// A new class for managing data transfers
 #include "DakotaTPLDataTransfer.hpp"
 
 //
 // - DemoTPLOptimizer implementation
 //
+
+// -----------------------------------------------------------------
+// Some calls to the Optimizer (Demo_Opt) are unique to that particular
+// TPL, whereas other calls, eg to exchange data, employ general
+// utilities such as adapters contained within a helper class.
+//
+// Calls specific to the TPL are indicated via 
+//
+//                      TPL_SPECIFIC
+//
+// within the associated comments.
+// -----------------------------------------------------------------
+
+
 
 // All of the interface source should be included in the Dakota
 // namespace.
@@ -73,10 +87,8 @@ DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
 
 
   // Configure the new data transfer mechanism
-  // PDH: Clarification needed.  This assumes TPL is using default
-  // (i.e., standard) format for constraints?  I don't see that it's
-  // been specificied otherwise anywhere in the demo.  Assuming the
-  // default is fine; just want to be clear about it.
+  // NB: This relies on the traits defined by the TPL, which for Demo_Opt
+  // implies the "standard" format for constraints.
   dataTransferHandler.reset(new TPLDataTransfer()); 
   dataTransferHandler->configure_data_adapters( methodTraits, model.user_defined_constraints() );
 
@@ -89,14 +101,15 @@ DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
   // objective functions can be implemented that will be added to future
   // versions of this example.
 
+  // ------------------  TPL_SPECIFIC  ------------------
   demoOpt->register_obj_fn(this);
 
   // Conditionally register ourself as a constraint callback depending
   // on if the problem uses them
   if( get_num_nln_eq(true) > 0 )
-    demoOpt->register_nln_eq_fn(this);
+    demoOpt->register_nln_eq_fn(this);   // TPL_SPECIFIC
   if( get_num_nln_ineq(true) > 0 )
-    demoOpt->register_nln_ineq_fn(this);
+    demoOpt->register_nln_ineq_fn(this); // TPL_SPECIFIC
 }
 
 
@@ -117,6 +130,7 @@ void DemoTPLOptimizer::core_run()
   // This code should be replaced by whatever the TPL's mechanism is
   // for running its solver.
 
+  // ------------------  TPL_SPECIFIC  ------------------
   demoOpt->execute(true);
 
   // The TPL should provide the optimal value of the objective
@@ -130,7 +144,7 @@ void DemoTPLOptimizer::core_run()
     // the optimal function value.  To use this demo with minimal
     // changes, the returned value needs to be (converted to) a
     // double.
-    double best_f = demoOpt->get_best_f();
+    double best_f = demoOpt->get_best_f(); // TPL_SPECIFIC
 
     // If the TPL defaults to doing minimization, no need to do
     // anything with this code.  It manages needed sign changes
@@ -142,15 +156,17 @@ void DemoTPLOptimizer::core_run()
     // Get best (single) objcetive value respecting max/min expectations
     best_fns[0] = (!max_sense.empty() && max_sense[0]) ?  -best_f : best_f;
 
-    // Get best Nonlinear Equality Constraints from TPL - needs an adapter...
+    // Get best Nonlinear Equality Constraints from TPL
     if( numNonlinearEqConstraints > 0 )
     {
-      auto best_nln_eqs = demoOpt->get_best_nln_eqs();
-      std::copy( best_nln_eqs.begin(), best_nln_eqs.end(), &best_fns(0)+1);
+      Cerr << "\nWarning: Demo_Opt does not yet fully implement nonlinear equality contraints.\n";
+      //auto best_nln_eqs = demoOpt->get_best_nln_eqs();
+      //std::copy( best_nln_eqs.begin(), best_nln_eqs.end(), &best_fns(0)+1);
     }
 
     // Get best Nonlinear Inequality Constraints from TPL
-    auto best_nln_ineqs = demoOpt->get_best_nln_ineqs();
+    auto best_nln_ineqs = demoOpt->get_best_nln_ineqs(); // TPL_SPECIFIC
+
     dataTransferHandler->get_best_nonlinear_ineq_constraints_from_tpl(
                                         best_nln_ineqs,
                                         best_fns);
@@ -158,11 +174,8 @@ void DemoTPLOptimizer::core_run()
 
     bestResponseArray.front().function_values(best_fns);
   }
-    // Replace this line with however the TPL being integrated returns
-    // the optimal variable values.  To use this demo with minimal
-    // changes, the returned value needs to be (converted to) a
-    // std::vector<double>.
-  std::vector<double> best_x = demoOpt->get_best_x();
+
+  std::vector<double> best_x = demoOpt->get_best_x(); // TPL_SPECIFIC
 
   // Set Dakota optimal value data.
   set_variables< std::vector<double> >(best_x, iteratedModel, bestVariablesArray.front());
@@ -180,7 +193,7 @@ void DemoTPLOptimizer::core_run()
 void DemoTPLOptimizer::initialize_run()
 {
   Optimizer::initialize_run();
-  demoOpt->initialize(true);
+  demoOpt->initialize(true); // TPL_SPECIFIC
 }
 
 
@@ -206,6 +219,7 @@ void DemoTPLOptimizer::set_demo_parameters()
   // be returned.  Otherwise, Dakota defaults will be returned.
   get_common_stopping_criteria(max_fn_evals, max_iters, conv_tol, min_var_chg, obj_target );
 
+  // ------------------  TPL_SPECIFIC  ------------------
   demoOpt->set_param("Maximum Evaluations", max_fn_evals);
   demoOpt->set_param("Maximum Iterations",  max_iters);
   demoOpt->set_param("Function Tolerance",  obj_target);
@@ -226,7 +240,7 @@ void DemoTPLOptimizer::set_demo_parameters()
   // Replace this line by whatever the TPL being integrated uses to
   // set its input file name.
 
-  demoOpt->set_solver_options(adv_opts_file, true);
+  demoOpt->set_solver_options(adv_opts_file, true); // TPL_SPECIFIC
 
 } // set_demo_parameters
 
@@ -257,6 +271,7 @@ void DemoTPLOptimizer::initialize_variables_and_constraints()
   // ingest variable values and bounds, including any data type
   // conversion needed.
 
+  // ------------------  TPL_SPECIFIC  ------------------
   demoOpt->set_problem_data(init_point,   //  "Initial Guess"
                             lower     ,   //  "Lower Bounds"
                             upper      ); //  "Upper Bounds"
