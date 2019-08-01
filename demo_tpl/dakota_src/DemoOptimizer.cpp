@@ -319,7 +319,7 @@ DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
 int
 DemoTPLOptimizer::get_num_nln_eq(bool verbose)
 {
-  return dataTransferHandler->num_active_nonlin_ineq_constraints();
+  return dataTransferHandler->num_nonlin_eq_constraints();
 }
 
 void
@@ -343,7 +343,7 @@ DemoTPLOptimizer::compute_nln_eq(std::vector<Real> &c, const std::vector<Real> &
 
 // -----------------------------------------------------------------
 
-// This is the implementation of the nonlinear equality constraint evaluation.
+// This is the implementation of the nonlinear inequality constraint evaluation.
 // This assumes a function callback approach, i.e., the TPL optimizer
 // calls this function whenever it needs an evaluation done.  Other
 // ways to interface to function will be added in the future.  This
