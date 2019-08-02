@@ -129,7 +129,7 @@ public:
 
   /// Return format for nonlinear inequality constraints
   NONLINEAR_INEQUALITY_FORMAT nonlinear_inequality_format() override
-    { return NONLINEAR_INEQUALITY_FORMAT::STANDARD; }
+    { return NONLINEAR_INEQUALITY_FORMAT::ONE_SIDED_UPPER; }
 
 }; // class DemoOptTraits
 
