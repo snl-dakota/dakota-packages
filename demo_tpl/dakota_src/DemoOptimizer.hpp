@@ -128,6 +128,10 @@ public:
     { return true; }
 
   /// Return format for nonlinear inequality constraints
+  NONLINEAR_EQUALITY_FORMAT nonlinear_equality_format() override
+    { return NONLINEAR_EQUALITY_FORMAT::TRUE_EQUALITY; }
+
+  /// Return format for nonlinear inequality constraints
   NONLINEAR_INEQUALITY_FORMAT nonlinear_inequality_format() override
     { return NONLINEAR_INEQUALITY_FORMAT::ONE_SIDED_UPPER; }
 

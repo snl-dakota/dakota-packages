@@ -319,7 +319,7 @@ DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
 int
 DemoTPLOptimizer::get_num_nln_eq(bool verbose)
 {
-  return dataTransferHandler->num_nonlin_eq_constraints();
+  return dataTransferHandler->num_dakota_nonlin_eq_constraints();
 }
 
 void
@@ -352,7 +352,7 @@ DemoTPLOptimizer::compute_nln_eq(std::vector<Real> &c, const std::vector<Real> &
 int
 DemoTPLOptimizer::get_num_nln_ineq(bool verbose)
 {
-  return dataTransferHandler->num_active_nonlin_ineq_constraints();
+  return dataTransferHandler->num_tpl_nonlin_ineq_constraints();
 }
 
 void
