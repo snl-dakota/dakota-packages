@@ -82,13 +82,6 @@ DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
 
   set_demo_parameters();
 
-
-  // Configure the new data transfer mechanism
-  // NB: This relies on the traits defined by the TPL, which for Demo_Opt
-  // implies the "standard" format for constraints.
-  dataTransferHandler.reset(new TPLDataTransfer()); 
-  dataTransferHandler->configure_data_adapters( methodTraits, model );
-
   // Register ourself as the callback interface for objective function
   // evaluations and nonlinear equality constraints.  This assumes that
   // the TPL makes a function call to do objective function evaluations,
