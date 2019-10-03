@@ -149,18 +149,22 @@ void DemoTPLOptimizer::core_run()
     // Get best Nonlinear Equality Constraints from TPL
     if( numNonlinearEqConstraints > 0 )
     {
-      Cerr << "\nWarning: Demo_Opt does not yet fully implement nonlinear equality contraints.\n";
-      //auto best_nln_eqs = demoOpt->get_best_nln_eqs();
+      auto best_nln_eqs = demoOpt->get_best_nln_eqs();
       //std::copy( best_nln_eqs.begin(), best_nln_eqs.end(), &best_fns(0)+1);
+      dataTransferHandler->get_best_nonlinear_eq_constraints_from_tpl(
+                                          best_nln_eqs,
+                                          best_fns);
     }
 
     // Get best Nonlinear Inequality Constraints from TPL
-    auto best_nln_ineqs = demoOpt->get_best_nln_ineqs(); // TPL_SPECIFIC
+    if( numNonlinearIneqConstraints > 0 )
+    {
+      auto best_nln_ineqs = demoOpt->get_best_nln_ineqs(); // TPL_SPECIFIC
 
-    dataTransferHandler->get_best_nonlinear_ineq_constraints_from_tpl(
-                                        best_nln_ineqs,
-                                        best_fns);
-
+      dataTransferHandler->get_best_nonlinear_ineq_constraints_from_tpl(
+                                          best_nln_ineqs,
+                                          best_fns);
+    }
 
     bestResponseArray.front().function_values(best_fns);
   }
@@ -325,10 +329,7 @@ DemoTPLOptimizer::compute_nln_eq(std::vector<Real> &c, const std::vector<Real> &
   iteratedModel.evaluate();
 
   // Use an adapter to copy data
-  // *************************************************************************
-  // ****** This will soon be replaced with use of dataTransferHandler *******
-  // *************************************************************************
-  get_nonlinear_eq_constraints( iteratedModel, c, -1.0 );
+  dataTransferHandler->get_nonlinear_eq_constraints_from_dakota(iteratedModel.current_response(), c);
 
 } // nonlinear eq constraints value
 
@@ -346,6 +347,8 @@ DemoTPLOptimizer::get_num_nln_ineq(bool verbose)
 {
   return dataTransferHandler->num_tpl_nonlin_ineq_constraints();
 }
+
+// -----------------------------------------------------------------
 
 void
 DemoTPLOptimizer::compute_nln_ineq(std::vector<Real> &c, const std::vector<Real> &x, bool verbose)
