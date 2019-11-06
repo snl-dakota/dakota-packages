@@ -15,6 +15,19 @@ optimization TPL/method that is derivative-free, operates over
 continuous variables, and supports bound constraints.
 
 
+## Quickstart 
+
+The sections that follow provide detailed steps for bringing a new
+gradient-free optimization Third Party Library (TPL) into Dakota
+using the very simple _Demo_ optimizer as a concrete example.  It can
+be enabled in a build of Dakota from source by simply including the
+following setting in the invocation of cmake, `-DHAVE_DEMO_TPL:BOOL=ON`.
+This will build the _Demo_ TPL and the code needed to incorporate
+it into Dakota.  It will also activate a working example found in
+$DAKTOA_SRC/test/dakota_demo_app.in which can be run after building
+Dakota via `ctest -R demo_app`.
+
+
 ## Building _Demo_ under Dakota using Cmake
 
 This section shows how to include the relevant parts of the `Demo` TPL
@@ -66,9 +79,9 @@ time.
 
 
 At this point, Dakota's _CMakeLists.txt_ files will need to be
-modified to include the _Demo_ tpl library.  The following modified
-can be used to bring in the _Demo_ TPL conditioned on having `-D
-HAVE_DEMO_TPL:BOOL=ON` defined when invoking cmake to configure
+modified to include the _Demo_ tpl library.  The following modifications
+can be used to bring in the _Demo_ TPL conditioned on having
+`-D HAVE_DEMO_TPL:BOOL=ON` defined when invoking cmake to configure
 Dakota:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cmake}
@@ -116,11 +129,11 @@ endif(HAVE_DEMO_TPL)
  simple Dakota test which will serve to guide the process.  This is
  akin to test-driven development which essentially creates a test
  which fails until everything has been implemented to allow it to run
- and pass. An candidate test for the current activity could be the
+ and pass. A candidate test for the current activity could be the
  following:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
-# File $DAKTOA_SRC/test/dakota_demo_tpl.in
+# File $DAKTOA_SRC/test/dakota_demo_app.in
 
     method,
         demo_tpl
@@ -166,72 +179,130 @@ function values for given parater values (3 in the test above), eg:
 Real
 DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
 {
-  set_variables<std::vector<double> >(x, iteratedModel, iteratedModel.current_variables());
+  // Tell Dakota what variable values to use for the function
+  // valuation.  x must be (converted to) a std::vector<double> to use
+  // this demo with minimal changes.
+  set_variables<>(x, iteratedModel, iteratedModel.current_variables());
 
+  // Evaluate the function at the specified x.
   iteratedModel.evaluate();
-  const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
 
-  double f = (!max_sense.empty() && max_sense[0]) ?
-    -iteratedModel.current_response().function_value(0) :
-    iteratedModel.current_response().function_value(0);
+  // Retrieve the the function value and sign it appropriately based
+  // on whether minimize or maximize has been specified in the Dakota
+  // input file.
+  double f = dataTransferHandler->get_response_value_from_dakota(iteratedModel.current_response());
 
   return f;
 }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-In this instance, the _Demo_ TPL uses `std::vector<double>` as its
-native parameter vector data type and is calling back to the example
-problem via an interface to Dakota to obtain a single `double`
+In this instance, the _Demo_ TPL uses `std::vector<double>` as its native
+parameter vector data type and is calling back to the example problem
+(Dakota model) via an interface to Dakota to obtain a single `double`
 (aliased to `Real` in Dakota) obective function value for a given set
 of parameter values.  These data exchanges are facilitated by used of
 "data adapters" supplied by Dakota with the `set_variables<>(...)`
-helper utilized in this case.
+utility and `dataTransferHandler` helper class utilized in this case.
 
-Similarly, Dakota must provide initial parameter values to the TPL
-and retrieve final objective function and variable values from the
-TPL.  The initial values for parameters and bound constraints can be
-obtained from Dakota with the `get_variables<>(...)` helpers.  This
-example returns the values to a standard vector of doubles (Reals).
-Those values can then be passed on the TPL using TPL API.
+Similarly, Dakota must provide initial parameter values to the _Demo_
+TPL and retrieve final objective function and variable values from the
+_Demo_ TPL.  The initial values for parameters and bound constraints
+can be obtained from Dakota with the `get_variables<>(...)` helpers.
+This example returns the values to a standard vector of doubles (Reals).
+These values can then be passed to the _Demo_ TPL using whatever API
+is provided.  The API for this last step varies with the particular TPL,
+and _Demo_ provides a function `set_problem_data` in this case.
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
 // File $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.cpp
 
-int num_total_vars = numContinuousVars;
-std::vector<Real> init_point(num_total_vars);
-std::vector<Real> lower(num_total_vars),
-                  upper(num_total_vars);
+void DemoTPLOptimizer::initialize_variables_and_constraints()
+{
+  // Get the number of variables, the initial values, and the values
+  // of bound constraints.  They are returned to standard C++ data
+  // types.  This example considers only continuous variables.  Other
+  // types of variables and constraints will be added at a later time.
+  // Note that double is aliased to Real in Dakota.
+  int num_total_vars = numContinuousVars;
+  std::vector<Real> init_point(num_total_vars);
+  std::vector<Real> lower(num_total_vars),
+                    upper(num_total_vars);
 
-get_variables(iteratedModel, init_point);
-get_variable_bounds_from_dakota<DemoOptTraits>( lower, upper );
+  // More on DemoOptTraits can be found in DemoOptimizer.hpp.
+  get_variables(iteratedModel, init_point);
+  get_variable_bounds_from_dakota<DemoOptTraits>( lower, upper );
 
+  // Replace this line by whatever the TPL being integrated uses to
+  // ingest variable values and bounds, including any data type
+  // conversion needed.
+
+  // ------------------  TPL_SPECIFIC  ------------------
+  demoOpt->set_problem_data(init_point,   //  "Initial Guess"
+                            lower     ,   //  "Lower Bounds"
+                            upper      ); //  "Upper Bounds"
+
+}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-The TPL should be able to return and optimal objective function value
-and the corresponding variable values via its API.  As has been the
-case throughout, the data should be doubles.  The following code take
-the returned values and set the Dakota data structures that contain
-final objective and variable values.  It adjusts the sign of the
+The TPL should be able to return an optimal objective function value
+and the corresponding variable (parameter) values via its API.  As has
+been the case throughout, the data should be doubles (aliased to Real
+in Dakota).  The following code takes the values returned by _Demo_
+via a call to `get_best_f()` and sets the Dakota data structures that
+contain final objective and variable values.  It adjusts the sign of the
 objective based on whether minimize or maximize has been specified in
-the Dakota input file (minimize is the default).
+the Dakota input file (minimize is the default).  If the problem being
+optimized involves nonlinear equality and/or inequality constraints,
+these will also need to be obtained from the TPL and passed to Dakota
+as part of the array of best function values (responses).
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
 // File $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.cpp
+// in method void DemoTPLOptimizer::core_run()
 
-  double best_f = demoOpt->get_best_f();
+  // Replace this line with however the TPL being incorporated returns
+  // the optimal function value.  To use this demo with minimal
+  // changes, the returned value needs to be (converted to) a
+  // double.
+  double best_f = demoOpt->get_best_f(); // TPL_SPECIFIC
 
+  // If the TPL defaults to doing minimization, no need to do
+  // anything with this code.  It manages needed sign changes
+  // depending on whether minimize or maximize has been specified in
+  // the Dakota input file.
   const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
-  RealVector best_fns(numFunctions);
-  best_fns[0] = (!max_sense.empty() && max_sense[0]) ?
-    -best_f : best_f;
+  RealVector best_fns(iteratedModel.response_size()); // includes nonlinear contraints
+
+  // Get best (single) objcetive value respecting max/min expectations
+  best_fns[0] = (!max_sense.empty() && max_sense[0]) ?  -best_f : best_f;
+
+  // Get best Nonlinear Equality Constraints from TPL
+  if( numNonlinearEqConstraints > 0 )
+  {
+    auto best_nln_eqs = demoOpt->get_best_nln_eqs(); // TPL_SPECIFIC
+    dataTransferHandler->get_best_nonlinear_eq_constraints_from_tpl(
+                                        best_nln_eqs,
+                                        best_fns);
+  }
+
+  // Get best Nonlinear Inequality Constraints from TPL
+  if( numNonlinearIneqConstraints > 0 )
+  {
+    auto best_nln_ineqs = demoOpt->get_best_nln_ineqs(); // TPL_SPECIFIC
+
+    dataTransferHandler->get_best_nonlinear_ineq_constraints_from_tpl(
+                                        best_nln_ineqs,
+                                        best_fns);
+  }
+
   bestResponseArray.front().function_values(best_fns);
-}
 
-std::vector<double> best_x = demoOpt->get_best_x();
+  std::vector<double> best_x = demoOpt->get_best_x(); // TPL_SPECIFIC
 
-set_variables< std::vector<double> >(best_x, iteratedModel, bestVariablesArray.front());
+  // Set Dakota optimal value data.
+  set_variables<>(best_x, iteratedModel, bestVariablesArray.front());
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
