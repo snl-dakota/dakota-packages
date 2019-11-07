@@ -170,7 +170,7 @@ an example interface between Dakota and the _Demo_ TPL can be seen in
 $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.hpp (with
 corresponding .cpp in the same directory).  Within these files is a
 key callback interface used by the _Demo_ TPL to obtain objective
-function values for given parater values (3 in the test above), eg:
+function values for given parameter values (3 in the test above), eg:
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
@@ -205,7 +205,58 @@ of parameter values.  These data exchanges are facilitated by used of
 "data adapters" supplied by Dakota with the `set_variables<>(...)`
 utility and `dataTransferHandler` helper class utilized in this case.
 
-Similarly, Dakota must provide initial parameter values to the _Demo_
+
+For problems involving nonlinear equality and inequality constraints
+Dakota treats these as additional responses to the objective funtction(s).
+The _Demo_ TPL supports both types for purposes of showing how these
+additional responses can be computed by Dakota (via interface to an
+underlying model) and transferred to the TPL.  Similar to the call (by
+_Demo_) to `compute_obj(...)` are two additional methods to compute and
+transfer nonlinear constraint responses, eg:
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+// File $DAKTOA_SRC/packages/external/dakota_src/DemoOptimizer.cpp
+
+void
+DemoTPLOptimizer::compute_nln_eq(std::vector<Real> &c, const std::vector<Real> &x, bool verbose)
+{
+  // Tell Dakota what variable values to use for the nonlinear constraint
+  // evaluations.  x must be (converted to) a std::vector<double> to use
+  // this demo with minimal changes.
+  set_variables<>(x, iteratedModel, iteratedModel.current_variables());
+
+  // Evaluate the function at the specified x.
+  iteratedModel.evaluate();
+
+  // Use an adapter to copy data
+  dataTransferHandler->get_nonlinear_eq_constraints_from_dakota(iteratedModel.current_response(), c);
+}
+
+void
+DemoTPLOptimizer::compute_nln_ineq(std::vector<Real> &c, const std::vector<Real> &x, bool verbose)
+{
+  set_variables<>(x, iteratedModel, iteratedModel.current_variables());
+  iteratedModel.evaluate();
+  dataTransferHandler->get_nonlinear_ineq_constraints_from_dakota(iteratedModel.current_response(), c);
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Both of these callback methods (to Dakota), `compute_nln_eq(...)` and
+`compute_nln_ineq(...)` follow the same pattern as seen for the objective
+function callback: 1) set the Dakota model with the current variables
+(parameters), 2) evaluate the model and 3) transfer the desired response
+(objective or constraint) back to the TPL.  The third step is facilitated
+by the appropriate call to the `dataTransferHandler` helper class.
+It should be noted that even though as many as three separate calls
+to evaluate the model are made for the same parameter values, Dakota
+maintains an internal cache of response values for each unique set.
+The model will be evaluated the first time a new set of parameter values
+is provided, but the cached values will simply be returned thereafter,
+thereby avoiding superfluous model evaluations.
+
+
+Dakota must also provide initial parameter values to the _Demo_
 TPL and retrieve final objective function and variable values from the
 _Demo_ TPL.  The initial values for parameters and bound constraints
 can be obtained from Dakota with the `get_variables<>(...)` helpers.
