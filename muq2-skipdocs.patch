@@ -1,0 +1,18 @@
+diff --git a/muq2/CMakeLists.txt b/muq2/CMakeLists.txt
+index ebfecea..7c9a904 100644
+--- a/muq2/CMakeLists.txt
++++ b/muq2/CMakeLists.txt
+@@ -130,6 +130,8 @@ MESSAGE("${MUQ_LOG_SUMMARY}")
+ ###############################################
+ # Add a target to build documentation
+ ###############################################
++option(MUQ_ENABLE_DOCS "MUQ: Whether to build Doxygen docs" OFF)
++if(MUQ_ENABLE_DOCS)
+ # add a target to generate API documentation with Doxygen
+ find_package(Doxygen)
+ if(DOXYGEN_FOUND)
+@@ -156,3 +158,4 @@ if(DOXYGEN_FOUND)
+ 
+ 
+ endif(DOXYGEN_FOUND)
++endif()
