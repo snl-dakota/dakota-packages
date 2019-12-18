@@ -17,9 +17,7 @@ endmacro()
 
 ####################################################################################
 
-if (NOT TARGET eigen)
-  include ("${CMAKE_CURRENT_LIST_DIR}/Eigen3Targets.cmake")
-endif ()
+include ("${CMAKE_CURRENT_LIST_DIR}/Eigen3Targets.cmake")
 
 # Legacy variables, do *not* use. May be removed in the future.
 
@@ -31,7 +29,7 @@ set (EIGEN3_INCLUDE_DIR  "${PACKAGE_PREFIX_DIR}/include/eigen3")
 set (EIGEN3_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include/eigen3")
 set (EIGEN3_ROOT_DIR     "${PACKAGE_PREFIX_DIR}")
 
-set (EIGEN3_VERSION_STRING "3.3.90")
+set (EIGEN3_VERSION_STRING "3.3.7")
 set (EIGEN3_VERSION_MAJOR  "3")
 set (EIGEN3_VERSION_MINOR  "3")
-set (EIGEN3_VERSION_PATCH  "90")
+set (EIGEN3_VERSION_PATCH  "7")
