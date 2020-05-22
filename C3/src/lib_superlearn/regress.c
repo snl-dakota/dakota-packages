@@ -1344,9 +1344,16 @@ ft_regress_run_rankadapt(struct FTRegress * ftr,
         if (ftr->regopts->verbose > 0){
             printf("Rounded ranks: "); iprint_sz(ftr->dim+1,ftr_ranks);
         }
-        
-        kicked = 0;
 
+        int allmax = 1;
+        for (size_t ii = 1; ii < ft->dim;ii++){
+            if (ranks[ii] < maxrank){
+                allmax = 0;
+                break;
+            }
+        }
+
+        kicked = 0;
         for (size_t ii = 1; ii < ft->dim; ii++){
             if (ftr_ranks[ii] == ranks[ii]){
                 ftr->regopts->restrict_rank_opt[ii-1] = ranks[ii];
@@ -1358,15 +1365,9 @@ ft_regress_run_rankadapt(struct FTRegress * ftr,
             }
         }
 
-        int allmax = 1;
-        for (size_t ii = 1; ii < ft->dim;ii++){
-            if (ranks[ii] < maxrank){
-                allmax = 0;                
-                break;
-            }
-        }
-
-        /* printf("kicked == %zu\n",kicked); */
+        /* printf("kicked == %d\n",kicked); */
+        /* printf("allmax == %d\n",allmax); */
+        /* printf("maxrank == %zu\n",maxrank); */
         if ((kicked == 0) || (allmax == 1)){
             function_train_free(ftround); ftround = NULL;
             free(ranks); ranks = NULL;
