@@ -203,7 +203,7 @@ void SubproblemOptimization<TSurrogateModel>::set_feasibility_thresholds (
   std::cout << "#M2# Subproblem Testing feasiblity: " << std::endl;
   std::cout << "#M2#      at point: [";
   for(int i = 0; i < x.size(); ++i)
-    std::cout << x[i] << ', ';
+    std::cout << x[i] << ", ";
   std::cout << std::endl;
   std::cout << "#M2#      Feasiblity thresholds:";
   for ( int i = 0; i < number_constraints; i++ ) {
