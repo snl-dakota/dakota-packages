@@ -1348,12 +1348,13 @@ ft_regress_run_rankadapt(struct FTRegress * ftr,
         int allmax = 1;
         for (size_t ii = 1; ii < ft->dim;ii++){
             if (ranks[ii] < maxrank){
-                allmax = 0;
+                allmax = 0;                
                 break;
             }
         }
-
+        
         kicked = 0;
+
         for (size_t ii = 1; ii < ft->dim; ii++){
             if (ftr_ranks[ii] == ranks[ii]){
                 ftr->regopts->restrict_rank_opt[ii-1] = ranks[ii];
@@ -1365,9 +1366,9 @@ ft_regress_run_rankadapt(struct FTRegress * ftr,
             }
         }
 
-        /* printf("kicked == %d\n",kicked); */
-        /* printf("allmax == %d\n",allmax); */
-        /* printf("maxrank == %zu\n",maxrank); */
+
+
+        /* printf("kicked == %zu\n",kicked); */
         if ((kicked == 0) || (allmax == 1)){
             function_train_free(ftround); ftround = NULL;
             free(ranks); ranks = NULL;
@@ -1614,9 +1615,10 @@ double cross_validate_run(struct CrossValidate * cv,
     double norm = 0.0;
 
     // keep the same starting parameters for each cv;
-    double * params = calloc_double(reg->ftp->nparams);
-    memmove(params,reg->ftp->params, reg->ftp->nparams * sizeof(double));
+    struct FTparam * ftp_original = ft_param_copy(reg->ftp);
+    ft_param_free(reg->ftp); reg->ftp = NULL;
     for (size_t ii = 0; ii < cv->kfold; ii++){
+        reg->ftp = ft_param_copy(ftp_original);
 
         if (ii == cv->kfold-1){
             batch = cv->N - start_num;
@@ -1665,8 +1667,10 @@ double cross_validate_run(struct CrossValidate * cv,
         start_num += batch;
 
         // reset parameters
-        ft_regress_update_params(reg,params);
+        ft_param_free(reg->ftp); reg->ftp = NULL;
+        reg->ftp = ftp_original;
     }
+
     if (cv->verbose > 1){
         printf("\t CV Err = %G, norm  = %G, relative_err = %G\n",erri/cv->N,norm/cv->N,erri/norm);
     }
@@ -1677,7 +1681,7 @@ double cross_validate_run(struct CrossValidate * cv,
     free(ytrain); ytrain = NULL;
     free(xtest); xtest = NULL;
     free(ytest); ytest = NULL;
-    free(params); params = NULL;
+    
 
     return err;
 }
