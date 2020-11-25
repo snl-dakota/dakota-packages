@@ -33,7 +33,7 @@ public:
   virtual ~MySamplingProblem() = default;
 
 
-  virtual double LogDensity(unsigned int const t, std::shared_ptr<SamplingState> const& state, AbstractSamplingProblem::SampleType type) override {
+  virtual double LogDensity(std::shared_ptr<SamplingState> const& state) override {
     lastState = state;
     return target->Evaluate(state->state).at(0)(0);
   };
@@ -89,7 +89,7 @@ public:
     pt::ptree ptProposal;
     ptProposal.put("BlockIndex",0);
     int subsampling = 5;
-    ptProposal.put("subsampling", subsampling);
+    ptProposal.put("Subsampling", subsampling);
     return std::make_shared<SubsamplingMIProposal>(ptProposal, coarseProblem, coarseChain);
   }
 
@@ -151,8 +151,15 @@ TEST(MIMCMCTest, MIMCMC) {
   auto componentFactory = std::make_shared<MyMIComponentFactory>();
 
   pt::ptree pt;
-  pt.put("NumInitialSamples", 5e4); // number of initial samples for greedy MLMCMC
-  pt.put("GreedyTargetVariance", 0.05); // estimator variance to be achieved by greedy algorithm
+  pt.put("NumSamples_0_0", 1e3);
+  pt.put("NumSamples_0_1", 1e3);
+  pt.put("NumSamples_0_2", 1e3);
+  pt.put("NumSamples_1_0", 1e3);
+  pt.put("NumSamples_1_1", 1e3);
+  pt.put("NumSamples_1_2", 1e3);
+  pt.put("NumSamples_2_0", 1e3);
+  pt.put("NumSamples_2_1", 1e3);
+  pt.put("NumSamples_2_2", 1e3);
 
   MIMCMC mimcmc (pt, componentFactory);
   mimcmc.Run(Eigen::Vector2d(1.0, 2.0));

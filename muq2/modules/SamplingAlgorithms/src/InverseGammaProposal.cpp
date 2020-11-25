@@ -19,38 +19,63 @@ REGISTER_MCMC_PROPOSAL(InverseGammaProposal)
 
 InverseGammaProposal::InverseGammaProposal(pt::ptree                         const& pt,
                                            std::shared_ptr<AbstractSamplingProblem> prob) : MCMCProposal(pt,prob),
-                                                                                            alpha(ExtractAlpha(prob, pt.get<std::string>("InverseGammaNode"))),
-                                                                                            beta(ExtractBeta(prob, pt.get<std::string>("InverseGammaNode"))),
-                                                                                            gaussBlock(ExtractGaussInd(prob, pt.get<std::string>("GaussianNode"))),
-                                                                                            gaussMean(ExtractMean(prob, pt.get<std::string>("GaussianNode"))) {
+                                                                                            alpha(ExtractAlpha(prob,pt.get<std::string>("InverseGammaNode"))),
+                                                                                            beta(ExtractBeta(prob,pt.get<std::string>("InverseGammaNode"))),
+                                                                                            gaussBlock(ExtractGaussInd(prob,pt.get<std::string>("GaussianNode"))),
+                                                                                            gaussMean(ExtractMean(prob,pt.get<std::string>("GaussianNode"))) {
   unsigned int problemDim = prob->blockSizes(blockInd);
   if(problemDim != 1)
     throw muq::WrongSizeError("The InverseGammaProposal is only defined for a block of size 1.");
 }
 
-std::shared_ptr<SamplingState> InverseGammaProposal::Sample(std::shared_ptr<SamplingState> currentState) {
+std::shared_ptr<SamplingState> InverseGammaProposal::Sample(std::shared_ptr<SamplingState> const& currentState) {
 
 
   // the mean of the proposal is the current point
   std::vector<Eigen::VectorXd> props = currentState->state;
   Eigen::VectorXd const& gaussState = currentState->state.at(gaussBlock);
 
-  double newAlpha = alpha + 0.5*gaussState.size();
-  double newBeta = beta + 0.5*(gaussState - gaussMean).sum();
+  Eigen::VectorXd newAlpha, newBeta;
+  if(alpha.size()==1){
+    newAlpha.resize(1);
+    newBeta.resize(1);
+
+    newAlpha(0) = alpha(0) + 0.5*gaussState.size();
+    newBeta(0) = beta(0) + 0.5*(gaussState - gaussMean).sum();
+
+  }else{
+    assert(alpha.size()==gaussState.size());
+
+    newAlpha = alpha.array() + 0.5;
+    newBeta = beta + 0.5*(gaussState-gaussMean);
+  }
+
   props.at(blockInd) = InverseGamma(newAlpha, newBeta).Sample();
 
   // store the new state in the output
   return std::make_shared<SamplingState>(props, 1.0);
 }
 
-double InverseGammaProposal::LogDensity(std::shared_ptr<SamplingState> currState,
-                                        std::shared_ptr<SamplingState> propState) {
+double InverseGammaProposal::LogDensity(std::shared_ptr<SamplingState> const& currState,
+                                        std::shared_ptr<SamplingState> const& propState) {
 
   Eigen::VectorXd const& gaussState = currState->state.at(gaussBlock);
   Eigen::VectorXd const& sigmaState = propState->state.at(blockInd);
 
-  double newAlpha = alpha + 0.5*gaussState.size();
-  double newBeta = beta + 0.5*(gaussState - gaussMean).sum();
+  Eigen::VectorXd newAlpha, newBeta;
+  if(alpha.size()==1){
+    newAlpha.resize(1);
+    newBeta.resize(1);
+
+    newAlpha(0) = alpha(0) + 0.5*gaussState.size();
+    newBeta(0) = beta(0) + 0.5*(gaussState - gaussMean).sum();
+
+  }else{
+    assert(alpha.size()==gaussState.size());
+
+    newAlpha = alpha.array() + 0.5;
+    newBeta = beta + 0.5*(gaussState-gaussMean);
+  }
 
   return InverseGamma(newAlpha, newBeta).LogDensity(sigmaState);
 }
@@ -110,14 +135,16 @@ std::shared_ptr<InverseGamma> InverseGammaProposal::ExtractInverseGamma(std::sha
   return dist;
 }
 
-double InverseGammaProposal::ExtractAlpha(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& igNode)
+Eigen::VectorXd InverseGammaProposal::ExtractAlpha(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& igNode)
 {
   return ExtractInverseGamma(prob,igNode)->alpha;
 }
-double InverseGammaProposal::ExtractBeta(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& igNode)
+
+Eigen::VectorXd InverseGammaProposal::ExtractBeta(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& igNode)
 {
   return ExtractInverseGamma(prob,igNode)->beta;
 }
+
 unsigned int InverseGammaProposal::ExtractGaussInd(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& gaussNode)
 {
   // Cast the abstract base class into a sampling problem

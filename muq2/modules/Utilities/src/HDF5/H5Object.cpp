@@ -37,21 +37,17 @@ H5Object& H5Object::CreatePlaceholder(std::string const& grpName)
     }
 
     if(children.find( pathParts.first ) == children.end()){
-      if((path.length()==1) && (path.at(0)=='/'))
-      {
-	       file->CreateGroup(pathParts.first);
-	       children[pathParts.first].ExactCopy( H5Object(file, pathParts.first ,false) );
-      }
-      else
-      {
-	       file->CreateGroup(path + pathParts.first);
-	       children[pathParts.first].ExactCopy( H5Object(file, path + pathParts.first ,false) );
+      if((path.length()==1) && (path.at(0)=='/')){
+        file->CreateGroup(pathParts.first);
+        children[pathParts.first].ExactCopy( H5Object(file, pathParts.first ,false) );
+      }else{
+        file->CreateGroup(path + pathParts.first);
+        children[pathParts.first].ExactCopy( H5Object(file, path + pathParts.first ,false) );
       }
 
       return children[pathParts.first].CreatePlaceholder(pathParts.second);
-    }
-    else
-    {
+
+    }else{
       return children[pathParts.first].CreatePlaceholder(pathParts.second);
     }
 };
@@ -61,28 +57,23 @@ H5Object& H5Object::CreateGroup(std::string const& grpName)
 {
     // If the group already exists, just return it.
     if(file->DoesGroupExist(path + grpName))
-	return (*this)[grpName];
+      return (*this)[grpName];
 
     // Otherwise, recursively create the necessary groups.
     auto pathParts = SplitString(grpName);
 
     if(children.find( pathParts.first ) == children.end())
     {
-	file->CreateGroup(path + pathParts.first);
-	children[pathParts.first].ExactCopy( H5Object(file, path + pathParts.first, false) );
+      file->CreateGroup(path + pathParts.first);
+      children[pathParts.first].ExactCopy( H5Object(file, path + pathParts.first, false) );
 
-	if(pathParts.second.length()!=0)
-	{
-	    return children[pathParts.first].CreateGroup(pathParts.second);
-	}
-	else
-	{
-	    return children[pathParts.first];
-	}
-    }
-    else
-    {
-	return children[pathParts.first].CreateGroup(pathParts.second);
+      if(pathParts.second.length()!=0){
+        return children[pathParts.first].CreateGroup(pathParts.second);
+      }else{
+        return children[pathParts.first];
+      }
+    }else{
+      return children[pathParts.first].CreateGroup(pathParts.second);
     }
 };
 
@@ -91,20 +82,15 @@ H5Object& H5Object::CreateGroup(std::string const& grpName)
 
 H5Object& H5Object::operator[](std::string const& targetPath)
 {
-  if(isDataset || (targetPath.length()==0))
-  {
+  if(isDataset || (targetPath.length()==0)){
     return *this;
-  }
-  else
-  {
+
+  }else{
     auto pathParts = SplitString(targetPath);
 
-    if(children.find( pathParts.first ) != children.end())
-    {
+    if(children.find( pathParts.first ) != children.end()){
       return children.at(pathParts.first)[pathParts.second];
-    }
-    else
-    {
+    }else{
       return CreatePlaceholder(targetPath);
     }
   }
@@ -189,7 +175,6 @@ BlockDataset H5Object::col(unsigned col) const
     assert(isDataset);
     Eigen::VectorXi shape = file->GetDataSetSize(path);
 
-
     return block(0,col,shape(0),1);
 }
 
@@ -246,8 +231,8 @@ unsigned H5Object::rows() const
 
 unsigned H5Object::cols() const
 {
-  if(!isDataset)
-    throw std::runtime_error("Attempted to call H5Object::cols() on a group object.");
+    if(!isDataset)
+      throw std::runtime_error("Attempted to call H5Object::cols() on a group object.");
 
     Eigen::VectorXi shape = file->GetDataSetSize(path);
     if(shape.size()==1)
@@ -258,8 +243,8 @@ unsigned H5Object::cols() const
 
 unsigned H5Object::size() const
 {
-  if(!isDataset)
-    throw std::runtime_error("Attempted to call H5Object::size() on a group object.");
+    if(!isDataset)
+      throw std::runtime_error("Attempted to call H5Object::size() on a group object.");
 
     Eigen::VectorXi shape = file->GetDataSetSize(path);
     return shape.prod();
@@ -267,25 +252,19 @@ unsigned H5Object::size() const
 
 double H5Object::operator()(int i) const
 {
-    if(isDataset)
-    {
-	return file->ReadPartialMatrix(path,i,0,1,1)(0);
-    }
-    else
-    {
-	assert(false);
+    if(isDataset){
+      return file->ReadPartialMatrix(path,i,0,1,1)(0);
+    }else{
+      assert(false);
     }
 };
-  
+
 double H5Object::operator()(int i, int j) const
 {
-    if(isDataset)
-    {
+    if(isDataset){
      	return file->ReadPartialMatrix(path, i,j,1,1)(0,0);
-    }
-    else
-    {
-	assert(false);
+    }else{
+      assert(false);
     }
 };
 
@@ -295,13 +274,13 @@ void H5Object::Flush()
 {
     file->FlushFile();
 }
-  
+
 
 void H5Object::Print(std::string prefix) const
 {
     std::cout << prefix + path << std::endl;
     for(auto& child : children)
-	child.second.Print(prefix + "  ");
+      child.second.Print(prefix + "  ");
 }
 
 
@@ -311,23 +290,25 @@ H5Object muq::Utilities::AddChildren(std::shared_ptr<HDF5File>        file,
 {
 
     if(file->IsDataSet(groupName))
-	    return H5Object(file,groupName,true);
+      return H5Object(file,groupName,true);
 
     // Set up the current object
     H5Object output(file, groupName, false);
 
     // Add the children
     std::vector<std::string> children = file->GetChildren(groupName);
-    
+
     for(auto& childPath : children)
     {
-	std::string fullChildPath = groupName;
-	if(groupName.at(fullChildPath.length()-1)!='/')
-	    fullChildPath += "/";
-	fullChildPath += childPath;
-	
-	output.children[fullChildPath].ExactCopy( AddChildren(file, fullChildPath) );
+      std::string fullChildPath = groupName;
+
+      if(groupName.at(fullChildPath.length()-1)!='/')
+        fullChildPath += "/";
+      fullChildPath += childPath;
+
+      output.children[fullChildPath].ExactCopy( AddChildren(file, fullChildPath) );
     }
+
     return output;
 }
 
@@ -337,7 +318,6 @@ H5Object muq::Utilities::AddChildren(std::shared_ptr<HDF5File>        file,
  */
 H5Object muq::Utilities::OpenFile(std::string const& filename)
 {
-    
     std::shared_ptr<HDF5File> file = std::make_shared<HDF5File>(filename);
     return AddChildren(file, "/");
 }

@@ -8,6 +8,7 @@ CreateTestGroup(
     ModGraphPieceTests.cpp
     ModPieceTests.cpp
     ConstantPieceTests.cpp
+    DerivativePieceTests.cpp
     IdentityPieceTests.cpp
     SplitVectorTests.cpp
     ScaleVectorTests.cpp
@@ -33,7 +34,10 @@ CreateTestGroup(
     LinearAlgebra/LinearOperatorTests.cpp
     LinearAlgebra/LyapunovSolverTests.cpp
     LinearAlgebra/AffineOperatorTests.cpp
-    
+    LinearAlgebra/LOBPCGTests.cpp
+    LinearAlgebra/StochasticEigenSolverTests.cpp
+    LinearAlgebra/SliceOperatorTests.cpp
+
     #LinearAlgebra/ScalarAlgebraTests.cpp
     #LinearAlgebra/EigenVectorAlgebraTests.cpp
     #LinearAlgebra/EigenMatrixAlgebraTests.cpp
@@ -46,13 +50,6 @@ CreateTestGroup(
     ODETests.cpp
     #RootfindingIVPTests.cpp
 )
-
-CreateParallelTestGroup(
-    MODELING_SUNDIALS_MODELS
-
-    ODEParallelTests.cpp
-)
-
 
 CreateTestGroup(
     MODELING_DISTRIBUTIONS

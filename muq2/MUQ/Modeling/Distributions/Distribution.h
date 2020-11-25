@@ -46,6 +46,19 @@ namespace muq {
 	      return GradLogDensity(wrt, inputs, args...);
       }
 
+
+      virtual Eigen::VectorXd ApplyLogDensityHessian(unsigned int                const  inWrt1,
+                                                     unsigned int                const  inWrt2,
+                                                     ref_vector<Eigen::VectorXd> const& input,
+                                                     Eigen::VectorXd             const& vec);
+
+
+      virtual Eigen::VectorXd ApplyLogDensityHessian(unsigned int                 const  inWrt1,
+                                                     unsigned int                 const  inWrt2,
+                                                     std::vector<Eigen::VectorXd> const& input,
+                                                     Eigen::VectorXd              const& vec){return ApplyLogDensityHessian(inWrt1,inWrt2,ToRefVector(input),vec);};
+
+
       /// Sample the distribution
       /**
 	      Calls SampleImpl, the default behavior is to return boost::none
@@ -147,6 +160,8 @@ boost::any sample3 = rv->Evaluate(x);
 
 
       virtual Eigen::VectorXd GradLogDensityImpl(unsigned int wrt, ref_vector<Eigen::VectorXd> const& inputs);
+
+      virtual Eigen::VectorXd ApplyLogDensityHessianImpl(unsigned int wrt1, unsigned int wrt2, ref_vector<Eigen::VectorXd> const& inputs, Eigen::VectorXd const& vec);
 
       /// Sample the distribution
       /**

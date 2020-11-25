@@ -46,11 +46,11 @@ TEST(MCMC, MHKernel_MHProposal) {
   std::shared_ptr<SampleCollection> localSamps = mcmc->Run(start);
   auto samps = std::make_shared<DistributedCollection>(localSamps, comm);
   EXPECT_EQ(comm->GetSize()*pt.get<int>("MyMCMC.NumSamples"), samps->size());
-  
+
   Eigen::VectorXd mean = samps->Mean();
   EXPECT_NEAR(mu(0), mean(0), 1e-1);
   EXPECT_NEAR(mu(1), mean(1), 1e-1);
-  
+
   Eigen::MatrixXd cov = samps->Covariance();
   EXPECT_NEAR(1.0, cov(0,0), 1e-1);
   EXPECT_NEAR(0.0, cov(0,1), 1e-1);
@@ -96,6 +96,8 @@ TEST(MCMC, MHKernel_ParallelAMProposal) {
   std::shared_ptr<MCMCProposal> proposalBase = kernelMH->Proposal();
   std::shared_ptr<ParallelAMProposal> proposalAM = std::dynamic_pointer_cast<ParallelAMProposal>(proposalBase);
   EXPECT_TRUE(proposalAM);
+
+  proposalAM->SetCommunicator(comm);
 
   std::shared_ptr<SampleCollection> localSamps = mcmc->Run(start);
   auto samps = std::make_shared<DistributedCollection>(localSamps, comm);

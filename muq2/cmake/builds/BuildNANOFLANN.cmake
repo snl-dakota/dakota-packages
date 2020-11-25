@@ -12,7 +12,7 @@ ExternalProject_Add(
         URL ${NANOFLANN_EXTERNAL_SOURCE}
         BUILD_COMMAND ""
       	CONFIGURE_COMMAND ""
-        INSTALL_COMMAND mkdir -p ${NANOFLANN_INSTALL_DIR}include && cp ${CMAKE_CURRENT_BINARY_DIR}/external/nanoflann/src/NANOFLANN/include/nanoflann.hpp ${NANOFLANN_INSTALL_DIR}include/
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${NANOFLANN_INSTALL_DIR}/include && cp ${CMAKE_CURRENT_BINARY_DIR}/external/nanoflann/src/NANOFLANN/include/nanoflann.hpp ${NANOFLANN_INSTALL_DIR}include/
 )
 
 set_property( TARGET NANOFLANN PROPERTY FOLDER "Externals")

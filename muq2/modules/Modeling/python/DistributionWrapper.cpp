@@ -93,9 +93,8 @@ void muq::Modeling::PythonBindings::DistributionWrapper(py::module &m)
       .def("LogDensity", (double (Distribution::*)(std::vector<Eigen::VectorXd> const&)) &Distribution::LogDensity)
       .def("LogDensity", (double (Distribution::*)(Eigen::VectorXd const&)) &Distribution::LogDensity)
       .def("GradLogDensity", (Eigen::VectorXd (Distribution::*)(unsigned int, std::vector<Eigen::VectorXd> const&)) &Distribution::GradLogDensity)
-      //.def("GradLogDensity", (Eigen::VectorXd (Distribution::*)(unsigned int, Eigen::VectorXd const&)) &Distribution::GradLogDensity)
+      .def("ApplyLogDensityHessian", (Eigen::VectorXd (Distribution::*)(unsigned int, unsigned int, std::vector<Eigen::VectorXd> const&, Eigen::VectorXd const&)) &Distribution::ApplyLogDensityHessian)
       .def("Sample", (Eigen::VectorXd (Distribution::*)(std::vector<Eigen::VectorXd> const&)) &Distribution::Sample)
-      //.def("Sample", (Eigen::VectorXd (Distribution::*)(Eigen::VectorXd const&)) &Distribution::Sample)
       .def("Sample", (Eigen::VectorXd (Distribution::*)()) &Distribution::Sample)
       .def("AsDensity", &Distribution::AsDensity)
       .def("AsVariable", &Distribution::AsVariable)
@@ -188,6 +187,7 @@ void muq::Modeling::PythonBindings::DistributionWrapper(py::module &m)
     py::class_<InverseGamma, Distribution, std::shared_ptr<InverseGamma>> ig(m, "InverseGamma");
     ig
       .def(py::init<double,double>())
+      .def(py::init<Eigen::VectorXd const&,Eigen::VectorXd const&>())
       .def_readonly("alpha", &InverseGamma::alpha)
       .def_readonly("beta", &InverseGamma::beta);
 }

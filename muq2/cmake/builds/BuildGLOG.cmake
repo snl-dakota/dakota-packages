@@ -9,7 +9,7 @@ if(DEFINED GLOG_EXTERNAL_SOURCE)
                     CONFIGURE_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/external/glog/src/GLOG/configure CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=${CMAKE_CXX_FLAGS} --prefix=${GLOG_INSTALL_DIR}
                     BUILD_COMMAND make
                     BUILD_IN_SOURCE 1
-                    INSTALL_COMMAND "make install"
+                    INSTALL_COMMAND make install
     )
 else()
     ExternalProject_Add(
@@ -19,7 +19,7 @@ else()
                     CONFIGURE_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/external/glog/src/GLOG/configure CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=${CMAKE_CXX_FLAGS} --prefix=${GLOG_INSTALL_DIR}
                     BUILD_COMMAND make
                     BUILD_IN_SOURCE 1
-                    INSTALL_COMMAND "make install"
+                    INSTALL_COMMAND make install
     )
 endif()
 

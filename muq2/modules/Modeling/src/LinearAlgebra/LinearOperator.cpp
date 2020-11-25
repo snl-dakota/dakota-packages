@@ -63,3 +63,24 @@ void LinearOperator::ApplyJacobianImpl(unsigned int                const  output
 {
   jacobianAction = Apply(vec);
 }
+
+void LinearOperator::ApplyHessianImpl(unsigned int const outWrt,
+                                      unsigned int inWrt1,
+                                      unsigned int inWrt2,
+                                      muq::Modeling::ref_vector<Eigen::VectorXd> const& input,
+                                      Eigen::VectorXd             const& sens,
+                                      Eigen::VectorXd             const& vec)
+{
+
+  // If inWrt1==inWrt2, then the Hessian is zero
+  if(inWrt1==inWrt2){
+    hessAction = Eigen::VectorXd::Zero(cols());
+  }else{
+
+    /* Since there is only one input, inWrt1!=inWrt2 will only be possible if inWrt2
+       is wrt to the sensitivity.  Since the gradient is A^Ts, the Jacobian of this
+       wrt to the sensitivity is A^T.
+    */
+    hessAction = ApplyTranspose(vec);
+  }
+}

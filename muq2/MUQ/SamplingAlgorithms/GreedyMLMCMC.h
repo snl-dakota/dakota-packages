@@ -31,17 +31,19 @@ namespace muq {
 
       std::shared_ptr<MIMCMCBox> GetBox(int index);
 
+      void WriteToFile(std::string filename);
+
     protected:
       virtual std::shared_ptr<SampleCollection> RunImpl(std::vector<Eigen::VectorXd> const& x0) override;
 
     private:
+      std::shared_ptr<MIComponentFactory> componentFactory;
+      const int numInitialSamples;
       const double e;
       const double beta;
       const int levels;
-      std::shared_ptr<MIComponentFactory> componentFactory;
-      const int numInitialSamples;
-      std::vector<std::shared_ptr<MIMCMCBox>> boxes;
       int verbosity;
+      std::vector<std::shared_ptr<MIMCMCBox>> boxes;
     };
 
   }

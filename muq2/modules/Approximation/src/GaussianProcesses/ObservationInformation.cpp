@@ -1,7 +1,5 @@
 #include "MUQ/Approximation/GaussianProcesses/ObservationInformation.h"
 
-
-using namespace muq::Utilities;
 using namespace muq::Approximation;
 
 

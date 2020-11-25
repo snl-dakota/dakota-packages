@@ -22,8 +22,6 @@ namespace muq
 {
 namespace Modeling{
     class LinearSDE;
-}
-namespace Utilities{
     class LinearOperator;
 }
 

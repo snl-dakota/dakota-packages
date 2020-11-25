@@ -11,6 +11,46 @@
 namespace muq {
   namespace Modeling {
 
+    /// This class keeps track of which nodes are upstream (needed to evaluate) a given node
+    class UpstreamPredicate {
+    public:
+
+      UpstreamPredicate();
+
+      UpstreamPredicate(boost::graph_traits<Graph>::vertex_descriptor const& baseNode, Graph const& graph);
+
+      bool operator()(const boost::graph_traits<Graph>::vertex_descriptor& node) const;
+
+    private:
+      /// A vector of all the nodes downstream of the input node
+      std::vector<boost::graph_traits<Graph>::vertex_descriptor> doesDepend;
+
+      /**
+	     @param[in] baseNode A node that depends on the input node (possible the input node itself)
+	      @param[in] graph The graph holding all the nodes
+      */
+      void UpstreamNodes(const boost::graph_traits<Graph>::vertex_descriptor& baseNode, Graph const& graph);
+    };
+
+    class UpstreamEdgePredicate {
+    public:
+
+      UpstreamEdgePredicate();
+
+      UpstreamEdgePredicate(UpstreamPredicate nodePred, Graph const& graph);
+
+      bool operator()(const boost::graph_traits<Graph>::edge_descriptor& edge) const;
+
+    private:
+
+      /// The nodes that are downstream of the input
+      UpstreamPredicate nodePred;
+
+      /// The graph holding all the nodes
+      const Graph* graph;
+
+    };
+
     /// This class keeps track of which nodes are downstream of a specified input
     class DependentPredicate {
     public:
@@ -94,7 +134,7 @@ namespace muq {
 
 
       std::shared_ptr<WorkGraph> GetGraph(){return wgraph;};
-      
+
     private:
 
       /// Evaluate each muq::Modeling::WorkPiece in the graph

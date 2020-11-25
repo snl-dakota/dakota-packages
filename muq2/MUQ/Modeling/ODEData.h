@@ -25,11 +25,12 @@ namespace muq {
 	 @param[in] autonomous Is the RHS autonomous?
 	 @param[in] wrtIn The input we are computing the derivative wrt --- negative indicates no derivative is being computed
        */
-#if MUQ_HAS_PARCER==1
-      ODEData(std::shared_ptr<ModPiece> const& rhs, ref_vector<Eigen::VectorXd> const& refinputs, bool const autonomous, int const wrtIn, std::shared_ptr<parcer::Communicator> const& comm);
-#else
-      ODEData(std::shared_ptr<ModPiece> const& rhs, ref_vector<Eigen::VectorXd> const& refinputs, bool const autonomous, int const wrtIn);
-#endif
+      ODEData(std::shared_ptr<ModPiece> const& rhs,
+              ref_vector<Eigen::VectorXd> const& refinputs,
+              bool const autonomous,
+              int const wrtIn,
+              Eigen::VectorXd const& actionVec = Eigen::VectorXd());
+
 
       /// Construct with root function
       /**
@@ -39,12 +40,17 @@ namespace muq {
 	 @param[in] autonomous Is the RHS autonomous?
 	 @param[in] wrtIn The input we are computing the derivative wrt --- negative indicates no derivative is being computed
        */
-      ODEData(std::shared_ptr<ModPiece> const& rhs, std::shared_ptr<ModPiece> const& root, ref_vector<Eigen::VectorXd> const& refinputs, bool const autonomous, int const wrtIn);
+      ODEData(std::shared_ptr<ModPiece> const& rhs,
+              std::shared_ptr<ModPiece> const& root,
+              ref_vector<Eigen::VectorXd> const& refinputs,
+              bool const autonomous,
+              int const wrtIn,
+              Eigen::VectorXd const& actionVec = Eigen::VectorXd());
 
       virtual ~ODEData() = default;
 
       /// Update the time and state inputs
-      void UpdateInputs(Eigen::VectorXd const& state, double const time);
+      void UpdateInputs(Eigen::Ref<const Eigen::VectorXd> const& newState, double const time);
 
       /// The right hand side of the ODE
       std::shared_ptr<ModPiece> rhs;
@@ -53,7 +59,9 @@ namespace muq {
       std::shared_ptr<ModPiece> root;
 
       /// The inputs to the rhs --- the first is the state, the rest are constant in time
-      std::vector<Eigen::VectorXd> inputs;
+      Eigen::VectorXd time;
+      Eigen::VectorXd state;
+      ref_vector<Eigen::VectorXd> inputs;
 
       /// Is the RHS autonomous?
       const bool autonomous;
@@ -61,9 +69,8 @@ namespace muq {
       /// The input we are computing the derivative wrt --- negative indicates no derivative is being computed
       const int wrtIn = -1;
 
-#if MUQ_HAS_PARCER==1
-      std::shared_ptr<parcer::Communicator> comm = nullptr;
-#endif
+      Eigen::VectorXd actionVec; // <- used to store the vector when ApplyJacobian is called
+      const bool isAction;
 
     private:
     };

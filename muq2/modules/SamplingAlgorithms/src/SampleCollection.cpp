@@ -364,7 +364,44 @@ unsigned SampleCollection::size() const { return samples.size(); }
 
 Eigen::VectorXd SampleCollection::Variance(int blockDim) const { return CentralMoment(2,blockDim); }
 
+
+std::set<std::string> SampleCollection::ListMeta(bool requireAll) const{
+
+    std::set<std::string> output;
+
+    // Add all of the metadata from the first sample
+    for(auto& metaPair : at(0)->meta)
+      output.insert(metaPair.first);
+
+    // Loop through the rest of the samples
+    for(unsigned int i=1; i<size(); ++i) {
+      if(requireAll){
+
+        // Make a list of any keys that we don't have already
+        std::vector<std::string> eraseElements;
+        for(auto& key : output){
+          if( !at(i)->HasMeta(key) ){
+            eraseElements.push_back(key);
+          }
+        }
+
+        // Erase any key that we didn't find in this sample
+        for(auto& key : eraseElements){
+          output.erase(key);
+        }
+
+      }else{
+        for(auto& metaPair : at(i)->meta)
+          output.insert(metaPair.first);
+      }
+    }
+
+    return output;
+}
+
+
 Eigen::MatrixXd SampleCollection::GetMeta(std::string const& name) const {
+
   Eigen::MatrixXd meta;
 
   // for each sample

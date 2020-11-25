@@ -79,6 +79,24 @@ std::shared_ptr<muq::Modeling::Gaussian> GaussianProcess::Discretize(Eigen::Matr
   return std::make_shared<muq::Modeling::Gaussian>(meanMap,cov);
 }
 
+Eigen::MatrixXd GaussianProcess::SolveFromEig(Eigen::MatrixXd const& b) const
+{
+  auto& vecs = covSolverEig.eigenvectors();
+  auto& vals = covSolverEig.eigenvalues();
+
+  const double tol = std::max(std::numeric_limits<double>::epsilon(), 1e-12*vals.maxCoeff());
+
+  int numPos = 0;
+  for(int i=vals.size()-1; i>=0; --i){
+    if(vals(i)>tol){
+        numPos++;
+    }else{
+      break;
+    }
+  }
+
+  return vecs.rightCols(numPos) * vals.tail(numPos).cwiseInverse().asDiagonal() * vecs.rightCols(numPos).transpose() * b;
+}
 
 void GaussianProcess::ProcessObservations()
 {
@@ -105,7 +123,15 @@ void GaussianProcess::ProcessObservations()
 
         trainCov.triangularView<Eigen::Lower>() = trainCov.triangularView<Eigen::Upper>().transpose();
 
-        covSolver = trainCov.selfadjointView<Eigen::Lower>().ldlt();
+        covSolver.compute(trainCov.selfadjointView<Eigen::Lower>());//.ldlt();
+        useEig = false;
+
+        // If the LDLT solver failed, try an eigenvalue solver
+        if(covSolver.info() != Eigen::Success){
+          covSolverEig.compute(trainCov);
+          useEig = true;
+          assert(covSolverEig.info()==Eigen::Success);
+        }
 
         // Evaluate the mean function
         Eigen::VectorXd trainDiff(obsDim);
@@ -120,7 +146,11 @@ void GaussianProcess::ProcessObservations()
             currRow += observations.at(i)->H->rows();
         }
 
-        sigmaTrainDiff = covSolver.solve(trainDiff);
+        if(useEig){
+          sigmaTrainDiff = SolveFromEig(trainDiff);
+        }else{
+          sigmaTrainDiff = covSolver.solve(trainDiff);
+        }
 
         hasNewObs = false;
     }
@@ -213,11 +243,16 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXd> GaussianProcess::Predict(Eigen::Matr
             covKernel->FillCovariance(newLocs.col(i),priorCov);
 
             if(observations.size()>0){
-                for(int d=0; d<coDim; ++d)
-                    outputCov(d,i) = priorCov(d,d) - crossCov.row(i*coDim+d) * covSolver.solve(crossCov.row(i*coDim+d).transpose());
+              for(int d=0; d<coDim; ++d){
+                if(useEig){
+                  outputCov(d,i) = priorCov(d,d) - crossCov.row(i*coDim+d).dot( SolveFromEig(crossCov.row(i*coDim+d).transpose()).col(0) );
+                }else{
+                  outputCov(d,i) = priorCov(d,d) - crossCov.row(i*coDim+d) * covSolver.solve(crossCov.row(i*coDim+d).transpose());
+                }
+              }
             }else{
-                for(int d=0; d<coDim; ++d)
-                    outputCov(d,i) = priorCov(d,d);
+              for(int d=0; d<coDim; ++d)
+                outputCov(d,i) = priorCov(d,d);
             }
         }
 
@@ -231,7 +266,11 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXd> GaussianProcess::Predict(Eigen::Matr
             covKernel->FillCovariance(newLocs.col(i),priorCov);
 
             if(observations.size()>0){
+              if(useEig){
+                outputCov.block(0,coDim*i,coDim,coDim) = priorCov - crossCov.block(i*coDim,0,coDim,crossCov.cols()) * SolveFromEig(crossCov.block(i*coDim,0,coDim,crossCov.cols()).transpose());
+              }else{
                 outputCov.block(0,coDim*i,coDim,coDim) = priorCov - crossCov.block(i*coDim,0,coDim,crossCov.cols()) * covSolver.solve(crossCov.block(i*coDim,0,coDim,crossCov.cols()).transpose());
+              }
             }else{
                 outputCov.block(0,coDim*i,coDim,coDim) = priorCov;
             }
@@ -246,7 +285,11 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXd> GaussianProcess::Predict(Eigen::Matr
 
         // Solve for the posterior covariance
         if(observations.size()>0){
+          if(useEig){
+            outputCov = priorCov - crossCov * SolveFromEig(crossCov.transpose());
+          }else{
             outputCov = priorCov - crossCov * covSolver.solve(crossCov.transpose());
+          }
         }else{
             outputCov = priorCov;
         }
@@ -288,7 +331,29 @@ Eigen::MatrixXd GaussianProcess::Sample(Eigen::MatrixXd const& newPts)
     Eigen::MatrixXd output(mean.rows(), mean.cols());
     Eigen::Map<Eigen::VectorXd> outVec(output.data(), output.rows()*output.cols());
 
-    outVec = covariance.selfadjointView<Eigen::Lower>().llt().matrixL()*RandomGenerator::GetNormal(covariance.rows());
+    // First, try using a Cholesky factorization because it's faster
+    auto fact = covariance.selfadjointView<Eigen::Lower>().llt();
+    if(fact.info() == Eigen::Success){
+      outVec = fact.matrixL()*RandomGenerator::GetNormal(covariance.rows());
+
+    // If the llt factorization failed, try an eigenvalue decomp
+    }else{
+
+      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(covariance);
+      auto& vals = solver.eigenvalues();
+      auto& vecs = solver.eigenvectors();
+
+      int numPos = 0;
+      for(int i=vals.size()-1; i>=0; --i){
+        if(vals(i)>std::sqrt(std::numeric_limits<double>::epsilon())){
+            numPos++;
+        }else{
+          break;
+        }
+      }
+
+      outVec = vecs.rightCols(numPos)*vals.tail(numPos).cwiseSqrt().asDiagonal()*RandomGenerator::GetNormal(numPos);
+    }
 
     output += mean;
 

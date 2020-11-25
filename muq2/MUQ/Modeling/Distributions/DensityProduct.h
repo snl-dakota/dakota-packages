@@ -25,6 +25,11 @@ namespace muq {
       virtual Eigen::VectorXd GradLogDensityImpl(unsigned int wrt,
                                                  ref_vector<Eigen::VectorXd> const& inputs) override;
 
+      virtual Eigen::VectorXd ApplyLogDensityHessianImpl(unsigned int                const  inWrt1,
+                                                         unsigned int                const  inWrt2,
+                                                         ref_vector<Eigen::VectorXd> const& input,
+                                                         Eigen::VectorXd             const& vec) override;
+
     };
   } // namespace Modeling
 } // namespace muq

@@ -30,9 +30,13 @@ CreateCompileGroup(
     PyModPiece.cpp
 
     ModPiece.cpp
+    GradientPiece.cpp
+    JacobianPiece.cpp
     ModGraphPiece.cpp
     WorkGraphPiece.cpp
     LinearSDE.cpp
+
+    OneStepCachePiece.cpp
 
     ConstantPiece.cpp
     ConstantVector.cpp
@@ -46,6 +50,7 @@ CreateCompileGroup(
     MultiLogisticLikelihood.cpp
 
     ReplicateOperator.cpp
+    SumPiece.cpp
 
     LinearSDE.cpp
 
@@ -87,7 +92,13 @@ CreateCompileGroup(
     LinearAlgebra/DiagonalOperator.cpp
     LinearAlgebra/ProductOperator.cpp
     LinearAlgebra/AffineOperator.cpp
-    
+    LinearAlgebra/HessianOperator.cpp
+    LinearAlgebra/GaussianOperator.cpp
+    LinearAlgebra/GaussNewtonOperator.cpp
+    LinearAlgebra/LOBPCG.cpp
+    LinearAlgebra/StochasticEigenSolver.cpp
+    LinearAlgebra/GeneralizedEigenSolver.cpp
+    LinearAlgebra/SliceOperator.cpp
     #LinearAlgebra/AnyAlgebra.cpp
     #LinearAlgebra/ScalarAlgebra.cpp
     #LinearAlgebra/EigenVectorAlgebra.cpp
@@ -121,8 +132,7 @@ CreateCompileGroup(
     "MODELING_CORE"
     "EIGEN3;BOOST;SUNDIALS"
     ""
-    ODEBase.cpp
-    ODEData.cpp
     ODE.cpp
+    ODEData.cpp
     #RootfindingIVP.cpp
 )

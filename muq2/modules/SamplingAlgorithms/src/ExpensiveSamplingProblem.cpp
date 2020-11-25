@@ -3,7 +3,7 @@
 #include "MUQ/Utilities/RandomGenerator.h"
 
 #include "MUQ/Modeling/Distributions/Gaussian.h"
-
+#include "MUQ/Utilities/AnyHelpers.h"
 #include "MUQ/SamplingAlgorithms/SamplingState.h"
 
 namespace pt = boost::property_tree;
@@ -65,14 +65,19 @@ void ExpensiveSamplingProblem::SetUp(boost::property_tree::ptree& pt) {
   eta = pt.get<double>("TailCorrection", 0.0);
 }
 
-double ExpensiveSamplingProblem::LogDensity(unsigned int const step, std::shared_ptr<SamplingState> const& state, AbstractSamplingProblem::SampleType type) {
+double ExpensiveSamplingProblem::LogDensity(std::shared_ptr<SamplingState> const& state) {
+
   std::vector<Eigen::VectorXd> neighbors, results;
 
-  bool addThreshold = (type==AbstractSamplingProblem::SampleType::Proposed);
+  assert(state->HasMeta("iteration"));
+  assert(state->HasMeta("IsProposal"));
+
+  unsigned int step = AnyCast(state->meta["iteration"]);
+  bool addThreshold = AnyCast(state->meta["IsProposal"]);
 
   double threshold = RefineSurrogate(step, state, neighbors, results);
 
-  if( type==AbstractSamplingProblem::SampleType::Accepted ) {
+  if( !addThreshold ) {
     lastLyapunov = LogLyapunovFunction(state->state[0]);
     lastThreshold = threshold;
   }

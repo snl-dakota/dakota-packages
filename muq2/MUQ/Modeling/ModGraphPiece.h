@@ -4,11 +4,14 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 
+#include <map>
+
 #include "MUQ/Modeling/ModPiece.h"
 #include "MUQ/Modeling/WorkGraphPiece.h"
 #include "MUQ/Modeling/ModGraphPiece.h"
 #include "MUQ/Modeling/ConstantVector.h"
 #include "MUQ/Modeling/NodeNameFinder.h"
+#include "MUQ/Modeling/WorkGraph.h"
 
 namespace muq {
   namespace Modeling {
@@ -26,9 +29,7 @@ namespace muq {
       	 @param[in] graph From inputs to the output-of-interest
       	 @param[in] constantPieces Pointers to the muq::Modeling::ConstantVector's that hold the graph's inputs
       	 @param[in] inputNames The names of each node in the graph corresponding to the constantPieces
-      	 @param[in] inTypes The input types (if known)
-      	 @param[in] outputNode The muq::Modeling::WorkPiece that we ultimately want to evaluate
-      	 @param[in] algebra Algebra to preform basic operations between different types (defaults to base class, which has common types)
+      	 @param[in] outputNode The muq::Modeling::ModPiece that we ultimately want to evaluate
        */
       ModGraphPiece(std::shared_ptr<WorkGraph>                           graph,
                     std::vector<std::shared_ptr<ConstantVector> > const& constantPieces,
@@ -41,6 +42,21 @@ namespace muq {
       std::shared_ptr<WorkGraph> GetGraph(){return wgraph;};
 
       std::vector<std::shared_ptr<ConstantVector> > GetConstantPieces(){return constantPieces;};
+
+      /** @brief Returns another ModGraphPiece containing only part of the graph
+                 making up this model.
+          @details Consider the graph for a posterior density.  You might have 5
+                   nodes in the graph: "Parameters", "Prior", "Likelihood", "Forward Model",
+                   and "Posterior".   This function returns a model using only
+                   a subset of these nodes.  For example, calling GetSubModel with
+                   the node name "Likelihood" will return a new ModGraphPiece containing
+                   three nodes: "Parameters", "Forward Model", and "Likelihood".
+                   The resulting model will only evaluate the likelihood.
+          @param[in] nodeName The name of a node in the graph that will serve as
+                              the new "output" node.
+          @return A ModGraphPiece with the "nodeName" node as output.
+      */
+      std::shared_ptr<ModGraphPiece> GetSubModel(std::string const& nodeName) const;
 
       /**
         @brief Matches inputs with another ModGraphPiece by looking at node names and edges.
@@ -58,7 +74,40 @@ namespace muq {
       */
       std::vector<int> MatchInputs(std::shared_ptr<ModGraphPiece> otherPiece) const;
 
+      /**
+      Returns a ModGraphPiece that, when evaluated, returns the gradient of this
+      ModPiece.  Note that the returned ModPiece will have an additional input
+      for the sensitivity vector used in the Gradient call.
+      */
+      std::shared_ptr<ModGraphPiece> GradientGraph(unsigned int                const  outputDimWrt,
+                                                   unsigned int                const  inputDimWrt);
+
+      /**
+        Returns a ModGraphPiece that, when evaluated, returns the action of the Jacobian of this
+        ModPiece on a vector.  Note that the returned ModPiece will have an
+        additional input for the vector that we want to apply the Jacobian to.
+      */
+      std::shared_ptr<ModGraphPiece> JacobianGraph(unsigned int                const  outputDimWrt,
+                                                   unsigned int                const  inputDimWrt);
+
+      /** Returns the name of the output node in the graph.*/
+      std::string GetOutputName() const{return wgraph->GetName(outputPiece);};
+
+      /** Returns the output ModPiece. */
+      std::shared_ptr<ModPiece> GetOutputPiece() const{return outputPiece;};
+
     private:
+
+      // Indices are [outWrt][inWrt]
+      std::map<std::pair<unsigned int, unsigned int>, std::shared_ptr<ModGraphPiece>> gradientPieces;
+      std::map<std::pair<unsigned int, unsigned int>, std::shared_ptr<ModGraphPiece>> jacobianPieces;
+      std::map<std::tuple<unsigned int, unsigned int, unsigned int>, std::shared_ptr<ModGraphPiece>> hessianPieces;
+
+      /** Returns the input index of this ModGraphPiece that corresponds to the
+          the specified placeholder ModPiece.  If the ModPiece is not an input,
+          than -1 is returned.
+      */
+      int GetInputIndex(std::shared_ptr<WorkPiece> const& piece) const;
 
       static Eigen::VectorXi ConstructInputSizes(std::vector<std::shared_ptr<ConstantVector> > const& constantPiecesIn);
 
@@ -75,10 +124,10 @@ namespace muq {
       @param[in] vec We are applying the Jacobian transpose to this object
       @param[in] inputs Inputs to the muq::Modeling::WorkGraphPiece
        */
-      // virtual void GradientImpl(unsigned int                const  outputDimWrt,
-      //                           unsigned int                const  inputDimWrt,
-      //                           ref_vector<Eigen::VectorXd> const& input,
-      //                           Eigen::VectorXd             const& sensitivity);
+      virtual void GradientImpl(unsigned int                const  outputDimWrt,
+                                unsigned int                const  inputDimWrt,
+                                ref_vector<Eigen::VectorXd> const& input,
+                                Eigen::VectorXd             const& sensitivity) override;
 
       /// Compute the Jacobian for this muq::Modeling::WorkGraphPiece using the chain rule
       /**
@@ -97,10 +146,19 @@ namespace muq {
          @param[in] vec We are applying the Jacobian to this object
          @param[in] inputs Inputs to the muq::Modeling::WorkGraphPiece
        */
-      // virtual void ApplyJacobianImpl(unsigned int                const  outputDimWrt,
-      //                                unsigned int                const  inputDimWrt,
-      //                                ref_vector<Eigen::VectorXd> const& input,
-      //                                Eigen::VectorXd             const& vec);
+      virtual void ApplyJacobianImpl(unsigned int                const  outputDimWrt,
+                                     unsigned int                const  inputDimWrt,
+                                     ref_vector<Eigen::VectorXd> const& input,
+                                     Eigen::VectorXd             const& vec) override;
+
+
+     virtual void ApplyHessianImpl(unsigned int                const  outWrt,
+                                   unsigned int                const  inWrt1,
+                                   unsigned int                const  inWrt2,
+                                   ref_vector<Eigen::VectorXd> const& input,
+                                   Eigen::VectorXd             const& sens,
+                                   Eigen::VectorXd             const& vec) override;
+
 
       /// Get the required outputs for a node in one of the filtered graphs
       /**
@@ -161,6 +219,8 @@ namespace muq {
 
       /// The ID of the WorkPiece corresponding to the output node
       unsigned int outputID;
+
+      std::shared_ptr<ModPiece> outputPiece;
 
       /// The muq::Modeling::ConstantVector's that store the inputs
       std::vector<std::shared_ptr<ConstantVector> > constantPieces;

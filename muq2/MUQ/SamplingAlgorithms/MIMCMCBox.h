@@ -4,6 +4,7 @@
 #include "MUQ/SamplingAlgorithms/MHKernel.h"
 #include "MUQ/SamplingAlgorithms/MIComponentFactory.h"
 #include "MUQ/SamplingAlgorithms/MIKernel.h"
+#include "MUQ/SamplingAlgorithms/RemoteMIProposal.h"
 #include "MUQ/Utilities/AnyHelpers.h"
 #include "MUQ/Utilities/MultiIndices/MultiIndexFactory.h"
 
@@ -32,6 +33,8 @@ namespace muq {
 
       void Sample();
 
+      Eigen::VectorXd MeanParam();
+
       Eigen::VectorXd MeanQOI();
 
       void DrawChain(std::shared_ptr<SingleChainMCMC> chain, std::string chainid, std::ofstream& graphfile) const;
@@ -40,13 +43,24 @@ namespace muq {
 
       std::shared_ptr<SingleChainMCMC> FinestChain();
 
+      std::shared_ptr<SingleChainMCMC> GetChain(std::shared_ptr<MultiIndex> index);
+
+      std::shared_ptr<MultiIndexSet> GetBoxIndices();
+
       std::shared_ptr<AbstractSamplingProblem> GetFinestProblem();
+
+      std::shared_ptr<MultiIndex> GetHighestIndex();
+      
+      std::shared_ptr<SampleCollection> GetQOIDiff();
+
+      void WriteToFile(std::string filename);
 
     private:
 
       // Creates a path of multiindices back to zero, preferring a route along the diagonal
       std::shared_ptr<MultiIndexSet> CreateRootPath(std::shared_ptr<MultiIndex> index);
 
+      std::shared_ptr<SampleCollection> QOIDiff;
 
       std::shared_ptr<MIComponentFactory> componentFactory;
       std::shared_ptr<MultiIndex> boxHighestIndex;

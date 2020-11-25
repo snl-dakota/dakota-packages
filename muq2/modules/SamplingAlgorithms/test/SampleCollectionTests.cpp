@@ -24,13 +24,13 @@ protected:
       weights /= weights.sum();
 
       for(int i=0; i<numSamps; ++i) {
-	auto state = std::make_shared<SamplingState>(Eigen::VectorXd(samps.col(i)), weights(i));
-	state->meta["id"] = i;
-	state->meta["x norm"] = samps.col(i).norm();
-	state->meta["vec2"] = (Eigen::Vector2d)(i*Eigen::Vector2d::Ones());
-	state->meta["vec3"] = (Eigen::Vector3d)(i*Eigen::Vector3d::Ones());
-	state->meta["vec4"] = (Eigen::Vector4d)(i*Eigen::Vector4d::Ones());
-	state->meta["vecX"] = (Eigen::VectorXd)(i*Eigen::VectorXd::Ones(5));
+      	auto state = std::make_shared<SamplingState>(Eigen::VectorXd(samps.col(i)), weights(i));
+      	state->meta["id"] = i;
+      	state->meta["x norm"] = samps.col(i).norm();
+      	state->meta["vec2"] = (Eigen::Vector2d)(i*Eigen::Vector2d::Ones());
+      	state->meta["vec3"] = (Eigen::Vector3d)(i*Eigen::Vector3d::Ones());
+      	state->meta["vec4"] = (Eigen::VectorXd)(i*Eigen::VectorXd::Ones(4));
+      	state->meta["vecX"] = (Eigen::VectorXd)(i*Eigen::VectorXd::Ones(5));
 
         collection.Add(state);
       }
@@ -47,6 +47,28 @@ protected:
     Eigen::VectorXd weights;
     SampleCollection collection;
 };
+
+TEST(SampleCollectionMetaTest, List){
+  auto state1 = std::make_shared<SamplingState>(Eigen::Vector2d{1.0,2.0}, 1.0);
+  state1->meta["id"] = 1;
+
+  auto state2 = std::make_shared<SamplingState>(Eigen::Vector2d{2.0,3.0}, 0.5);
+  state2->meta["id"] = 2;
+  state2->meta["bonus"] = "what?";
+
+  SampleCollection collection;
+  collection.Add(state1);
+  collection.Add(state2);
+
+  std::set<std::string> anyList = collection.ListMeta(false);
+  EXPECT_EQ(2,anyList.size());
+
+  for(auto& str : anyList)
+    std::cout << str << std::endl;
+    
+  std::set<std::string> allList = collection.ListMeta(true);
+  EXPECT_EQ(1,allList.size());
+}
 
 TEST_F(SampleCollectionTest, Mean)
 {

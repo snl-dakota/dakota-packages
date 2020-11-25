@@ -10,6 +10,9 @@
 
 #include <Eigen/Core>
 
+#include <iomanip>
+#include <limits>
+
 using namespace muq::Approximation;
 
 TEST(Quadrature, PhysicistHermite) {
@@ -292,17 +295,17 @@ TEST(Quadrature, Jacobi) {
   int order = 4;
 
   // legendre table for polynomial order n=5
-  std::vector<double> gaussPtsTable = {-0.6904577501267610633887,
-                                       -0.32651993134900065265,
+  std::vector<double> gaussPtsTable = {-0.7198842953848507,
+                                       -0.3852703828805474,
                                        0.0,
-                                       0.4751788706128316398344,
-                                       0.792794294644228504216};
+                                       0.3852703828805472,
+                                       0.7198842953848505};
 
-  std::vector<double> gaussWtsTable = {0.0274101780663370994418,
-                                       0.2129178606036482785255,
-                                       0.4390843794439508053922,
-                                       0.3222065654722182153781,
-                                       0.0650476830805122679291};
+  std::vector<double> gaussWtsTable = {0.03294330378740584,
+                                       0.2271817563376543,
+                                       0.3940355940355936,
+                                       0.2271817563376542,
+                                       0.03294330378740585};
 
   // Jacobi powers
   double alpha = 3.0;
@@ -319,7 +322,9 @@ TEST(Quadrature, Jacobi) {
   Eigen::VectorXd gaussPts = gq.Points().transpose();
   Eigen::VectorXd gaussWts = gq.Weights();
 
-  std::cout << gaussPts << std::endl;
+  std::cout << std::setprecision(std::numeric_limits<double>::digits10 + 1);
+  std::cout << "Points: " << std::endl << gaussPts << std::endl;
+  std::cout << "Weights: " << std::endl << gaussWts << std::endl;
   for (int i=0; i<order+1; i++) {
 
     EXPECT_NEAR(gaussPts(i), gaussPtsTable[i], 1e-9);

@@ -2,6 +2,7 @@
 
 #include "MUQ/Modeling/Distributions/Gaussian.h"
 #include "MUQ/SamplingAlgorithms/AMProposal.h"
+#include "MUQ/Utilities/RandomGenerator.h"
 
 namespace pt = boost::property_tree;
 using namespace muq::Utilities;
@@ -10,60 +11,92 @@ using namespace muq::Modeling;
 
 
 REGISTER_MCMC_PROPOSAL(AMProposal)
-AMProposal::AMProposal(pt::ptree const& pt , std::shared_ptr<AbstractSamplingProblem> prob) : MHProposal(pt, prob),
-                                              adaptSteps(pt.get<unsigned int>("AdaptSteps")),
-                                              adaptStart(pt.get<unsigned int>("AdaptStart")),
-                                              adaptScale(pt.get<double>("AdaptScale")) {}
 
+AMProposal::AMProposal(pt::ptree                                       pt,
+                       std::shared_ptr<AbstractSamplingProblem> const& prob,
+                       Eigen::MatrixXd                          const& initialCov) : MCMCProposal(pt,prob),
+                                                                                     propCov(initialCov),
+                                                                                     adaptSteps(pt.get<unsigned int>("AdaptSteps")),
+                                                                                     adaptStart(pt.get<unsigned int>("AdaptStart")),
+                                                                                     adaptEnd(pt.get<unsigned int>("AdaptEnd",std::numeric_limits<unsigned int>::max())),
+                                                                                     adaptScale(pt.get("AdaptScale",2.4*2.4/initialCov.rows()))
+{
+  propChol = propCov.selfadjointView<Eigen::Lower>().llt();
+  newSamps.resize(propCov.rows(), adaptSteps);
+  numAdaptSamps = 1;
+}
 
-AMProposal::~AMProposal() {}
+AMProposal::AMProposal(pt::ptree                                       pt ,
+                       std::shared_ptr<AbstractSamplingProblem> const& prob) : AMProposal(pt,prob, ConstructCovariance(pt,prob))
+
+{}
+
+Eigen::MatrixXd AMProposal::ConstructCovariance(pt::ptree                                const& pt ,
+                                                std::shared_ptr<AbstractSamplingProblem> const& prob)
+{
+  int dim = prob->blockSizes(pt.get("BlockIndex",0));
+  double propVar = pt.get("InitialVariance",1.0);
+  return propVar * Eigen::MatrixXd::Identity(dim,dim);
+}
+
 
 void AMProposal::Adapt(unsigned int const t, std::vector<std::shared_ptr<SamplingState>> const& states) {
-  // always update the sample mean and covariance
-  Update(t, states);
 
-  if( t%adaptSteps==0 && t>adaptStart ) {
 
-    Eigen::MatrixXd adjustedCov = adaptScale * cov + 1e-10 * Eigen::MatrixXd::Identity(cov.rows(), cov.cols());
+  if((t>=adaptStart)&&(t<adaptEnd)){
 
-    // update the proposal covariance
-    std::dynamic_pointer_cast<Gaussian>(proposal)->SetCovariance(adjustedCov);
+    if((numAdaptSamps==1)&&(numNewSamps==0)){
+      mean = states.at(0)->state.at(blockInd);
+    }
+
+    // Copy the states into the matrix of new samples
+    for(unsigned int i=0; (i<states.size())&&(numNewSamps<adaptSteps); i++){
+      newSamps.col(numNewSamps) = states.at(i)->state.at(blockInd);
+      numNewSamps++;
+    }
+
+    if((t%adaptSteps==0)&&(numNewSamps>0)){
+
+      Eigen::VectorXd oldMean;
+      std::swap(mean,oldMean);
+
+      // Update the mean, covariance, and Cholesky factorization
+      mean = (oldMean*numAdaptSamps + newSamps.leftCols(numNewSamps).rowwise().mean()*numNewSamps)/(numAdaptSamps+numNewSamps);
+
+      propChol.rankUpdate(oldMean, double(numAdaptSamps));
+      propChol.rankUpdate(mean, -1.0*double(numAdaptSamps+numNewSamps));
+
+      for(unsigned int i=0; i<numNewSamps; ++i)
+        propChol.rankUpdate(newSamps.col(i), 1.0);
+
+      numAdaptSamps += numNewSamps;
+      numNewSamps = 0;
+    }
   }
 }
 
-void AMProposal::UpdateOne(unsigned int const numSamps, std::shared_ptr<SamplingState> state)
+
+Eigen::MatrixXd AMProposal::ProposalCovariance() const
 {
-  // first sample---we have no mean, just set it to the first sample
-  if( mean.size()==0 ){
-    mean = state->state.at(blockInd);
-    return;
-  }
-
-  // update the mean
-  Eigen::VectorXd oldMean = mean;
-  Eigen::VectorXd const& newState  = state->state.at(blockInd);
-
-  mean = (oldMean*numSamps + newState)/(numSamps+1.0);
-
-  // If we haven't compute the covariance before...
-  if( cov.rows()==0 ){
-
-    cov = Eigen::MatrixXd::Zero(oldMean.size(),oldMean.size());
-
-    //compute covariance from scratch, from the definition
-    cov.selfadjointView<Eigen::Lower>().rankUpdate(oldMean - mean, 1.0);
-    cov.selfadjointView<Eigen::Lower>().rankUpdate(newState - mean, 1.0);
-
-  }else{
-    cov *= (numSamps - 1.0) / numSamps;
-    //note that the asymmetric form fixes the fact that the old mean was wrong
-    cov += (1.0 / static_cast<double>(numSamps)) * (newState - oldMean) * (newState - mean).transpose();
-  }
+  return adaptScale*propChol.reconstructedMatrix()/double(numAdaptSamps);
 }
 
-void AMProposal::Update(unsigned int const numSamps, std::vector<std::shared_ptr<SamplingState>> const& states) {
+std::shared_ptr<SamplingState> AMProposal::Sample(std::shared_ptr<SamplingState> const& currentState)
+{
 
-  for(int i=0; i<states.size(); ++i)
-    UpdateOne(numSamps+i,states.at(i));
+  // the mean of the proposal is the current point
+  Eigen::VectorXd const& xc = currentState->state.at(blockInd);
 
+  std::vector<Eigen::VectorXd> props = currentState->state;
+  props.at(blockInd) = xc + std::sqrt(adaptScale/double(numAdaptSamps))*(propChol.matrixL() * RandomGenerator::GetNormal(xc.size())).eval();
+
+  // store the new state in the output
+  return std::make_shared<SamplingState>(props, 1.0);
+}
+
+double AMProposal::LogDensity(std::shared_ptr<SamplingState> const& currState,
+                              std::shared_ptr<SamplingState> const& propState)
+{
+  Eigen::VectorXd diff = (propState->state.at(blockInd) - currState->state.at(blockInd))/std::sqrt(adaptScale/double(numAdaptSamps));
+  return -0.5*diff.dot(propChol.solve(diff));
 }

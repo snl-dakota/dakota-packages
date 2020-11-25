@@ -42,11 +42,13 @@ namespace muq {
 
     public:
 
+      MultiIndex() : MultiIndex(0) {};
+
       /** Constructor that creates a multiindex of all zeros.
           @param[in] lengthIn The length (i.e., number of components) in the
            multiindex.
        */
-      MultiIndex(unsigned lengthIn);
+      explicit MultiIndex(unsigned lengthIn);
 
       /** Constructor that creates a multiindex with some default value.
        *          @param[in] lengthIn The length (i.e., number of components) in the
@@ -129,6 +131,8 @@ namespace muq {
       bool operator!=(const MultiIndex &b) const;
       bool operator<(const MultiIndex &b) const;
       bool operator>(const MultiIndex &b) const;
+      bool operator>=(const MultiIndex &b) const;
+      bool operator<=(const MultiIndex &b) const;
 
       MultiIndex& operator+=(const MultiIndex &b);
       MultiIndex& operator++();

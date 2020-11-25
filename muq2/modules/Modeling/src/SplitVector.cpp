@@ -2,7 +2,11 @@
 
 using namespace muq::Modeling;
 
-SplitVector::SplitVector(Eigen::VectorXi const& ind, Eigen::VectorXi const& size, unsigned int const insize) : ModPiece(Eigen::VectorXi::Constant(1, insize), size), ind(ind), size(size) {
+SplitVector::SplitVector(Eigen::VectorXi const& ind,
+                         Eigen::VectorXi const& size,
+                         unsigned int const insize) : ModPiece(Eigen::VectorXi::Constant(1, insize), size),
+                                                      ind(ind),
+                                                      size(size) {
   assert(ind.size()==size.size());
   assert(size.sum()<=insize);
   assert(ind.maxCoeff()<insize);

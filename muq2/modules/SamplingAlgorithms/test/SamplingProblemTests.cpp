@@ -22,5 +22,5 @@ TEST(SamplingProblem, GaussianTarget) {
   Eigen::VectorXd xc = Eigen::VectorXd::Zero(2);
   auto state = std::make_shared<SamplingState>(xc, 1.0);
 
-  EXPECT_DOUBLE_EQ(dist->LogDensity(xc), problem->LogDensity(0, state, AbstractSamplingProblem::SampleType::Accepted));
+  EXPECT_DOUBLE_EQ(dist->LogDensity(xc), problem->LogDensity(state));
 }

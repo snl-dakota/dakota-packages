@@ -180,6 +180,7 @@ TEST(ModPieceTest, NamingTest)
   EXPECT_STREQ(testSinMod->Name().c_str(), "RenamedSinMod");
 }
 
+
 TEST(ModPieceTest, UniqueNames)
 {
   int dim = 10;
@@ -239,6 +240,21 @@ TEST(ModPieceTest, FiniteDifference)
     for(int i=0; i<jacX.size(); ++i)
       EXPECT_NEAR(jacX(i), trueJacX(i),1e-4);
   }
+
+  {
+    Eigen::VectorXd targetVec = Eigen::VectorXd::Random(dim);
+    Eigen::VectorXd ones = Eigen::VectorXd::Ones(dim);
+    Eigen::VectorXd hessX = testSinMod->ApplyHessianByFD(0,0,0,vecVec, ones, targetVec);
+
+    Eigen::VectorXd trueHessX(dim);
+    for(int i=0; i<dim; ++i){
+      trueHessX(i) = -sin(vecIn(i))*targetVec(i);
+      EXPECT_NEAR(trueHessX(i), hessX(i), 1e-7);
+    }
+
+  }
+
+
 
 }
 

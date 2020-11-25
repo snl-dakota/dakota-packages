@@ -36,7 +36,7 @@ public:
   virtual ~MySamplingProblem() = default;
 
 
-  virtual double LogDensity(unsigned int const t, std::shared_ptr<SamplingState> const& state, AbstractSamplingProblem::SampleType type) override {
+  virtual double LogDensity(std::shared_ptr<SamplingState> const& state) override {
     lastState = state;
     return target->Evaluate(state->state).at(0)(0);
   };
@@ -91,7 +91,7 @@ public:
     pt::ptree ptProposal;
     ptProposal.put("BlockIndex",0);
     int subsampling = 5;
-    ptProposal.put("subsampling", subsampling);
+    ptProposal.put("Subsampling", subsampling);
     return std::make_shared<SubsamplingMIProposal>(ptProposal, coarseProblem, coarseChain);
   }
 
@@ -152,7 +152,7 @@ TEST(MLMCMCTest, GreedyMLMCMC)
 
   auto mean = greedymlmcmc.MeanQOI();
 
-  EXPECT_NEAR(mean[0], 1.0, 0.1);
-  EXPECT_NEAR(mean[1], 2.0, 0.1);
+  EXPECT_NEAR(mean[0], 1.0, 0.15);
+  EXPECT_NEAR(mean[1], 2.0, 0.15);
 
 }

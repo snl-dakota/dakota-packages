@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <set>
 
 #include <Eigen/Core>
 
@@ -141,6 +142,14 @@ namespace muq{
       \return A matrix of meta data associated with in the input string
       */
       Eigen::MatrixXd GetMeta(std::string const& name) const;
+
+      /**
+      Returns a vector containing the names of metadata that is available.  If
+      requireAll is true, then the returned list contains metadata that is available
+      for all samples.  If requireAll is false, then this list contains metadata
+      that is stored with any sample even if not all samples have that metadata.
+      */
+      std::set<std::string> ListMeta(bool requireAll=true) const;
 
       virtual Eigen::VectorXd ExpectedValue(std::shared_ptr<muq::Modeling::ModPiece> const& f, std::vector<std::string> const& metains = std::vector<std::string>()) const;
 

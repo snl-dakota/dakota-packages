@@ -14,6 +14,10 @@
 #define MUQ_HAS_PARCER @MUQ_HAS_PARCER@
 #endif
 
+#ifndef MUQ_HAS_OTF2
+#define MUQ_HAS_OTF2 @MUQ_HAS_OTF2@
+#endif
+
 #ifndef MUQ_ANYCAST_COMPILES
 #define MUQ_ANYCAST_COMPILES @MUQ_ANYCAST_COMPILES@
 #endif

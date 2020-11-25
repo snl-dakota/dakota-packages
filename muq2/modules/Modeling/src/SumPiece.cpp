@@ -45,12 +45,12 @@ void SumPiece::ApplyJacobianImpl(unsigned int                const  outputDimWrt
   jacobianAction = vec;
 }
 
-// void SumPiece::ApplyHessianImpl(unsigned int                const  outWrt,
-//                                    unsigned int                const  inWrt1,
-//                                    unsigned int                const  inWrt2,
-//                                    ref_vector<Eigen::VectorXd> const& input,
-//                                    Eigen::VectorXd             const& sens,
-//                                    Eigen::VectorXd             const& vec)
-// {
-//   hessAction = Eigen::VectorXd::Zero(vec.size());
-// }
+void SumPiece::ApplyHessianImpl(unsigned int                const  outWrt,
+                                unsigned int                const  inWrt1,
+                                unsigned int                const  inWrt2,
+                                ref_vector<Eigen::VectorXd> const& input,
+                                Eigen::VectorXd             const& sens,
+                                Eigen::VectorXd             const& vec)
+{
+  hessAction = Eigen::VectorXd::Zero(vec.size());
+}

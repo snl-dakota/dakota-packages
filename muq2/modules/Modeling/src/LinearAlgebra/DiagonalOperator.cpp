@@ -3,7 +3,8 @@
 using namespace muq::Modeling;
 
 
-DiagonalOperator::DiagonalOperator(Eigen::VectorXd const& diagIn) : LinearOperator(diagIn.rows(), diagIn.rows())
+DiagonalOperator::DiagonalOperator(Eigen::VectorXd const& diagIn) : LinearOperator(diagIn.rows(), diagIn.rows()),
+                                                                    diag(diagIn)
 {}
 
 /** Apply the linear operator to a vector */

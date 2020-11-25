@@ -16,6 +16,13 @@ namespace muq {
        */
       ConstantVector(std::vector<Eigen::VectorXd> const& outs);
 
+      /// Create a muq::Modeling::ConstantPiece with the outputs given in a vector of vectors
+      /**
+      The outputs must have type Eigen::VectorXd
+      @param[in] outs The outputs
+       */
+      ConstantVector(std::vector<boost::any> const& outs);
+
       /// Create a muq::Modeling::ConstantPiece with the outputs given in a vector
       /**
 	       @param[in] outs The outputs
@@ -36,6 +43,8 @@ namespace muq {
       virtual void EvaluateImpl(muq::Modeling::ref_vector<Eigen::VectorXd> const& inputs) override;
 
       static Eigen::VectorXi OutSizes(std::vector<Eigen::VectorXd> const& outs);
+
+      static Eigen::VectorXi OutSizes(std::vector<boost::any> const& outs);
 
     }; // class ConstantVector
 

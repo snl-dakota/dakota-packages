@@ -30,6 +30,7 @@ void PythonBindings::ProblemWrapper(py::module &m) {
   py::class_<SamplingProblem, AbstractSamplingProblem, std::shared_ptr<SamplingProblem>> sampProb(m, "SamplingProblem");
   sampProb
     .def(py::init<std::shared_ptr<muq::Modeling::ModPiece>>())
+    .def(py::init<std::shared_ptr<muq::Modeling::ModPiece>, std::shared_ptr<muq::Modeling::ModPiece>>())
     .def("LogDensity", &SamplingProblem::LogDensity)
     .def("GradLogDensity", &SamplingProblem::GradLogDensity)
     .def("GetDistribution", &SamplingProblem::GetDistribution);

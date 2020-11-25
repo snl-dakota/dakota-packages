@@ -58,7 +58,9 @@ Serializes a boost::any object.  Assumes that the boost::any wraps around a doub
 template<class Archive>
 void save(Archive & ar, TemporaryBoostAnyConst const& obj)
 {
-  if(obj.any.type() == typeid(double)){
+  if(obj.any.type() == typeid(bool)){
+    BoostAnySerializer<Archive>::template save<bool>(obj.any,ar);
+  }else if(obj.any.type() == typeid(double)){
     BoostAnySerializer<Archive>::template save<double>(obj.any,ar);
   }else if(obj.any.type() == typeid(float)){
     BoostAnySerializer<Archive>::template save<float>(obj.any,ar);
@@ -68,7 +70,7 @@ void save(Archive & ar, TemporaryBoostAnyConst const& obj)
     BoostAnySerializer<Archive>::template save<int>(obj.any,ar);
   }else if(obj.any.type() == typeid(unsigned int)){
     BoostAnySerializer<Archive>::template save<unsigned int>(obj.any,ar);
-    
+
   }else if(obj.any.type() == typeid(Eigen::Vector2d)){
     BoostAnySerializer<Archive>::template save<Eigen::Vector2d>(obj.any,ar);
   }else if(obj.any.type() == typeid(Eigen::Vector3d)){
@@ -77,7 +79,7 @@ void save(Archive & ar, TemporaryBoostAnyConst const& obj)
     BoostAnySerializer<Archive>::template save<Eigen::Vector4d>(obj.any,ar);
   }else if(obj.any.type() == typeid(Eigen::VectorXd)){
     BoostAnySerializer<Archive>::template save<Eigen::VectorXd>(obj.any,ar);
-    
+
   }else if(obj.any.type() == typeid(Eigen::Vector2f)){
     BoostAnySerializer<Archive>::template save<Eigen::Vector2f>(obj.any,ar);
   }else if(obj.any.type() == typeid(Eigen::Vector3f)){
@@ -86,7 +88,7 @@ void save(Archive & ar, TemporaryBoostAnyConst const& obj)
     BoostAnySerializer<Archive>::template save<Eigen::Vector4f>(obj.any,ar);
       }else if(obj.any.type() == typeid(Eigen::VectorXf)){
     BoostAnySerializer<Archive>::template save<Eigen::VectorXf>(obj.any,ar);
-    
+
   }else if(obj.any.type() == typeid(Eigen::Vector2i)){
     BoostAnySerializer<Archive>::template save<Eigen::Vector2i>(obj.any,ar);
   }else if(obj.any.type() == typeid(Eigen::Vector3i)){
@@ -95,7 +97,7 @@ void save(Archive & ar, TemporaryBoostAnyConst const& obj)
     BoostAnySerializer<Archive>::template save<Eigen::Vector4i>(obj.any,ar);
   }else if(obj.any.type() == typeid(Eigen::VectorXi)){
     BoostAnySerializer<Archive>::template save<Eigen::VectorXi>(obj.any,ar);
-    
+
   }else if(obj.any.type() == typeid(Eigen::Matrix2d)){
     BoostAnySerializer<Archive>::template save<Eigen::Matrix2d>(obj.any,ar);
   }else if(obj.any.type() == typeid(Eigen::Matrix3d)){
@@ -104,7 +106,7 @@ void save(Archive & ar, TemporaryBoostAnyConst const& obj)
     BoostAnySerializer<Archive>::template save<Eigen::Matrix4d>(obj.any,ar);
   }else if(obj.any.type() == typeid(Eigen::MatrixXd)){
     BoostAnySerializer<Archive>::template save<Eigen::MatrixXd>(obj.any,ar);
-    
+
   }else if(obj.any.type() == typeid(Eigen::Matrix2f)){
     BoostAnySerializer<Archive>::template save<Eigen::Matrix2f>(obj.any,ar);
   }else if(obj.any.type() == typeid(Eigen::Matrix3f)){
@@ -113,7 +115,7 @@ void save(Archive & ar, TemporaryBoostAnyConst const& obj)
     BoostAnySerializer<Archive>::template save<Eigen::Matrix4f>(obj.any,ar);
   }else if(obj.any.type() == typeid(Eigen::MatrixXf)){
     BoostAnySerializer<Archive>::template save<Eigen::MatrixXf>(obj.any,ar);
-    
+
   }else if(obj.any.type() == typeid(Eigen::Matrix2i)){
     BoostAnySerializer<Archive>::template save<Eigen::Matrix2i>(obj.any,ar);
   }else if(obj.any.type() == typeid(Eigen::Matrix3i)){
@@ -123,6 +125,7 @@ void save(Archive & ar, TemporaryBoostAnyConst const& obj)
   }else if(obj.any.type() == typeid(Eigen::MatrixXi)){
     BoostAnySerializer<Archive>::template save<Eigen::MatrixXi>(obj.any,ar);
   }else{
+    std::cout<< "ERROR: Could not interpret type " << obj.any.type().name() << std::endl;
     assert(false);
   }
 };
@@ -138,7 +141,9 @@ void load(Archive & ar, boost::any & obj)
   ar(typeName);
 
   // Now read the value itself and store in a boost::any
-  if(typeName == typeid(double).name()){
+  if(typeName == typeid(bool).name()){
+    obj = BoostAnySerializer<Archive>::template load<bool>(ar);
+  }else if(typeName == typeid(double).name()){
     obj = BoostAnySerializer<Archive>::template load<double>(ar);
   }else if(typeName == typeid(float).name()){
     obj = BoostAnySerializer<Archive>::template load<float>(ar);
@@ -157,7 +162,7 @@ void load(Archive & ar, boost::any & obj)
     obj = BoostAnySerializer<Archive>::template load<Eigen::Vector4d>(ar);
   }else if(typeName == typeid(Eigen::VectorXd).name()){
     obj = BoostAnySerializer<Archive>::template load<Eigen::VectorXd>(ar);
-    
+
   }else if(typeName == typeid(Eigen::Vector2f).name()){
     obj = BoostAnySerializer<Archive>::template load<Eigen::Vector2f>(ar);
   }else if(typeName == typeid(Eigen::Vector3f).name()){
@@ -166,7 +171,7 @@ void load(Archive & ar, boost::any & obj)
     obj = BoostAnySerializer<Archive>::template load<Eigen::Vector4f>(ar);
   }else if(typeName == typeid(Eigen::VectorXf).name()){
     obj = BoostAnySerializer<Archive>::template load<Eigen::VectorXf>(ar);
-    
+
   }else if(typeName == typeid(Eigen::Vector2i).name()){
     obj = BoostAnySerializer<Archive>::template load<Eigen::Vector2i>(ar);
   }else if(typeName == typeid(Eigen::Vector3i).name()){
@@ -175,7 +180,7 @@ void load(Archive & ar, boost::any & obj)
     obj = BoostAnySerializer<Archive>::template load<Eigen::Vector4i>(ar);
   }else if(typeName == typeid(Eigen::VectorXi).name()){
     obj = BoostAnySerializer<Archive>::template load<Eigen::VectorXi>(ar);
-    
+
   }else if(typeName == typeid(Eigen::Matrix2d).name()){
     obj = BoostAnySerializer<Archive>::template load<Eigen::Matrix2d>(ar);
   }else if(typeName == typeid(Eigen::Matrix3d).name()){
@@ -184,7 +189,7 @@ void load(Archive & ar, boost::any & obj)
     obj = BoostAnySerializer<Archive>::template load<Eigen::Matrix4d>(ar);
   }else if(typeName == typeid(Eigen::MatrixXd).name()){
     obj = BoostAnySerializer<Archive>::template load<Eigen::MatrixXd>(ar);
-    
+
   }else if(typeName == typeid(Eigen::Matrix2f).name()){
     obj = BoostAnySerializer<Archive>::template load<Eigen::Matrix2f>(ar);
   }else if(typeName == typeid(Eigen::Matrix3f).name()){
@@ -193,7 +198,7 @@ void load(Archive & ar, boost::any & obj)
     obj = BoostAnySerializer<Archive>::template load<Eigen::Matrix4f>(ar);
   }else if(typeName == typeid(Eigen::MatrixXf).name()){
     obj = BoostAnySerializer<Archive>::template load<Eigen::MatrixXf>(ar);
-    
+
   }else if(typeName == typeid(Eigen::Matrix2i).name()){
     obj = BoostAnySerializer<Archive>::template load<Eigen::Matrix2i>(ar);
   }else if(typeName == typeid(Eigen::Matrix3i).name()){

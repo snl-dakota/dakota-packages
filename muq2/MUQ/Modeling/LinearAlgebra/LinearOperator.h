@@ -114,6 +114,13 @@ protected:
                                  unsigned int                const  inputDimWrt,
                                  muq::Modeling::ref_vector<Eigen::VectorXd> const& input,
                                  Eigen::VectorXd             const& vec) override;
+
+  virtual void ApplyHessianImpl(unsigned int const outWrt,
+                                unsigned int inWrt1,
+                                unsigned int inWrt2,
+                                muq::Modeling::ref_vector<Eigen::VectorXd> const& input,
+                                Eigen::VectorXd             const& sens,
+                                Eigen::VectorXd             const& vec) override;
 };
 
 

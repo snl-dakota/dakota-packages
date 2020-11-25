@@ -164,11 +164,16 @@ public:
     rhs = std::make_shared<RHS>();
 
     // solver options
-    pt.put<double>("ODE.RelativeTolerance", 1.0e-10);
-    pt.put<double>("ODE.AbsoluteTolerance", 1.0e-10);
-    pt.put<double>("ODE.MaxStepSize", 1.0);
-    pt.put<unsigned int>("ODE.NumObservations", outTimes.size());
-    pt.put<unsigned int>("ODE.MaxNumSteps", 1000);
+    pt.put("ODE.LinearSolver.Method", "Dense");
+
+    pt.put("ODE.NonlinearSolver.Method", "Newton");
+
+    pt.put("ODE.Integrator.RelativeTolerance", 1.0e-10);
+    pt.put("ODE.Integrator.AbsoluteTolerance", 1.0e-10);
+    pt.put("ODE.Integrator.MaximumStepSize", 1.0);
+    pt.put("ODE.Integrator.MaximumSteps", 1000);
+    pt.put("ODE.Integrator.CheckPointSteps", 100);
+
   }
 
   /// Default destructor
@@ -176,10 +181,28 @@ public:
 
   virtual void TearDown() override {
     // create the ODE integrator
-    auto ode = std::make_shared<ODE>(rhs, pt.get_child("ODE"));
+    auto ode = std::make_shared<ODE>(rhs, outTimes, pt.get_child("ODE"));
 
     // integrate the ODE
-    const std::vector<Eigen::VectorXd>& result = ode->Evaluate(ic, (Eigen::VectorXd)Eigen::VectorXd::Constant(1, k), outTimes);
+    Eigen::VectorXd params = Eigen::VectorXd::Constant(1, k);
+
+    int numCalls1 = ode->GetNumCalls("Evaluate");
+    std::vector<Eigen::VectorXd> result = ode->Evaluate(ic, params);
+    int numCalls2 = ode->GetNumCalls("Evaluate");
+    EXPECT_EQ(numCalls1+1, numCalls2);
+
+    if(pt.get<std::string>("ODE.NonlinearSolver.Method")=="Newton"){
+      if(pt.get<std::string>("ODE.LinearSolver.Method")=="Dense"){
+        EXPECT_LT(0, rhs->GetNumCalls("Jacobian"));
+        EXPECT_EQ(0, rhs->GetNumCalls("JacobianAction"));
+      }else{
+        EXPECT_EQ(0, rhs->GetNumCalls("Jacobian"));
+        EXPECT_LT(0, rhs->GetNumCalls("JacobianAction"));
+      }
+    }else{
+      EXPECT_EQ(0, rhs->GetNumCalls("Jacobian"));
+      EXPECT_EQ(0, rhs->GetNumCalls("JacobianAction"));
+    }
 
     // check the result for the first vector of times
     for( unsigned int t=0; t<outTimes.size(); ++t ) {
@@ -190,8 +213,17 @@ public:
       EXPECT_NEAR(result[0](2*t+1), -std::sqrt(k)*ic(0)*std::sin(std::sqrt(k)*time)+ic(1)*std::cos(std::sqrt(k)*time), 1.0e-6);
     }
 
-    // compute jacobians of the initial condition
-    const Eigen::MatrixXd& jac00 = ode->Jacobian(0, 0, ic, (Eigen::VectorXd)Eigen::VectorXd::Constant(1, k), outTimes);
+    // compute jacobians wrt initial condition
+    numCalls1 = ode->GetNumCalls("Evaluate");
+    int numJacCalls1 = ode->GetNumCalls("Jacobian");
+    Eigen::MatrixXd jac00 = ode->Jacobian(0, 0, ic, params);
+
+    numCalls2 = ode->GetNumCalls("Evaluate");
+    int numJacCalls2 = ode->GetNumCalls("Jacobian");
+
+    EXPECT_EQ(numCalls1, numCalls2); // <- Makes sure we're not using finite differences
+    EXPECT_EQ(numJacCalls1+1, numJacCalls2); // <- Checks for weirdness
+
     Eigen::MatrixXd jac00true = Eigen::MatrixXd::Zero(2*outTimes.size(), 2);
 
     EXPECT_EQ(jac00.rows(), 2*outTimes.size()); // rows
@@ -211,18 +243,33 @@ public:
       EXPECT_NEAR(jac00(2*i+1, 1), jac00true(2*i+1, 1), 1.0e-6);
     }
 
-    // compute the gradient wrt initial conditions
-    const Eigen::VectorXd sens00 = Eigen::VectorXd::Ones(2*outTimes.size());
-    const Eigen::VectorXd& grad00 = ode->Gradient(0, 0, ic, (Eigen::VectorXd)Eigen::VectorXd::Constant(1, k), outTimes, sens00);
-    const Eigen::VectorXd expectedGrad00 = jac00true.transpose()*sens00;
+    // Make a slight change to the stiffness and compute the Jacobian again, but
+    // using the cache to keep track of the ODE solution
+    Eigen::VectorXd newParams = params;
+    newParams(0) += 1.0;
+    ode->EnableCache();
 
-    EXPECT_EQ(grad00.size(), expectedGrad00.size());
-    EXPECT_EQ(grad00.size(), 2);
-    EXPECT_NEAR(grad00(0), expectedGrad00(0), 1.0e-6);
-    EXPECT_NEAR(grad00(0), expectedGrad00(0), 1.0e-6);
+    numCalls1 = ode->GetNumCalls("Evaluate");
+    numJacCalls1 = ode->GetNumCalls("Jacobian");
 
-    // compute jacobians of the parameter k
-    const Eigen::MatrixXd& jac01 = ode->Jacobian(0, 1, ic, (Eigen::VectorXd)Eigen::VectorXd::Constant(1, k), outTimes);
+    jac00 = ode->Jacobian(0, 0, ic, newParams);
+    result = ode->Evaluate(ic, newParams);
+
+    numCalls2 = ode->GetNumCalls("Evaluate");
+    numJacCalls2 = ode->GetNumCalls("Jacobian");
+    EXPECT_EQ(numCalls1, numCalls2);
+    EXPECT_EQ(numJacCalls1+1, numJacCalls2);
+
+    for( unsigned int t=0; t<outTimes.size(); ++t ) {
+      const double time = outTimes(t);
+
+      // check evaluate values
+      EXPECT_NEAR(result[0](2*t), ic(0)*std::cos(std::sqrt(newParams(0))*time)+ic(1)/std::sqrt(newParams(0))*std::sin(std::sqrt(newParams(0))*time), 1.0e-6);
+      EXPECT_NEAR(result[0](2*t+1), -std::sqrt(newParams(0))*ic(0)*std::sin(std::sqrt(newParams(0))*time)+ic(1)*std::cos(std::sqrt(newParams(0))*time), 1.0e-6);
+    }
+
+    // compute jacobian wrt the parameter k
+    Eigen::MatrixXd jac01 = ode->Jacobian(0, 1, ic, params);
     Eigen::MatrixXd jac01true = Eigen::MatrixXd::Zero(2*outTimes.size(), 1);
 
     EXPECT_EQ(jac01.rows(), 2*outTimes.size()); // rows
@@ -238,42 +285,60 @@ public:
       EXPECT_NEAR(jac01(2*i+1, 0), jac01true(2*i+1, 0), 1.0e-6);
     }
 
+
+    // compute the gradient wrt initial conditions
+    numCalls1 = ode->GetNumCalls("Evaluate");
+    int numGradCalls1 = ode->GetNumCalls("Gradient");
+
+    Eigen::VectorXd sens00 = Eigen::VectorXd::Ones(2*outTimes.size());
+    Eigen::VectorXd grad00 = ode->Gradient(0, 0, ic, params, sens00);
+    Eigen::VectorXd expectedGrad00 = jac00true.transpose()*sens00;
+
+    numCalls2 = ode->GetNumCalls("Evaluate");
+    int numGradCalls2 = ode->GetNumCalls("Gradient");
+
+    EXPECT_EQ(numCalls1,numCalls2);
+    EXPECT_EQ(numGradCalls1+1, numGradCalls2);
+
+    // Make sure caching is working for gradient calls
+    result = ode->Evaluate(ic, params);
+
+    EXPECT_EQ(numCalls2, ode->GetNumCalls("Evaluate"));
+
+    EXPECT_EQ(grad00.size(), expectedGrad00.size());
+    EXPECT_EQ(grad00.size(), 2);
+    EXPECT_NEAR(grad00(0), expectedGrad00(0), 1.0e-6);
+    EXPECT_NEAR(grad00(0), expectedGrad00(0), 1.0e-6);
+
     // compute the gradient wrt the parameter k
-    const Eigen::VectorXd sens01 = Eigen::VectorXd::Ones(2*outTimes.size());
-    const Eigen::VectorXd& grad01 = ode->Gradient(0, 1, ic, (Eigen::VectorXd)Eigen::VectorXd::Constant(1, k), outTimes, sens01);
-    const Eigen::VectorXd expectedGrad01 = jac01true.transpose()*sens01;
+    Eigen::VectorXd sens01 = Eigen::VectorXd::Ones(2*outTimes.size());
+    Eigen::VectorXd grad01 = ode->Gradient(0, 1, ic, params, sens01);
+    Eigen::VectorXd expectedGrad01 = jac01true.transpose()*sens01;
 
     EXPECT_EQ(grad01.size(), expectedGrad01.size());
     EXPECT_EQ(grad01.size(), 1);
     EXPECT_NEAR(grad01(0), expectedGrad01(0), 1.0e-5);
 
-    // compute jacobians of the times
-    const Eigen::MatrixXd& jac02 = ode->Jacobian(0, 2, ic, (Eigen::VectorXd)Eigen::VectorXd::Constant(1, k), outTimes);
-    Eigen::MatrixXd jac02true = Eigen::MatrixXd::Zero(2*outTimes.size(), outTimes.size());
 
-    EXPECT_EQ(jac02.rows(), 2*outTimes.size()); // rows
-    EXPECT_EQ(jac02.cols(), outTimes.size()); // cols
-    for( unsigned int i=0; i<outTimes.size(); ++i ) {
-      const double time = outTimes(i);
+    // Test Jacobian action wrt initial condition
+    Eigen::VectorXd vec00 = Eigen::VectorXd::Random(ode->inputSizes(0));
+    Eigen::VectorXd jv00  = ode->ApplyJacobian(0,0,ic,params,vec00);
+    Eigen::VectorXd trueJv00 = ode->Jacobian(0, 0, ic, params) * vec00;
 
-      jac02true(2*i, i) = -std::sqrt(k)*ic(0)*std::sin(std::sqrt(k)*time)+ic(1)*std::cos(std::sqrt(k)*time);
-      jac02true(2*i+1, i) = -k*(ic(0)*std::cos(std::sqrt(k)*time)+ic(1)/std::sqrt(k)*std::sin(std::sqrt(k)*time));
+    EXPECT_EQ(trueJv00.size(), jv00.size());
 
-      // check jacobian wrt output times
-      EXPECT_NEAR(jac02(2*i, i), jac02true(2*i, i), 1.0e-6);
-      EXPECT_NEAR(jac02(2*i+1, i), jac02true(2*i+1, i), 1.0e-6);
-    }
+    for( unsigned int i=0; i<outTimes.size(); ++i )
+      EXPECT_NEAR(trueJv00(i), jv00(i), 1e-8);
 
-    // compute the gradient wrt the output times
-    const Eigen::VectorXd sens02 = Eigen::VectorXd::Ones(2*outTimes.size());
-    const Eigen::VectorXd& grad02 = ode->Gradient(0, 2, ic, (Eigen::VectorXd)Eigen::VectorXd::Constant(1, k), outTimes, sens02);
-    const Eigen::VectorXd expectedGrad02 = jac02true.transpose()*sens02;
+    Eigen::VectorXd vec01 = Eigen::VectorXd::Random(ode->inputSizes(1));
+    Eigen::VectorXd jv01  = ode->ApplyJacobian(0,1,ic,params,vec01);
+    Eigen::VectorXd trueJv01 = ode->Jacobian(0, 1, ic, params) * vec01;
 
-    EXPECT_EQ(grad02.size(), expectedGrad02.size());
-    EXPECT_EQ(grad02.size(), outTimes.size());
-    for( unsigned int i=0; i<outTimes.size(); ++i ) {
-      EXPECT_NEAR(grad02(i), expectedGrad02(i), 1.0e-5);
-    }
+    EXPECT_EQ(trueJv01.size(), jv01.size());
+
+    for( unsigned int i=0; i<outTimes.size(); ++i )
+      EXPECT_NEAR(trueJv01(i), jv01(i), 1e-8);
+
   }
 
   /// The right hand side
@@ -291,47 +356,44 @@ public:
   /// The output times
   const Eigen::VectorXd outTimes = Eigen::VectorXd::LinSpaced(10, 0.0, 1.0);
 
-  private:
 };
 
 TEST_F(ODETests, BDFNewtonMethod) {
-  pt.put<std::string>("ODE.MultistepMethod", "BDF");
-  pt.put<std::string>("ODE.NonlinearSolver", "Newton");
-  pt.put<std::string>("ODE.LinearSolver", "Dense");
+  pt.put<std::string>("ODE.Integrator.Method", "BDF");
+  pt.put<std::string>("ODE.NonlinearSolver.Method", "Newton");
+  pt.put<std::string>("ODE.LinearSolver.Method", "Dense");
 }
 
 TEST_F(ODETests, BDFIterMethod) {
-  pt.put<std::string>("ODE.MultistepMethod", "BDF");
-  pt.put<std::string>("ODE.NonlinearSolver", "Iter");
-  pt.put<std::string>("ODE.LinearSolver", "Dense");
+  pt.put<std::string>("ODE.Integrator.Method", "BDF");
+  pt.put<std::string>("ODE.NonlinearSolver.Method", "Iter");
 }
 
 TEST_F(ODETests, AdamsNewtonMethod) {
-  pt.put<std::string>("ODE.MultistepMethod", "Adams");
-  pt.put<std::string>("ODE.NonlinearSolver", "Newton");
-  pt.put<std::string>("ODE.LinearSolver", "Dense");
+  pt.put<std::string>("ODE.Integrator.Method", "Adams");
+  pt.put<std::string>("ODE.NonlinearSolver.Method", "Newton");
+  pt.put<std::string>("ODE.LinearSolver.Method", "Dense");
 }
 
 TEST_F(ODETests, AdamsIterMethod) {
-  pt.put<std::string>("ODE.MultistepMethod", "Adams");
-  pt.put<std::string>("ODE.NonlinearSolver", "Iter");
-  pt.put<std::string>("ODE.LinearSolver", "Dense");
+  pt.put<std::string>("ODE.Integrator.Method", "Adams");
+  pt.put<std::string>("ODE.NonlinearSolver.Method", "Iter");
 }
 
 TEST_F(ODETests, SPGMR) {
-  pt.put<std::string>("ODE.MultistepMethod", "BDF");
-  pt.put<std::string>("ODE.NonlinearSolver", "Newton");
-  pt.put<std::string>("ODE.LinearSolver", "SPGMR");
+  pt.put<std::string>("ODE.Integrator.Method", "BDF");
+  pt.put<std::string>("ODE.NonlinearSolver.Method", "Newton");
+  pt.put<std::string>("ODE.LinearSolver.Method", "SPGMR");
 }
 
-TEST_F(ODETests, SPBCG) {
-  pt.put<std::string>("ODE.MultistepMethod", "Adams");
-  pt.put<std::string>("ODE.NonlinearSolver", "Newton");
-  pt.put<std::string>("ODE.LinearSolver", "SPBCG");
+TEST_F(ODETests, SPBCGS) {
+  pt.put<std::string>("ODE.Integrator.Method", "Adams");
+  pt.put<std::string>("ODE.NonlinearSolver.Method", "Newton");
+  pt.put<std::string>("ODE.LinearSolver.Method", "SPBCGS");
 }
 
 TEST_F(ODETests, SPTFQMR) {
-  pt.put<std::string>("ODE.MultistepMethod", "Adams");
-  pt.put<std::string>("ODE.NonlinearSolver", "Iter");
-  pt.put<std::string>("ODE.LinearSolver", "SPTFQMR");
+  pt.put<std::string>("ODE.Integrator.Method", "Adams");
+  pt.put<std::string>("ODE.NonlinearSolver.Method", "Newton");
+  pt.put<std::string>("ODE.LinearSolver.Method", "SPTFQMR");
 }

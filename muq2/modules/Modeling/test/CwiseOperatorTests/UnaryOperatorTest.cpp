@@ -10,7 +10,7 @@ TEST(CwiseOperators, SimpleBase)
 {
   unsigned int dim = 10;
 
-  typedef CwiseUnaryOperator<std::exp, stan::math::exp> MyExpPiece;
+  typedef CwiseUnaryOperator<std::exp, stan::math::exp,stan::math::exp> MyExpPiece;
   auto piece = std::make_shared<MyExpPiece>(dim);
 
   Eigen::VectorXd input = Eigen::VectorXd::Random(dim);
@@ -71,6 +71,15 @@ TEST(CwiseOperators, ExpOperator)
   Eigen::VectorXd jacAct = piece->ApplyJacobian(0,0,input,vec);
   for(int i=0; i<dim; ++i)
     EXPECT_DOUBLE_EQ(vec(i)*std::exp(input(i)), gradient(i));
+
+  Eigen::VectorXd sens = Eigen::VectorXd::Random(dim);
+  Eigen::VectorXd hessAct = piece->ApplyHessian(0,0,0, std::vector<Eigen::VectorXd>{input}, sens, vec);
+  for(int i=0; i<dim; ++i)
+    EXPECT_DOUBLE_EQ(vec(i)*sens(i)*std::exp(input(i)), hessAct(i));
+
+  hessAct = piece->ApplyHessian(0,0,1, std::vector<Eigen::VectorXd>{input}, sens, vec);
+  for(int i=0; i<dim; ++i)
+    EXPECT_DOUBLE_EQ(vec(i)*std::exp(input(i)), hessAct(i));
 }
 
 TEST(CwiseOperators, SinOperator)

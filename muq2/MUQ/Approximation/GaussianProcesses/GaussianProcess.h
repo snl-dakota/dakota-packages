@@ -297,7 +297,7 @@ namespace muq
                         std::shared_ptr<KernelBase>       covKernelIn);
 
         virtual ~GaussianProcess() = default;
-        
+
         /** Update this Gaussian process with with direct observations of the field at the columns of loc. */
         virtual GaussianProcess& Condition(Eigen::Ref<const Eigen::MatrixXd> const& loc,
                                            Eigen::Ref<const Eigen::MatrixXd> const& vals)
@@ -351,6 +351,8 @@ namespace muq
 
         Eigen::MatrixXd BuildCrossCov(Eigen::MatrixXd const& newLocs);
 
+        Eigen::MatrixXd SolveFromEig(Eigen::MatrixXd const& b) const;
+
         void ProcessObservations();
 
 
@@ -364,6 +366,9 @@ namespace muq
         Eigen::VectorXd sigmaTrainDiff;
 
         Eigen::LDLT<Eigen::MatrixXd> covSolver;
+
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> covSolverEig;
+        bool useEig = false; // If the ldlt decomposition fails, we'll try the eigenvalue solver
 
         int obsDim;
         const int inputDim;

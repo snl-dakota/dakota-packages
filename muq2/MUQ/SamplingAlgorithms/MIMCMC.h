@@ -47,17 +47,46 @@ namespace muq {
 
       Eigen::VectorXd MeanQOI();
 
+      /**
+       * @brief Access an MIMCMCBox
+       *
+       * @param index Model index for which to retrieve the box.
+       * @return std::shared_ptr<MIMCMCBox> The MIMCMCBox representing the Multiindex telescoping sum component
+       * associated with that model.
+       */
+      std::shared_ptr<MIMCMCBox> GetBox(std::shared_ptr<MultiIndex> index);
+
+      /**
+       * @brief Evaluate parameter mean via MI telescoping sum.
+       */
+      Eigen::VectorXd MeanParam();
+
+      /**
+       * @brief Draw MI structure (mostly debugging purposes)
+       */
       void Draw(bool drawSamples = true);
 
-    protected:
+      std::shared_ptr<MIMCMCBox> GetMIMCMCBox(std::shared_ptr<MultiIndex> index);
+
+      /**
+       * @brief Get set of indices of boxes set up by the method.
+       */
+      std::shared_ptr<MultiIndexSet> GetIndices();
+
       virtual std::shared_ptr<SampleCollection> RunImpl(std::vector<Eigen::VectorXd> const& x0) override;
 
+      /**
+       * @brief Write HDF5 output for the entire MIMCMC method
+       */
+      void WriteToFile(std::string filename);
+
     private:
+      pt::ptree pt;
       std::shared_ptr<MultiIndexSet> gridIndices;
       std::shared_ptr<MIComponentFactory> componentFactory;
-      const int samples;
       std::vector<std::shared_ptr<MIMCMCBox>> boxes;
 
+      std::string multiindexToConfigString (std::shared_ptr<MultiIndex> index);
     };
 
   }

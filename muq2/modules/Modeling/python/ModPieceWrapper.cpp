@@ -4,8 +4,10 @@
 #include "MUQ/Modeling/ModPiece.h"
 #include "MUQ/Modeling/ModGraphPiece.h"
 #include "MUQ/Modeling/MultiLogisticLikelihood.h"
+#include "MUQ/Modeling/OneStepCachePiece.h"
 #include "MUQ/Modeling/PyModPiece.h"
 #include "MUQ/Modeling/ReplicateOperator.h"
+#include "MUQ/Modeling/SplitVector.h"
 #include "MUQ/Modeling/WorkGraph.h"
 
 #include <pybind11/pybind11.h>
@@ -49,6 +51,15 @@ public:
                          Eigen::VectorXd              const& vec) override {
     PYBIND11_OVERLOAD(void, PyModPiece, ApplyJacobianImpl, outputDimWrt, inputDimWrt, input, vec);
   }
+
+  void ApplyHessianImpl(unsigned int                 const  outputDimWrt,
+                        unsigned int                 const  inputDimWrt1,
+                        unsigned int                 const  inputDimWrt2,
+                        std::vector<Eigen::VectorXd> const& input,
+                        Eigen::VectorXd              const& sens,
+                        Eigen::VectorXd              const& vec) override {
+    PYBIND11_OVERLOAD(void, PyModPiece, ApplyHessianImpl, outputDimWrt, inputDimWrt1, inputDimWrt2, input, sens, vec);
+  }
 };
 
 class Publicist : public PyModPiece {
@@ -58,12 +69,14 @@ public:
     using PyModPiece::GradientImpl;
     using PyModPiece::JacobianImpl;
     using PyModPiece::ApplyJacobianImpl;
+    using PyModPiece::ApplyHessianImpl;
 
     // Expose protected member variables
     using PyModPiece::outputs;
     using PyModPiece::gradient;
     using PyModPiece::jacobian;
     using PyModPiece::jacobianAction;
+    using PyModPiece::hessAction;
 };
 
 void muq::Modeling::PythonBindings::ModPieceWrapper(py::module &m)
@@ -83,9 +96,14 @@ void muq::Modeling::PythonBindings::ModPieceWrapper(py::module &m)
     .def("ApplyJacobian", (Eigen::VectorXd const& (ModPiece::*)(unsigned int, unsigned int, std::vector<Eigen::VectorXd> const&, Eigen::VectorXd const&)) &ModPiece::ApplyJacobian)
     .def("GradientByFD", (Eigen::VectorXd (ModPiece::*)(unsigned int, unsigned int, std::vector<Eigen::VectorXd> const&, Eigen::VectorXd const&)) &ModPiece::GradientByFD)
     .def("JacobianByFD", (Eigen::MatrixXd (ModPiece::*)(unsigned int, unsigned int, std::vector<Eigen::VectorXd> const&)) &ModPiece::JacobianByFD)
-    .def("ApplyJacobianByFD", (Eigen::VectorXd (ModPiece::*)(unsigned int, unsigned int, std::vector<Eigen::VectorXd> const&, Eigen::VectorXd const&)) &ModPiece::ApplyJacobianByFD);
+    .def("ApplyJacobianByFD", (Eigen::VectorXd (ModPiece::*)(unsigned int, unsigned int, std::vector<Eigen::VectorXd> const&, Eigen::VectorXd const&)) &ModPiece::ApplyJacobianByFD)
+    .def("ApplyHessian", (Eigen::VectorXd (ModPiece::*)(unsigned int, unsigned int, unsigned int, std::vector<Eigen::VectorXd> const&, Eigen::VectorXd const&, Eigen::VectorXd const&)) &ModPiece::ApplyHessian)
+    .def("ApplyHessianByFD", (Eigen::VectorXd (ModPiece::*)(unsigned int, unsigned int, unsigned int, std::vector<Eigen::VectorXd> const&, Eigen::VectorXd const&, Eigen::VectorXd const&)) &ModPiece::ApplyHessianByFD)
+    .def("EnableCache", &ModPiece::EnableCache)
+    .def("DisableCache", &ModPiece::DisableCache)
+    .def("CacheStatus", &ModPiece::CacheStatus);
 
-  py::class_<PyModPiece, PyModPieceTramp, ModPiece, std::shared_ptr<PyModPiece>> pymp(m, "PyModPiece");
+  py::class_<PyModPiece, PyModPieceTramp, ModPiece, WorkPiece, std::shared_ptr<PyModPiece> > pymp(m, "PyModPiece");
   pymp
     .def(py::init<Eigen::VectorXi const&, Eigen::VectorXi const&>())
     .def("EvaluateImpl", (void (PyModPiece::*)(std::vector<Eigen::VectorXd> const&)) &Publicist::EvaluateImpl)
@@ -95,7 +113,14 @@ void muq::Modeling::PythonBindings::ModPieceWrapper(py::module &m)
     .def("JacobianImpl", (void (PyModPiece::*)(unsigned int const, unsigned int const, std::vector<Eigen::VectorXd> const&)) &Publicist::JacobianImpl)
     .def_readwrite("jacobian", &Publicist::jacobian)
     .def("ApplyJacobianImpl", (void (PyModPiece::*)(unsigned int const, unsigned int const, std::vector<Eigen::VectorXd> const&, Eigen::VectorXd const&)) &Publicist::ApplyJacobianImpl)
-    .def_readwrite("jacobianAction", &Publicist::jacobianAction);
+    .def_readwrite("jacobianAction", &Publicist::jacobianAction)
+    .def("ApplyHessianImpl", (void (PyModPiece::*)(unsigned int const, unsigned int const, unsigned int const, std::vector<Eigen::VectorXd> const&, Eigen::VectorXd const&, Eigen::VectorXd const&)) &Publicist::ApplyHessianImpl)
+    .def_readwrite("hessAction", &Publicist::hessAction);
+
+  py::class_<OneStepCachePiece, ModPiece, WorkPiece, std::shared_ptr<OneStepCachePiece>> ocp(m, "OneStepCachePiece");
+  ocp
+    .def(py::init<std::shared_ptr<ModPiece>>())
+    .def("HitRatio", &OneStepCachePiece::HitRatio);
 
   py::class_<ConstantVector, ModPiece, WorkPiece, std::shared_ptr<ConstantVector>> cv(m, "ConstantVector");
   cv
@@ -109,9 +134,16 @@ void muq::Modeling::PythonBindings::ModPieceWrapper(py::module &m)
   py::class_<ModGraphPiece, ModPiece, WorkPiece, std::shared_ptr<ModGraphPiece>> mgp(m, "ModGraphPiece");
   mgp
     .def("GetGraph", &ModGraphPiece::GetGraph)
-    .def("GetConstantPieces", &ModGraphPiece::GetConstantPieces);
+    .def("GetConstantPieces", &ModGraphPiece::GetConstantPieces)
+    .def("GradientGraph", &ModGraphPiece::GradientGraph)
+    .def("JacobianGraph", &ModGraphPiece::JacobianGraph);
 
   py::class_<MultiLogisticLikelihood, ModPiece, WorkPiece, std::shared_ptr<MultiLogisticLikelihood>> mll(m, "MultiLogisticLikelihood");
   mll
     .def(py::init<unsigned int, Eigen::VectorXi>());
+
+  py::class_<SplitVector, ModPiece, WorkPiece, std::shared_ptr<SplitVector>>(m,"SplitVector")
+    .def(py::init<Eigen::VectorXi const&, Eigen::VectorXi const&, unsigned int const>())
+    .def("StartIndices", &SplitVector::StartIndices);
+
 }

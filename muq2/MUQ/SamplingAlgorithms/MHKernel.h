@@ -17,7 +17,7 @@ namespace muq {
       Parameter Key | Type | Default Value | Description |
       ------------- | ------------- | ------------- | ------------- |
       "Proposal"  | String | - | A string pointing to a block of proposal options. |
-      
+
      */
     class MHKernel : public TransitionKernel {
     public:
@@ -42,21 +42,12 @@ namespace muq {
 
       virtual inline double AcceptanceRate() const {return double(numAccepts)/double(numCalls);};
 
-#if MUQ_HAS_PARCER
-      virtual void SetCommunicator(std::shared_ptr<parcer::Communicator> newcomm) override;
-#endif
 
     protected:
       std::shared_ptr<MCMCProposal> proposal;
 
       unsigned int numCalls = 0;
       unsigned int numAccepts = 0;
-
-      /// true: reevaluate the log density (even if one already exists), false: use stored log density
-      /**
-	 For example, if the log-density is a continually refined surrogate (LA-MCMC) or an importance sampling estimate (pseudo-marginal) then we need to reevaluate every time.
-       */
-      const bool reeval;
 
     };
   } // namespace SamplingAlgorithms

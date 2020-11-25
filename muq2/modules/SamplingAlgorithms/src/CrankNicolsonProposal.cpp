@@ -30,7 +30,7 @@ CrankNicolsonProposal::CrankNicolsonProposal(boost::property_tree::ptree       c
 }
 
 
-std::shared_ptr<SamplingState> CrankNicolsonProposal::Sample(std::shared_ptr<SamplingState> currentState)
+std::shared_ptr<SamplingState> CrankNicolsonProposal::Sample(std::shared_ptr<SamplingState> const& currentState)
 {
   // the mean of the proposal is the current point
   std::vector<Eigen::VectorXd> props = currentState->state;
@@ -45,8 +45,8 @@ std::shared_ptr<SamplingState> CrankNicolsonProposal::Sample(std::shared_ptr<Sam
   return std::make_shared<SamplingState>(props, 1.0);
 }
 
-double CrankNicolsonProposal::LogDensity(std::shared_ptr<SamplingState> currState,
-                                         std::shared_ptr<SamplingState> propState)
+double CrankNicolsonProposal::LogDensity(std::shared_ptr<SamplingState> const& currState,
+                                         std::shared_ptr<SamplingState> const& propState)
 {
   std::vector<Eigen::VectorXd> hypers = GetPriorInputs(currState->state);
   if(hypers.size()>0)
@@ -82,8 +82,8 @@ std::vector<Eigen::VectorXd> CrankNicolsonProposal::GetPriorInputs(std::vector<E
 }
 
 
-void CrankNicolsonProposal::ExtractPrior(std::shared_ptr<AbstractSamplingProblem> prob,
-                                         std::string                              nodeName)
+void CrankNicolsonProposal::ExtractPrior(std::shared_ptr<AbstractSamplingProblem> const& prob,
+                                         std::string                                     nodeName)
 {
   // Cast the abstract base class into a sampling problem
   std::shared_ptr<SamplingProblem> prob2 = std::dynamic_pointer_cast<SamplingProblem>(prob);

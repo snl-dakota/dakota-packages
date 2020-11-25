@@ -30,7 +30,7 @@ MHProposal::MHProposal(pt::ptree const& pt,
                        std::shared_ptr<GaussianBase> proposalIn) :
                        MCMCProposal(pt,prob), proposal(proposalIn) {}
 
-std::shared_ptr<SamplingState> MHProposal::Sample(std::shared_ptr<SamplingState> currentState) {
+std::shared_ptr<SamplingState> MHProposal::Sample(std::shared_ptr<SamplingState> const& currentState) {
   assert(currentState->state.size()>blockInd);
 
   // the mean of the proposal is the current point
@@ -45,8 +45,8 @@ std::shared_ptr<SamplingState> MHProposal::Sample(std::shared_ptr<SamplingState>
   return std::make_shared<SamplingState>(props, 1.0);
 }
 
-double MHProposal::LogDensity(std::shared_ptr<SamplingState> currState,
-                              std::shared_ptr<SamplingState> propState) {
+double MHProposal::LogDensity(std::shared_ptr<SamplingState> const& currState,
+                              std::shared_ptr<SamplingState> const& propState) {
 
   Eigen::VectorXd diff = propState->state.at(blockInd)-currState->state.at(blockInd);
   return proposal->LogDensity(diff);//, std::pair<boost::any, Gaussian::Mode>(conditioned->state.at(blockInd), Gaussian::Mode::Mean));

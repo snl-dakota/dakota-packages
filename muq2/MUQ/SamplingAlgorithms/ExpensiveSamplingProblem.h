@@ -48,7 +48,7 @@ namespace muq {
 
       virtual ~ExpensiveSamplingProblem() = default;
 
-      virtual double LogDensity(unsigned int const t, std::shared_ptr<SamplingState> const& state, AbstractSamplingProblem::SampleType type) override;
+      virtual double LogDensity(std::shared_ptr<SamplingState> const& state) override;
 
       unsigned int CacheSize() const;
 

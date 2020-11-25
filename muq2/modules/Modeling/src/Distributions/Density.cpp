@@ -36,6 +36,20 @@ void DensityBase::ApplyJacobianImpl(unsigned int                const  outputDim
   jacobianAction = GradLogDensity(inputDimWrt, input).transpose()*vec;
 }
 
+void DensityBase::ApplyHessianImpl(unsigned int                const  outWrt,
+                                   unsigned int                const  inWrt1,
+                                   unsigned int                const  inWrt2,
+                                   ref_vector<Eigen::VectorXd> const& input,
+                                   Eigen::VectorXd             const& sens,
+                                   Eigen::VectorXd             const& vec)
+{
+  if(inWrt2<inputSizes.size()){
+    hessAction = sens(0)*ApplyLogDensityHessian(inWrt1,inWrt2,input,vec);
+  }else{
+    hessAction = GradLogDensity(inWrt1,input);
+  }
+}
+
 
 Density::Density(std::shared_ptr<Distribution> distIn) : DensityBase(GetInputSizes(distIn)), dist(distIn) {}
 
@@ -52,6 +66,14 @@ Eigen::VectorXd Density::GradLogDensityImpl(unsigned int wrt, ref_vector<Eigen::
 Eigen::VectorXd Density::SampleImpl(ref_vector<Eigen::VectorXd> const& inputs)
 {
   return dist->SampleImpl(inputs);
+}
+
+Eigen::VectorXd Density::ApplyLogDensityHessianImpl(unsigned int                const  inWrt1,
+                                                    unsigned int                const  inWrt2,
+                                                    ref_vector<Eigen::VectorXd> const& input,
+                                                    Eigen::VectorXd             const& vec)
+{
+  return dist->ApplyLogDensityHessianImpl(inWrt1,inWrt2,input,vec);
 }
 
 Eigen::VectorXi Density::GetInputSizes(std::shared_ptr<Distribution> distIn)

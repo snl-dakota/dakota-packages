@@ -55,7 +55,7 @@ void GaussianBase::SetMean(Eigen::VectorXd const& newMu)
   mean = newMu;
 }
 
-Eigen::VectorXd GaussianBase::GradLogDensity(unsigned int wrt, ref_vector<Eigen::VectorXd> const& inputs)
+Eigen::VectorXd GaussianBase::GradLogDensityImpl(unsigned int wrt, ref_vector<Eigen::VectorXd> const& inputs)
 {
   Eigen::VectorXd delta = inputs.at(0).get() - mean;
   if(wrt==0){
@@ -64,4 +64,17 @@ Eigen::VectorXd GaussianBase::GradLogDensity(unsigned int wrt, ref_vector<Eigen:
     std::cerr << "ERROR: Gradient wrt mean and covariance has not been implemented." << std::endl;
     assert(false);
   }
+}
+
+Eigen::VectorXd GaussianBase::ApplyLogDensityHessianImpl(unsigned int wrt1,
+                                                         unsigned int wrt2,
+                                                         ref_vector<Eigen::VectorXd> const& inputs,
+                                                         Eigen::VectorXd const& vec)
+{
+ if((wrt1==0)&&(wrt2==0)){
+   return -1.0 * ApplyPrecision(vec);
+ }else{
+   std::cerr << "ERROR: ApplyHessian wrt mean and covariance has not been implemented." << std::endl;
+   assert(false);
+ }
 }

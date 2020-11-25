@@ -72,3 +72,37 @@ Eigen::VectorXd Distribution::GradLogDensityImpl(unsigned int                   
 
   return output;
 }
+
+Eigen::VectorXd Distribution::ApplyLogDensityHessian(unsigned int                const  inWrt1,
+                                                     unsigned int                const  inWrt2,
+                                                     ref_vector<Eigen::VectorXd> const& input,
+                                                     Eigen::VectorXd             const& vec)
+{
+  assert(inWrt1<hyperSizes.size()+1);
+  assert(inWrt2<hyperSizes.size()+1);
+  assert(input.size() == hyperSizes.size()+1);
+  if(inWrt2==0){
+    assert(vec.size()==varSize);
+  }else{
+    assert(vec.size()==hyperSizes(inWrt2-1));
+  }
+
+  return ApplyLogDensityHessianImpl(inWrt1,inWrt2,input,vec);
+}
+
+Eigen::VectorXd Distribution::ApplyLogDensityHessianImpl(unsigned int                const  inWrt1,
+                                                         unsigned int                const  inWrt2,
+                                                         ref_vector<Eigen::VectorXd> const& input,
+                                                         Eigen::VectorXd             const& vec)
+{
+  const double stepSize = 1e-8 / vec.norm();
+  Eigen::VectorXd grad1 = GradLogDensity(inWrt1, input);
+  Eigen::VectorXd grad2;
+
+  ref_vector<Eigen::VectorXd> input2 = input;
+  Eigen::VectorXd x2 = input.at(inWrt2).get() + stepSize * vec;
+  input2.at(inWrt2) = std::cref(x2);
+  grad2 = GradLogDensity(inWrt1, input2);
+
+  return (grad2 - grad1)/stepSize;
+}

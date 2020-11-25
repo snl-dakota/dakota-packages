@@ -17,19 +17,26 @@ namespace muq{
 
       virtual void EvaluateImpl(ref_vector<Eigen::VectorXd> const& inputs) override;
 
-      void GradientImpl(unsigned int                const  outputDimWrt,
-                        unsigned int                const  inputDimWrt,
-                        ref_vector<Eigen::VectorXd> const& input,
-                        Eigen::VectorXd             const& sensitivity) override;
+      virtual void GradientImpl(unsigned int                const  outputDimWrt,
+                                unsigned int                const  inputDimWrt,
+                                ref_vector<Eigen::VectorXd> const& input,
+                                Eigen::VectorXd             const& sensitivity) override;
 
-      void JacobianImpl(unsigned int                const  outputDimWrt,
-                        unsigned int                const  inputDimWrt,
-                        ref_vector<Eigen::VectorXd> const& input) override;
+      virtual void JacobianImpl(unsigned int                const  outputDimWrt,
+                                unsigned int                const  inputDimWrt,
+                                ref_vector<Eigen::VectorXd> const& input) override;
 
-      void ApplyJacobianImpl(unsigned int                const  outputDimWrt,
-                             unsigned int                const  inputDimWrt,
-                             ref_vector<Eigen::VectorXd> const& input,
-                             Eigen::VectorXd             const& vec) override;
+      virtual void ApplyJacobianImpl(unsigned int                const  outputDimWrt,
+                                     unsigned int                const  inputDimWrt,
+                                     ref_vector<Eigen::VectorXd> const& input,
+                                     Eigen::VectorXd             const& vec) override;
+
+     virtual void ApplyHessianImpl(unsigned int                const  outWrt,
+                                   unsigned int                const  inWrt1,
+                                   unsigned int                const  inWrt2,
+                                   ref_vector<Eigen::VectorXd> const& input,
+                                   Eigen::VectorXd             const& sens,
+                                   Eigen::VectorXd             const& vec) override;
 
     };
 
@@ -49,7 +56,14 @@ namespace muq{
 
       virtual double LogDensityImpl(ref_vector<Eigen::VectorXd> const& inputs) override;
 
-      virtual Eigen::VectorXd GradLogDensityImpl(unsigned int wrt, ref_vector<Eigen::VectorXd> const& inputs) override;
+      virtual Eigen::VectorXd GradLogDensityImpl(unsigned int wrt,
+                                                 ref_vector<Eigen::VectorXd> const& inputs) override;
+
+      virtual Eigen::VectorXd ApplyLogDensityHessianImpl(unsigned int                const  inWrt1,
+                                                         unsigned int                const  inWrt2,
+                                                         ref_vector<Eigen::VectorXd> const& input,
+                                                         Eigen::VectorXd             const& vec) override;
+
       virtual Eigen::VectorXd SampleImpl(ref_vector<Eigen::VectorXd> const& inputs) override;
 
       static Eigen::VectorXi GetInputSizes(std::shared_ptr<Distribution> distIn);

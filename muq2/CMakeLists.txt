@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.12)
+cmake_minimum_required (VERSION 3.10)
 
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/)
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/finds)
@@ -12,16 +12,18 @@ INCLUDE(CheckFunctionExists)
 # define the project name
 project(MUQ)
 set(${CMAKE_PROJECT_NAME}_MAJOR_VERSION 0)
-set(${CMAKE_PROJECT_NAME}_MINOR_VERSION 2)
+set(${CMAKE_PROJECT_NAME}_MINOR_VERSION 3)
 set(${CMAKE_PROJECT_NAME}_PATCH_VERSION 0)
 set(${CMAKE_PROJECT_NAME}_VERSION ${${CMAKE_PROJECT_NAME}_MAJOR_VERSION}.${${CMAKE_PROJECT_NAME}_MINOR_VERSION}.${${CMAKE_PROJECT_NAME}_PATCH_VERSION})
 
 message(STATUS "\n\nThis is MUQ, the MIT UQ Library!\n\n")
 
-# Make the external project installation directory if it doesn't exist already
-file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/)
-file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/include)
-file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/lib)
+
+###############################################
+# User options
+###############################################
+INCLUDE(OptionsSetup)
+INCLUDE(SetInstallPaths)
 
 ###############################################
 # Compiler configuration
@@ -29,11 +31,6 @@ file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/lib)
 INCLUDE(SetupCompiler)
 INCLUDE(CompilerCheck)
 include_directories(.)
-
-###############################################
-# User options
-###############################################
-INCLUDE(OptionsSetup)
 
 ###############################################
 # Find source files and calculate required dependencies
@@ -76,6 +73,9 @@ get_directory_property(MUQ_COMPILE_DEFINITIONS COMPILE_DEFINITIONS)
 message(STATUS "Storing MUQ_COMPILE_DEFINITIONS = ${MUQ_COMPILE_DEFINITIONS}")
 message(STATUS "MUQ_LIBRARIES = ${MUQ_LIBRARIES}")
 
+set(MUQ_LIBRARIES_CACHE ${MUQ_LIBRARIES} CACHE INTERNAL "List of MUQ libraries for linking in parent projects.")
+set(MUQ_LINK_LIBRARIES_CACHE ${MUQ_LINK_LIBRARIES} CACHE INTERNAL "List of external libraries needed by MUQ for use in parent projects.")
+
 set(MUQ_EXPORT_LIBRARIES "")
 FOREACH(BUILT_LIB ${MUQ_LIBRARIES})
 	list(APPEND MUQ_EXPORT_LIBRARIES ${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}${BUILT_LIB}${CMAKE_SHARED_LIBRARY_SUFFIX})
@@ -95,8 +95,11 @@ install(FILES "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${CMAKE_PROJECT_NAM
 
 # Install the pymuq libraries
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/modules/Modeling/python/pymuqModeling/"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pymuqModeling"
-	    COMPONENT dev)
+        DESTINATION "${PYTHON_INSTALL_PREFIX}/muq/pymuqModeling"
+        COMPONENT dev)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/modules/PythonPackage/"
+        DESTINATION "${PYTHON_INSTALL_PREFIX}/muq/"
+        COMPONENT dev)
 
 # Install the export set for use with the install-tree
 install(EXPORT ${CMAKE_PROJECT_NAME}Depends
@@ -112,6 +115,10 @@ install(DIRECTORY MUQ
 #install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/modules/Approximation/python/pymuqApproximation/"
 #        DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pymuqApproximation"
 #        PATTERN "wrappers/" EXCLUDE)
+
+install(DIRECTORY spdlog
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
+	    FILES_MATCHING PATTERN "*.h")
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${INSTALL_LIB_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${INSTALL_LIB_DIR})
@@ -130,8 +137,6 @@ MESSAGE("${MUQ_LOG_SUMMARY}")
 ###############################################
 # Add a target to build documentation
 ###############################################
-option(MUQ_ENABLE_DOCS "MUQ: Whether to build Doxygen docs" OFF)
-if(MUQ_ENABLE_DOCS)
 # add a target to generate API documentation with Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
@@ -143,13 +148,7 @@ if(DOXYGEN_FOUND)
 		set(ANALYTICS_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/documentation/doxFiles/analytics_header.html)
 	endif()
 
-  message(STATUS "Extracting parameter values from cpp files.  Results are stored in ${CMAKE_BINARY_DIR}/ExtractedParameters.dox")
-  message(STATUS "python ${CMAKE_CURRENT_SOURCE_DIR}/documentation/doxFiles/FindPtreeParameters.py ${CMAKE_CURRENT_SOURCE_DIR}")
-  execute_process(COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/documentation/doxFiles/FindPtreeParameters.py ${CMAKE_CURRENT_SOURCE_DIR}
-                  OUTPUT_FILE "${CMAKE_BINARY_DIR}/ParameterDescriptions.dox")
-
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/documentation/muq.doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/muq.doxyfile @ONLY)
-    #configure_file(${CMAKE_CURRENT_SOURCE_DIR}/documentation/ParameterDescriptions.dox.in ${CMAKE_CURRENT_BINARY_DIR}/ParameterDescriptions.dox @ONLY)
     add_custom_target(doc
         ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/muq.doxyfile
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -158,4 +157,5 @@ if(DOXYGEN_FOUND)
 
 
 endif(DOXYGEN_FOUND)
-endif()
+
+add_subdirectory(examples EXCLUDE_FROM_ALL)

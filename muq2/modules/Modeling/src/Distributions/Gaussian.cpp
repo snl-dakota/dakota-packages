@@ -37,9 +37,11 @@ Gaussian::Gaussian(Eigen::VectorXd const& muIn,
   if(covPrec.cols()>1)
     assert(mean.rows()==covPrec.cols());
 
-  if(covPrec.cols()>1)
-    sqrtCovPrec = covPrec.selfadjointView<Eigen::Lower>().llt();
+  if(covPrec.cols()>1){
 
+    sqrtCovPrec = covPrec.selfadjointView<Eigen::Lower>().llt();
+    assert(sqrtCovPrec.info()==Eigen::Success);
+  }
   ComputeNormalization();
 }
 
@@ -127,13 +129,23 @@ void Gaussian::ComputeNormalization() {
     if(covPrec.cols()==1){
       logDet = covPrec.array().log().sum();
     }else{
-      logDet = 2.0*std::log(sqrtCovPrec.matrixL().determinant());
+      // Compute the log determinant of the covariance
+      logDet = 0.0;
+      for(int i=0; i<sqrtCovPrec.rows(); ++i){
+        logDet += std::log( sqrtCovPrec.matrixL()(i,i) );
+      }
+      logDet *= 2.0;
     }
   } else if( mode==Gaussian::Mode::Precision ) {
     if(covPrec.cols()==1){
       logDet = -covPrec.array().log().sum();
     }else{
-      logDet = -2.0*std::log(sqrtCovPrec.matrixL().determinant());
+      // Compute the log determinant of the covariance
+      logDet = 0.0;
+      for(int i=0; i<sqrtCovPrec.rows(); ++i){
+        logDet += std::log( sqrtCovPrec.matrixL()(i,i) );
+      }
+      logDet *= -2.0;
     }
   }
 }
@@ -173,11 +185,12 @@ void Gaussian::SetCovariance(Eigen::MatrixXd const& newCov) {
 
   assert(newCov.rows() == mean.rows());
 
-  if(newCov.cols()>1)
-    assert(newCov.cols() == mean.rows());
-
   covPrec = newCov;
-  sqrtCovPrec = covPrec.selfadjointView<Eigen::Lower>().llt();
+
+  if(newCov.cols()>1){
+    assert(newCov.cols() == mean.rows());
+    sqrtCovPrec = covPrec.selfadjointView<Eigen::Lower>().llt();
+  }
 
   // recompute the scaling constant
   ComputeNormalization();

@@ -17,6 +17,7 @@
 #include "MUQ/Modeling/LinearAlgebra/ProductOperator.h"
 #include "MUQ/Modeling/LinearAlgebra/SumOperator.h"
 #include "MUQ/Modeling/LinearAlgebra/ZeroOperator.h"
+#include "MUQ/Modeling/LinearAlgebra/SliceOperator.h"
 
 
 #include <pybind11/pybind11.h>
@@ -140,5 +141,10 @@ void muq::Modeling::PythonBindings::LinearOperatorWrapper(py::module &m)
     .def(py::init<int, int>())
     .def("Apply", &ZeroOperator::Apply)
     .def("ApplyTranspose", &ZeroOperator::ApplyTranspose);
+
+  py::class_<SliceOperator, LinearOperator, std::shared_ptr<SliceOperator>>(m, "SliceOperator")
+    .def(py::init<int, int,int,int>())
+    .def("Apply", &SliceOperator::Apply)
+    .def("ApplyTranspose", &SliceOperator::ApplyTranspose);
 
 };

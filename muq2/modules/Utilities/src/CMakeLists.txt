@@ -36,6 +36,7 @@ CreateCompileGroup(
     ""
     RandomGenerator.cpp
     StringUtilities.cpp
+    Demangler.cpp
 )
 
 CreateCompileGroup(

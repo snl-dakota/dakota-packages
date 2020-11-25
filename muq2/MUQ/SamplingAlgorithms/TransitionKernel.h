@@ -91,6 +91,12 @@ namespace muq {
       std::shared_ptr<parcer::Communicator> comm;
 #endif
 
+      /// true: reevaluate the log density (even if one already exists), false: use stored log density
+      /**
+	     For example, if the log-density is a continually refined surrogate (LA-MCMC) or an importance sampling estimate (pseudo-marginal) then we need to reevaluate every time.
+       */
+      const bool reeval;
+
     private:
     };
   } // namespace SamplingAlgorithms

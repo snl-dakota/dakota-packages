@@ -1,5 +1,6 @@
 #include "MUQ/Modeling/ModPiece.h"
 #include "MUQ/Utilities/Exceptions.h"
+#include "MUQ/Utilities/Demangler.h"
 
 #include <chrono>
 
@@ -18,17 +19,58 @@ std::vector<Eigen::VectorXd> const& ModPiece::Evaluate(std::vector<Eigen::Vector
   return Evaluate(ToRefVector(input));
 }
 
+bool ModPiece::ExistsInCache(ref_vector<Eigen::VectorXd> const& input) const
+{
+  // Check to see if the input is the same as what's cached
+  if(input.size()!=cacheInput.size()){
+    return false;
+  }
+
+  // Check the size of each input vector
+  for(int i=0; i<input.size(); ++i){
+    if(input.at(i).get().size()!=cacheInput.at(i).size()){
+      return false;
+    }
+  }
+
+  // Check the contents of each input vector
+  for(int i=0; i<input.size(); ++i){
+    Eigen::VectorXd const& inVec = input.at(i).get();
+    for(int j=0; j<cacheInput[i].size(); ++j){
+      if(std::abs(inVec(j)-cacheInput[i](j))>std::numeric_limits<double>::epsilon()){
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 std::vector<Eigen::VectorXd> const& ModPiece::Evaluate(ref_vector<Eigen::VectorXd> const& input)
 {
-  CheckInputs(input);
+  CheckInputs(input,"Evaluate");
 
+  // If we're using the one-step cache, check to see if the inputs are the same as the previous evaluation
+  if(cacheEnabled){
+    if(ExistsInCache(input)){
+      return outputs;
+
+    }else{
+      // Copy the contents
+      cacheInput.resize(input.size());
+      for(int i=0; i<input.size(); ++i)
+        cacheInput.at(i) = input.at(i);
+    }
+  }
+
+  // Otherwise, evaluate the model
   numEvalCalls++;
   auto start_time = std::chrono::high_resolution_clock::now();
 
   EvaluateImpl(input);
 
   auto end_time = std::chrono::high_resolution_clock::now();
-  evalTime += 1e6*static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+  evalTime += static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
 
   return outputs;
 }
@@ -47,7 +89,7 @@ Eigen::VectorXd const& ModPiece::Gradient(unsigned int                const  out
                                           ref_vector<Eigen::VectorXd> const& input,
                                           Eigen::VectorXd             const& sensitivity)
 {
-  CheckInputs(input);
+  CheckInputs(input,"Gradient");
 
   numGradCalls++;
   auto start_time = std::chrono::high_resolution_clock::now();
@@ -55,7 +97,7 @@ Eigen::VectorXd const& ModPiece::Gradient(unsigned int                const  out
   GradientImpl(outputDimWrt, inputDimWrt, input, sensitivity);
 
   auto end_time = std::chrono::high_resolution_clock::now();
-  gradTime += 1e6*static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+  gradTime += static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
 
   return gradient;
 }
@@ -74,6 +116,7 @@ Eigen::VectorXd ModPiece::GradientByFD(unsigned int                const  output
                                        ref_vector<Eigen::VectorXd> const& input,
                                        Eigen::VectorXd             const& sensitivity)
 {
+  numGradFDCalls++;
   return JacobianByFD(outputDimWrt,inputDimWrt, input).transpose()*sensitivity;
 }
 
@@ -88,7 +131,7 @@ Eigen::MatrixXd const& ModPiece::Jacobian(unsigned int                const  out
                                           unsigned int                const  inputDimWrt,
                                           ref_vector<Eigen::VectorXd> const& input)
 {
-  CheckInputs(input);
+  CheckInputs(input,"Jacobian");
 
   numJacCalls++;
   auto start_time = std::chrono::high_resolution_clock::now();
@@ -96,7 +139,7 @@ Eigen::MatrixXd const& ModPiece::Jacobian(unsigned int                const  out
   JacobianImpl(outputDimWrt, inputDimWrt, input);
 
   auto end_time = std::chrono::high_resolution_clock::now();
-  jacTime += 1e6*static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+  jacTime += static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
 
   return jacobian;
 }
@@ -115,7 +158,7 @@ Eigen::VectorXd const& ModPiece::ApplyJacobian(unsigned int                const
                                                ref_vector<Eigen::VectorXd> const& input,
                                                Eigen::VectorXd             const& vec)
 {
-  CheckInputs(input);
+  CheckInputs(input,"ApplyJacobian");
 
   numJacActCalls++;
   auto start_time = std::chrono::high_resolution_clock::now();
@@ -123,7 +166,7 @@ Eigen::VectorXd const& ModPiece::ApplyJacobian(unsigned int                const
   ApplyJacobianImpl(outputDimWrt, inputDimWrt, input, vec);
 
   auto end_time = std::chrono::high_resolution_clock::now();
-  jacActTime += 1e6*static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+  jacActTime += static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
 
   return jacobianAction;
 }
@@ -160,12 +203,10 @@ void ModPiece::EvaluateImpl(ref_vector<boost::any> const& inputs){
 //  hessTime += 1e6*static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
 // }
 
-
-void ModPiece::CheckInputs(ref_vector<Eigen::VectorXd> const& input)
+void ModPiece::CheckInputs(ref_vector<Eigen::VectorXd> const& input, std::string const& funcName)
 {
   bool errorOccured = false;
-
-  std::string msg = "\nError evaluating ModPiece:\n";
+  std::string msg;
 
   if(input.size() != inputSizes.size()){
     msg += "  - Wrong number of input arguments.  Expected " + std::to_string(inputSizes.size()) + " inputs, but " + std::to_string(input.size()) + " were given.\n";
@@ -179,8 +220,12 @@ void ModPiece::CheckInputs(ref_vector<Eigen::VectorXd> const& input)
     }
   }
 
-  if(errorOccured)
+  if(errorOccured){
+    std::string className = muq::Utilities::demangle(typeid(*this).name());
+    msg = "\nError evaluating " + className + "::" + funcName + ":\n" + msg;
+
     throw muq::WrongSizeError(msg);
+  }
 }
 
 
@@ -228,6 +273,8 @@ Eigen::MatrixXd ModPiece::JacobianByFD(unsigned int                const  output
                                        unsigned int                const  inputDimWrt,
                                        ref_vector<Eigen::VectorXd> const& input)
 {
+  numJacFDCalls++;
+
   Eigen::VectorXd f0 = Evaluate(input).at(outputDimWrt);
   Eigen::VectorXd f;
 
@@ -264,21 +311,126 @@ Eigen::VectorXd ModPiece::ApplyJacobianByFD(unsigned int                const  o
                                             ref_vector<Eigen::VectorXd> const& input,
                                             Eigen::VectorXd             const& vec)
 {
-  const double eps = std::max(1e-8, 1e-10*vec.norm());
+  numJacActFDCalls++;
+
+  const double eps = 1e-4;
+  double vecNorm = vec.norm();
+  const Eigen::VectorXd stepDir = vec/vecNorm;
 
   ref_vector<Eigen::VectorXd> newInputVec = input;
-  Eigen::VectorXd newInput = input.at(inputDimWrt).get() + eps*vec;
+  Eigen::VectorXd newInput = input.at(inputDimWrt).get() - 0.5*eps*stepDir;
+  newInputVec.at(inputDimWrt) = std::cref(newInput);
+  Eigen::VectorXd f0 = Evaluate(newInputVec).at(outputDimWrt);
+
+  newInput = input.at(inputDimWrt).get() + 0.5*eps*stepDir;
   newInputVec.at(inputDimWrt) = std::cref(newInput);
 
-  Eigen::VectorXd f0 = Evaluate(input).at(outputDimWrt);
   Eigen::VectorXd f  = Evaluate(newInputVec).at(outputDimWrt);
 
-  return (f-f0)/eps;
+  return vecNorm*(f-f0)/eps;
 }
+
+Eigen::VectorXd ModPiece::ApplyHessian(unsigned int                const  outWrt,
+                                       unsigned int                const  inWrt1,
+                                       unsigned int                const  inWrt2,
+                                       std::vector<Eigen::VectorXd> const& input,
+                                       Eigen::VectorXd             const& sens,
+                                       Eigen::VectorXd             const& vec)
+{
+  return ApplyHessian(outWrt,inWrt1, inWrt2, ToRefVector(input), sens, vec);
+}
+
+Eigen::VectorXd ModPiece::ApplyHessian(unsigned int                const  outWrt,
+                                       unsigned int                const  inWrt1,
+                                       unsigned int                const  inWrt2,
+                                       ref_vector<Eigen::VectorXd> const& input,
+                                       Eigen::VectorXd             const& sens,
+                                       Eigen::VectorXd             const& vec)
+{
+  assert(inWrt2<inputSizes.size()+1);
+  assert(outWrt<sens.size());
+  assert(outputSizes(outWrt)==sens.size());
+  if(inWrt2<inputSizes.size()){
+    assert(inputSizes(inWrt2)==vec.size());
+  }else{
+    assert(vec.size()==outputSizes(outWrt));
+  }
+
+  numHessActCalls++;
+  auto start_time = std::chrono::high_resolution_clock::now();
+
+  ApplyHessianImpl(outWrt, inWrt1, inWrt2, input, sens, vec);
+
+  auto end_time = std::chrono::high_resolution_clock::now();
+  hessActTime += static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count());
+
+  return hessAction;
+}
+
+void ModPiece::ApplyHessianImpl(unsigned int                const  outWrt,
+                                unsigned int                const  inWrt1,
+                                unsigned int                const  inWrt2,
+                                ref_vector<Eigen::VectorXd> const& input,
+                                Eigen::VectorXd             const& sens,
+                                Eigen::VectorXd             const& vec)
+{
+  //std::cout << "Just before FD..." << std::endl;
+  hessAction = ApplyHessianByFD(outWrt, inWrt1, inWrt2, input, sens, vec);
+  //std::cout << "After FD, hessAction = " << hessAction << std::endl;
+}
+
+Eigen::VectorXd ModPiece::ApplyHessianByFD(unsigned int                const  outWrt,
+                                       unsigned int                const  inWrt1,
+                                       unsigned int                const  inWrt2,
+                                       std::vector<Eigen::VectorXd> const& input,
+                                       Eigen::VectorXd             const& sens,
+                                       Eigen::VectorXd             const& vec)
+{
+  return ApplyHessianByFD(outWrt,inWrt1, inWrt2, ToRefVector(input), sens, vec);
+}
+
+Eigen::VectorXd ModPiece::ApplyHessianByFD(unsigned int                const  outWrt,
+                                           unsigned int                const  inWrt1,
+                                           unsigned int                const  inWrt2,
+                                           ref_vector<Eigen::VectorXd> const& input,
+                                           Eigen::VectorXd             const& sens,
+                                           Eigen::VectorXd             const& vec)
+{
+  numHessActFDCalls++;
+
+  const double stepSize = std::max(1e-4, 1e-8*vec.norm());
+
+  Eigen::VectorXd grad1, grad2;
+
+  // If the Hessian is wrt to one of the inputs, not the sensitivity vector
+  if(inWrt2<inputSizes.size()){
+
+    ref_vector<Eigen::VectorXd> input2 = input;
+    Eigen::VectorXd x2 = input.at(inWrt2).get() - 0.5*stepSize * vec;
+    input2.at(inWrt2) = std::cref(x2);
+
+    grad1 = Gradient(outWrt, inWrt1, input2, sens);
+
+    x2 = input.at(inWrt2).get() + 0.5*stepSize * vec;
+    input2.at(inWrt2) = std::cref(x2);
+    grad2 = Gradient(outWrt, inWrt1, input2, sens);
+
+  // Otherwise, we want the Jacobian of the Gradient piece wrt to the sensitivity vector
+  }else{
+    Eigen::VectorXd sens2 = sens - 0.5*stepSize * vec;
+    grad1 = Gradient(outWrt, inWrt1, input, sens2);
+
+    sens2 = sens + 0.5*stepSize * vec;
+    grad2 = Gradient(outWrt, inWrt1, input, sens2);
+  }
+
+  return (grad2 - grad1)/stepSize;
+}
+
 
 double ModPiece::GetRunTime(const std::string& method) const
 {
-  const double toMilli = 1.0e-6;
+  const double toMilli = 1e-6;
 
   if (method.compare("Evaluate") == 0) {
     return (numEvalCalls == 0) ? -1.0 : toMilli *static_cast<double>(evalTime) / static_cast<double>(numEvalCalls);
@@ -289,28 +441,29 @@ double ModPiece::GetRunTime(const std::string& method) const
   } else if (method.compare("JacobianAction") == 0) {
     return (numJacActCalls ==
             0) ? -1.0 : toMilli *static_cast<double>(jacActTime) / static_cast<double>(numJacActCalls);
-  } else if (method.compare("Hessian") == 0) {
-    return (numHessCalls == 0) ? -1.0 : toMilli *static_cast<double>(hessTime) / static_cast<double>(numHessCalls);
+  } else if (method.compare("HessianAction") == 0) {
+    return (numHessActCalls == 0) ? -1.0 : toMilli *static_cast<double>(hessActTime) / static_cast<double>(numHessActCalls);
   } else {
     assert(method.compare("Evaluate") == 0 || method.compare("Gradient") == 0 || method.compare(
-             "Jacobian") == 0 || method.compare("JacobianAction") == 0 || method.compare("Hessian") == 0);
+             "Jacobian") == 0 || method.compare("JacobianAction") == 0 || method.compare("HessianAction") == 0);
     return -999.0;
   }
 }
 
+
 void ModPiece::ResetCallTime()
 {
-  numEvalCalls   = 0;
-  numGradCalls   = 0;
-  numJacCalls    = 0;
-  numJacActCalls = 0;
-  numHessCalls   = 0;
+  numEvalCalls    = 0;
+  numGradCalls    = 0;
+  numJacCalls     = 0;
+  numJacActCalls  = 0;
+  numHessActCalls = 0;
 
-  evalTime   = 0;
-  gradTime   = 0;
-  jacTime    = 0;
-  jacActTime = 0;
-  hessTime   = 0;
+  evalTime    = 0;
+  gradTime    = 0;
+  jacTime     = 0;
+  jacActTime  = 0;
+  hessActTime = 0;
 }
 
 unsigned long int ModPiece::GetNumCalls(const std::string& method) const
@@ -323,11 +476,22 @@ unsigned long int ModPiece::GetNumCalls(const std::string& method) const
     return numJacCalls;
   } else if (method.compare("JacobianAction") == 0) {
     return numJacActCalls;
-  } else if (method.compare("Hessian") == 0) {
-    return numHessCalls;
+  } else if (method.compare("HessianAction") == 0) {
+    return numHessActCalls;
+  } else if (method.compare("GradientFD") == 0) {
+    return numGradFDCalls;
+  } else if (method.compare("JacobianFD") == 0) {
+    return numJacFDCalls;
+  } else if (method.compare("JacobianActionFD") == 0) {
+    return numJacActFDCalls;
+  } else if (method.compare("HessianActionFD") == 0) {
+    return numHessActFDCalls;
   } else {
-    assert(method.compare("Evaluate") == 0 || method.compare("Gradient") == 0 || method.compare(
-             "Jacobian") == 0 || method.compare("JacobianAction") == 0 || method.compare("Hessian") == 0);
+    assert( (method.compare("Evaluate") == 0) || (method.compare("Gradient") == 0)
+          || (method.compare("Jacobian") == 0) || (method.compare("JacobianAction") == 0)
+          || (method.compare("HessianAction") == 0) || (method.compare("GradientFD")==0)
+          || (method.compare("JacobianFD")==0) || (method.compare("JacobianActionFD")==0)
+          || (method.compare("HessianActionFD")==0));
     return -999;
   }
 }

@@ -3,6 +3,8 @@
 #include "MUQ/SamplingAlgorithms/SampleCollection.h"
 #include "MUQ/SamplingAlgorithms/SamplingState.h"
 
+#include "MUQ/Utilities/AnyHelpers.h"
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/eigen.h>
@@ -32,6 +34,7 @@ void PythonBindings::SampleWrapper(py::module &m)
   py::class_<SampleCollection, std::shared_ptr<SampleCollection>> sampColl(m, "SampleCollection");
   sampColl
     .def("__getitem__", (const std::shared_ptr<SamplingState> (SampleCollection::*)(unsigned) const) &SampleCollection::at)
+//    .def("at", &SampleCollection::at)
     .def("size", &SampleCollection::size)
     .def("CentralMoment", (Eigen::VectorXd (SampleCollection::*)(unsigned, int) const) &SampleCollection::CentralMoment, py::arg("order"), py::arg("blockDim") = -1)
     .def("CentralMoment", (Eigen::VectorXd (SampleCollection::*)(unsigned, Eigen::VectorXd const&, int) const) &SampleCollection::CentralMoment, py::arg("order"), py::arg("mean"), py::arg("blockDim") = -1)
@@ -57,5 +60,13 @@ void PythonBindings::SampleWrapper(py::module &m)
     .def_readonly("weight", &SamplingState::weight)
     .def_readonly("state", &SamplingState::state)
     .def("HasMeta", &SamplingState::HasMeta)
+    .def("GetMeta", [](std::shared_ptr<SamplingState> self, std::string const& metaKey)
+                                  -> boost::any& {
+                                     return self->meta.at(metaKey);
+                                  })
+    .def("GetMetaSamplingState", [](std::shared_ptr<SamplingState> self, std::string const& metaKey)
+                                  -> std::shared_ptr<SamplingState> {
+                                     return muq::Utilities::AnyCast(self->meta.at(metaKey));
+                                  })
     .def("TotalDim", &SamplingState::TotalDim);
 }

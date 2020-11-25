@@ -59,7 +59,7 @@ void GMHKernel::SerialProposal(unsigned int const t, std::shared_ptr<SamplingSta
 
   // If the current state does not have LogTarget information, add it
   if(! state->HasMeta("LogTarget"))
-    state->meta["LogTarget"] = problem->LogDensity(t, state, AbstractSamplingProblem::SampleType::Accepted);
+    state->meta["LogTarget"] = problem->LogDensity(state);
 
   // propose the points
   proposedStates.resize(Np1, nullptr);
@@ -67,13 +67,13 @@ void GMHKernel::SerialProposal(unsigned int const t, std::shared_ptr<SamplingSta
 
   for(auto it = proposedStates.begin()+1; it!=proposedStates.end(); ++it ) {
     *it = proposal->Sample(state);
-    (*it)->meta["LogTarget"] = problem->LogDensity(t, *it, AbstractSamplingProblem::SampleType::Proposed);
+    (*it)->meta["LogTarget"] = problem->LogDensity(*it);
   }
 
   // evaluate the target density
   Eigen::VectorXd R = Eigen::VectorXd::Zero(Np1);
   for( unsigned int i=0; i<Np1; ++i )
-    R(i) = boost::any_cast<double const>(proposedStates[i]->meta["LogTarget"]);
+    R(i) = AnyCast(proposedStates[i]->meta["LogTarget"]);
 
   // compute stationary transition probability
   AcceptanceDensity(R);

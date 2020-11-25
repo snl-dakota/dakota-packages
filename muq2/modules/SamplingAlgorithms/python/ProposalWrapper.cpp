@@ -2,6 +2,8 @@
 
 #include "MUQ/SamplingAlgorithms/AMProposal.h"
 #include "MUQ/SamplingAlgorithms/MCMCProposal.h"
+#include "MUQ/SamplingAlgorithms/MALAProposal.h"
+#include "MUQ/SamplingAlgorithms/InfMALAProposal.h"
 #include "MUQ/SamplingAlgorithms/MHProposal.h"
 #include "MUQ/SamplingAlgorithms/CrankNicolsonProposal.h"
 
@@ -41,9 +43,17 @@ void PythonBindings::ProposalWrapper(py::module &m) {
     .def(py::init( [](py::dict d, std::shared_ptr<AbstractSamplingProblem> prob, std::shared_ptr<muq::Modeling::GaussianBase> gauss) { return new CrankNicolsonProposal(ConvertDictToPtree(d), prob, gauss);}));
 
 
-  py::class_<AMProposal, MHProposal, std::shared_ptr<AMProposal>> amPro(m, "AMProposal");
+  py::class_<AMProposal, MCMCProposal, std::shared_ptr<AMProposal>> amPro(m, "AMProposal");
   amPro
-    .def(py::init<boost::property_tree::ptree const&, std::shared_ptr<AbstractSamplingProblem>>())
+    .def(py::init( [](py::dict d, std::shared_ptr<AbstractSamplingProblem> prob) {return new AMProposal(ConvertDictToPtree(d), prob);} ))
+    .def(py::init( [](py::dict d, std::shared_ptr<AbstractSamplingProblem> prob, Eigen::MatrixXd const& cov) {return new AMProposal(ConvertDictToPtree(d), prob, cov);} ))
     .def("Adapt", &AMProposal::Adapt);
 
+  py::class_<MALAProposal, MCMCProposal, std::shared_ptr<MALAProposal>>(m,"MALAProposal")
+    .def(py::init( [](py::dict d, std::shared_ptr<AbstractSamplingProblem> prob) {return new MALAProposal(ConvertDictToPtree(d), prob);} ))
+    .def(py::init( [](py::dict d, std::shared_ptr<AbstractSamplingProblem> prob, std::shared_ptr<muq::Modeling::GaussianBase> const& prop) {return new MALAProposal(ConvertDictToPtree(d), prob, prop);} ));
+
+  py::class_<InfMALAProposal, CrankNicolsonProposal, std::shared_ptr<InfMALAProposal>>(m,"InfMALAProposal")
+    .def(py::init( [](py::dict d, std::shared_ptr<AbstractSamplingProblem> prob) {return new InfMALAProposal(ConvertDictToPtree(d), prob);} ))
+    .def(py::init( [](py::dict d, std::shared_ptr<AbstractSamplingProblem> prob, std::shared_ptr<muq::Modeling::GaussianBase> prop) {return new InfMALAProposal(ConvertDictToPtree(d), prob, prop);} ));
 }

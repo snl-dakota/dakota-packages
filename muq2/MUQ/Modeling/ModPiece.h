@@ -160,7 +160,7 @@ namespace muq{
      * JacobianImpl, JacobianActionImpl, or HessianImp functions.
      *            If the function was never called, -1 is returned.
      *   @param[in] method The implemented function of interest.  Possible options are "Evaluate", "Gradient", "Jacobian",
-     * "JacobianAction", or "Hessian"
+     * "JacobianAction", or "HessianAction"
      *   @return The average wall clock time in milli-seconds.
      */
     virtual double GetRunTime(const std::string& method="Evaluate") const override;
@@ -168,9 +168,9 @@ namespace muq{
 
     /** @brief get the number of times one of the implemented methods has been called.
      *   @details This function returns the number of times the EvaluateImpl, GradientImpl, JacobianImpl,
-     * JacobianActionImpl, or HessianImp functions have been called.
+     * ApplyJacobianImpl, or ApplyHessianImpl functions have been called.
      *   @param[in] method The implemented function of interest.  Possible options are "Evaluate", "Gradient", "Jacobian",
-     * "JacobianAction", or "Hessian"
+     * "JacobianAction", "HessianAction", "GradientFD", "JacobianActionFD", "HessianActionFD"
      *   @return An integer with the number of calls.
      */
     virtual unsigned long int GetNumCalls(const std::string& method = "Evaluate") const override;
@@ -324,14 +324,6 @@ namespace muq{
       return ApplyJacobianRecurse(wrtOut, wrtIn, vec, args...);
     }
 
-    // virtual Eigen::VectorXd ApplyHessian(int                         const  outputDimWrt,
-    //                                      int                         const  inputDimWrt1,
-    //                                      int                         const  inputDimWrt2,
-    //                                      ref_vector<Eigen::VectorXd> const& input,
-    //                                      Eigen::VectorXd             const& sensitivity
-    //                                      Eigen::VectorXd             const& vec);
-
-
 
     virtual Eigen::VectorXd GradientByFD(unsigned int                 const  outputDimWrt,
                                          unsigned int                 const  inputDimWrt,
@@ -361,6 +353,90 @@ namespace muq{
                                               ref_vector<Eigen::VectorXd> const& input,
                                               Eigen::VectorXd             const& vec);
 
+    /**
+    Assume we have a simple function given by the composition of two functions
+    \f$h(x) = f(g(x))\f$, where \f$g:\mathbb{R}^N\rightarrow\mathbb{M}\f$ and
+    \f$f:\mathbb{R}^M \rightarrow \mathbb{R}$.  The
+    gradient of \f$h\f$ with respect to \f$x\f$ is given by the chain rule as
+    \f[
+    \nabla_x h = \nabla_g f J_x(g),
+    \f]
+    where \f$J_x(g)\f$ denotes the Jacobian matrix of \f$g\f$ with respect to \f$x\f$.
+    The Hessian matrix is then given by the Jacobian of the gradient, or more
+    precisely
+    \f{eqnarray*}
+    \nabla^2_{xx} h &=& J_x\left(J_x^T(g) \left[\nabla_g f\right]\right)\\
+    &=& J_x^T(g) J_x\left(\left[\nabla_g f\right]\right) + \sum_{i=1}^M \frac{\partial f}{\partial g_i}\nabla^2_{xx}g_i\\
+     &=&  \J_x^T(g) J_g(\nabla_g f) J_x(g) + \sum_{i=1}^M \frac{\partial f}{\partial g_i}\nabla^2_{xx}g_i.
+    \f}
+    Thus, to apply the Hessian to a matrix, if suffices to apply the Jacobian of
+    gradient to a matrix.  This function, ModPiece::ApplyHessian does just that.
+    It applies the Jacobian of the Gradient function to a vector.  Note that the
+    Jacobian can be taken wrt to any the inputs to this ModPiece or the sensitivity
+    vector.
+    @param[in] outWrt Consider only this vector-valued output of the ModPiece
+    @param[in] inWrt1 The index of the first derivative in [0,numInput) (i.e., the value passed to Gradient)
+    @param[in] inWrt2 The index of the Jacobian part in [0,numInputs+1), if inWrt2==numInputs, then the Jacobian is taken with respect to the sensitivity vector.
+    @param[in] input The container of vector-valued inputs to this ModPiece
+    @param[in] sens The sensitivity vector that would be passed to the Gradient function.
+    @param[in] vec The vector we want to apply the Hessian to.
+
+    @seealso ApplyHessianByFD
+    */
+    virtual Eigen::VectorXd ApplyHessian(unsigned int const outWrt,
+                                         unsigned int const inWrt1,
+                                         unsigned int const inWrt2,
+                                         std::vector<Eigen::VectorXd> const& input,
+                                         Eigen::VectorXd              const& sens,
+                                         Eigen::VectorXd              const& vec);
+
+    virtual Eigen::VectorXd ApplyHessian(unsigned int const outWrt,
+                                         unsigned int const inWrt1,
+                                         unsigned int const inWrt2,
+                                         ref_vector<Eigen::VectorXd> const& input,
+                                         Eigen::VectorXd             const& sens,
+                                         Eigen::VectorXd             const& vec);
+
+   /**
+   Applies the Hessian to a vector using finite differences.  Note that only two
+   evaluation are the gradient function are needed to compute the action of the
+   Hessian on a vector.
+   */
+   virtual Eigen::VectorXd ApplyHessianByFD(unsigned int                const  outWrt,
+                                            unsigned int                const  inWrt1,
+                                            unsigned int                const  inWrt2,
+                                            std::vector<Eigen::VectorXd> const& input,
+                                            Eigen::VectorXd             const& sens,
+                                            Eigen::VectorXd             const& vec);
+
+   virtual Eigen::VectorXd ApplyHessianByFD(unsigned int                const  outWrt,
+                                            unsigned int                const  inWrt1,
+                                            unsigned int                const  inWrt2,
+                                            ref_vector<Eigen::VectorXd> const& input,
+                                            Eigen::VectorXd             const& sens,
+                                            Eigen::VectorXd             const& vec);
+
+    /** The ModPiece class has support for caching one evaluation.  If more
+        extensive caching is needed, the muq::Modeling::FlannCache class
+        can be used.  The one step caching in the ModPiece class can be
+        useful when subsequent calls to the ModPiece might have the exact same
+        inputs.   If enabled, both the input and output of EvaluateImpl calls
+        will be stored.  If the next call to Evaluate has the same input, then
+        EvaluateImpl will not be called, the cached value will just be returned.
+
+        Note that caching introduces some additional overhead and is not always
+        a good idea.   It is therefore disabled by default and should be turned
+        on manually for expensive ModPieces.
+
+        Enabling the one-step cache is particularly useful in gradient based
+        optimization and MCMC methods, where subsequent calls to Evaluate and
+        Gradient will occur with the same inputs.   Without using caching, a call
+        to Gradient in a ModGraphPiece could result in duplicate calls to Evaluate.
+    */
+    void EnableCache(){cacheEnabled=true;};
+    void DisableCache(){cacheEnabled=false;};
+    bool CacheStatus() const{return cacheEnabled;};
+
     const Eigen::VectorXi inputSizes;
     const Eigen::VectorXi outputSizes;
 
@@ -368,26 +444,38 @@ namespace muq{
 
     std::vector<Eigen::VectorXd> ToStdVec(ref_vector<Eigen::VectorXd> const& input);
 
+    // Should one step caching be used?
+    bool cacheEnabled = false;
+    std::vector<Eigen::VectorXd> cacheInput;
+
+    /** Checks to see if the input matches the value stored in the one-step cache. */
+    bool ExistsInCache(ref_vector<Eigen::VectorXd> const& input) const;
+
     // The following variables keep track of how many times the Implemented functions, i.e. EvaluateImpl, GradientImpl,
     // etc... are called.
-    unsigned long int numGradCalls   = 0;
-    unsigned long int numJacCalls    = 0;
-    unsigned long int numJacActCalls = 0;
-    unsigned long int numHessCalls   = 0;
+    unsigned long int numGradCalls    = 0;
+    unsigned long int numJacCalls     = 0;
+    unsigned long int numJacActCalls  = 0;
+    unsigned long int numHessActCalls = 0;
+    unsigned long int numGradFDCalls  = 0;
+    unsigned long int numJacFDCalls  = 0;
+    unsigned long int numJacActFDCalls = 0;
+    unsigned long int numHessActFDCalls = 0;
 
     // these variables keep track of the total wall-clock time spent in each of the Implemented functions.  They are in
     // units of milliseconds
-    double gradTime   = 0;
-    double jacTime    = 0;
-    double jacActTime = 0;
-    double hessTime   = 0;
+    double gradTime    = 0;
+    double jacTime     = 0;
+    double jacActTime  = 0;
+    double hessActTime = 0;
 
     std::vector<Eigen::VectorXd> outputs;
     Eigen::VectorXd gradient;
     Eigen::VectorXd jacobianAction;
     Eigen::MatrixXd jacobian;
+    Eigen::VectorXd hessAction;
 
-    void CheckInputs(ref_vector<Eigen::VectorXd> const& input);
+    void CheckInputs(ref_vector<Eigen::VectorXd> const& input, std::string const& funcName);
 
     virtual void EvaluateImpl(ref_vector<boost::any> const& inputs) override;
 
@@ -407,6 +495,13 @@ namespace muq{
                                    ref_vector<Eigen::VectorXd> const& input,
                                    Eigen::VectorXd             const& vec);
 
+    virtual void ApplyHessianImpl(unsigned int                const  outWrt,
+                                  unsigned int                const  inWrt1,
+                                  unsigned int                const  inWrt2,
+                                  ref_vector<Eigen::VectorXd> const& input,
+                                  Eigen::VectorXd             const& sens,
+                                  Eigen::VectorXd             const& vec);
+
     // virtual void ApplyHessianImpl(int                         const  outputDimWrt,
     //                       int                         const  inputDimWrt1,
     //                       int                         const  inputDimWrt2,
@@ -423,6 +518,7 @@ namespace muq{
     //                       Eigen::VectorXd             const& vec);
 
   private:
+
     template<typename NextType, typename... Args>
     inline Eigen::VectorXd const& GradientRecurse(unsigned int outWrt,
                                                   unsigned int inWrt,

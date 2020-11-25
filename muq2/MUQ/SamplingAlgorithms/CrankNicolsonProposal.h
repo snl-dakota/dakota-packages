@@ -18,9 +18,9 @@ namespace muq {
     This class implements the preconditioned Crank Nicolson proposal (pCN) from
     Cotter et al., 2013.  The proposal takes the form
     \f[
-    u^\prime = \sqrt{ 1 - \beta^2} u_c + \beta z,
+    u^\prime = \bar{u} + \sqrt{ 1 - \beta^2} (u_c-\bar{u}) + \beta z,
     \f]
-    where \f$u_c\f$ is the current state of the chain, \f$z\sim N(0,C)\f$ is a normal
+    where \f$\bar{u}\f$ is an estimate of the posterior mean (e.g., the prior mean or posterior MAP), \f$u_c\f$ is the current state of the chain, \f$z\sim N(0,C)\f$ is a normal
     random variable with a strategically chosen covariance \f$C\f$ (often the prior covariance), and \f$u^\prime\f$
     is the propsed point.  The parameter \f$\beta\f$ is a tuning parameter.
 
@@ -64,12 +64,12 @@ namespace muq {
       // Sometimes we have to keep track of the prior distribution so we can update the proposal mean and covariance
       std::shared_ptr<muq::Modeling::GaussianBase> priorDist;
 
-      virtual std::shared_ptr<SamplingState> Sample(std::shared_ptr<SamplingState> currentState) override;
+      virtual std::shared_ptr<SamplingState> Sample(std::shared_ptr<SamplingState> const& currentState) override;
 
-      virtual double LogDensity(std::shared_ptr<SamplingState> currState,
-                                std::shared_ptr<SamplingState> propState) override;
+      virtual double LogDensity(std::shared_ptr<SamplingState> const& currState,
+                                std::shared_ptr<SamplingState> const& propState) override;
 
-      void ExtractPrior(std::shared_ptr<AbstractSamplingProblem> prob, std::string nodeName);
+      void ExtractPrior(std::shared_ptr<AbstractSamplingProblem> const& prob, std::string nodeName);
     };
 
   } // namespace SamplingAlgoirthms

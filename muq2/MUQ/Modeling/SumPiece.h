@@ -38,12 +38,12 @@ namespace Modeling{
                                    ref_vector<Eigen::VectorXd> const& input,
                                    Eigen::VectorXd             const& vec) override;
 
-    // virtual void ApplyHessianImpl(unsigned int                const  outWrt,
-    //                               unsigned int                const  inWrt1,
-    //                               unsigned int                const  inWrt2,
-    //                               ref_vector<Eigen::VectorXd> const& input,
-    //                               Eigen::VectorXd             const& sens,
-    //                               Eigen::VectorXd             const& vec) override;
+    virtual void ApplyHessianImpl(unsigned int                const  outWrt,
+                                  unsigned int                const  inWrt1,
+                                  unsigned int                const  inWrt2,
+                                  ref_vector<Eigen::VectorXd> const& input,
+                                  Eigen::VectorXd             const& sens,
+                                  Eigen::VectorXd             const& vec) override;
   }; // class SumPiece
 
 }

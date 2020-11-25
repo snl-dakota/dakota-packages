@@ -2,7 +2,7 @@
 find_package(PkgConfig)
 
 if(NOT DEFINED MUQ_HDF5_DIR)
-	pkg_check_modules(PC_HDF5 QUIET libhdf5)
+	pkg_search_module(PC_HDF5 QUIET hdf5-serial libhdf5)
 	set(HDF5_DEFINITIONS ${PC_HDF5_CFLAGS_OTHER})
 
 
@@ -25,11 +25,11 @@ if(NOT DEFINED MUQ_HDF5_DIR)
             set(HDF5HL_DEFINITIONS ${PC_HDF5HL_CFLAGS_OTHER})
 
             find_library(HDF5HL_LIBRARY NAMES hdf5_hl
-                         HINTS ${PARENT_DIR} ${PC_HDF5HL_LIBDIR} ${PC_HDF5HL_LIBRARY_DIRS}
+                         HINTS ${PARENT_DIR} ${TEMP_DIR} ${PC_HDF5HL_LIBDIR} ${PC_HDF5HL_LIBRARY_DIRS}
                          PATH_SUFFIXES lib hdf5)
 
             find_library(HDF5HL_LIBRARY_STATIC NAMES ${library_prefix}hdf5_hl.${static_library_suffix}
-                         HINTS ${PARENT_DIR} ${PC_HDF5HL_LIBDIR} ${PC_HDF5HL_LIBRARY_DIRS}
+                         HINTS ${PARENT_DIR} ${TEMP_DIR} ${PC_HDF5HL_LIBDIR} ${PC_HDF5HL_LIBRARY_DIRS}
                          PATH_SUFFIXES lib hdf5)
 
         endif()

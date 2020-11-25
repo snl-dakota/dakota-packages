@@ -25,3 +25,11 @@ Eigen::VectorXd DensityProduct::GradLogDensityImpl(unsigned int wrt,
 {
   return Eigen::VectorXd::Ones(1,1);
 }
+
+Eigen::VectorXd DensityProduct::ApplyLogDensityHessianImpl(unsigned int                const  inWrt1,
+                                                           unsigned int                const  inWrt2,
+                                                           ref_vector<Eigen::VectorXd> const& input,
+                                                           Eigen::VectorXd             const& vec)
+{
+  return Eigen::VectorXd::Zero(1);
+}

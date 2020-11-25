@@ -84,7 +84,7 @@ namespace muq {
           @param[in] nonzeroDim The index of the single nonzero component.
           @param[in] order The value of the single nonzero component.
           @return A MultiIndex of the form [0,...,0,order,0,...,0]
-      */                                              
+      */
       static std::shared_ptr<MultiIndex> CreateSingleTerm(int totalDim, int nonzeroDim, int order);
 
 

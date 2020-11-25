@@ -62,15 +62,15 @@ macro (PrintRequired name pad)
     else()
         FILE(APPEND ${_log_summary}
                     "#        ${name}${pad}-------------> Met with existing library:\n"
-                    "#                                Include Directory:\n"
-                    "#                                  ${${name}_INCLUDE_DIR}\n")
+                    "#                                 Include Directory:\n"
+                    "#                                   ${${name}_INCLUDE_DIR}\n")
 
         IF(DEFINED ${name}_LIBRARIES)
-            FILE(APPEND ${_log_summary} "#                                Libraries:\n")
+            FILE(APPEND ${_log_summary} "#                                 Libraries:\n")
 
             foreach(libName ${${name}_LIBRARIES})
                 FILE(APPEND ${_log_summary}
-                            "#                                  ${libName}\n")
+                            "#                                   ${libName}\n")
             endforeach(libName)
         endif()
     endif()
@@ -81,13 +81,16 @@ endmacro(PrintRequired)
 FILE(APPEND ${_log_summary}
 "#  Required dependencies: \n"
 )
-PrintRequired(EIGEN3 " --")
-PrintRequired(BOOST " ---")
-PrintRequired(HDF5 " ----")
-PrintRequired(NANOFLANN " ---")
-PrintRequired(SUNDIALS " ")
-PrintRequired(NLOPT " ---")
-PrintRequired(PARCER " --")
+PrintRequired(EIGEN3 " ---")
+PrintRequired(BOOST " ----")
+PrintRequired(HDF5 " -----")
+PrintRequired(NANOFLANN " ")
+PrintRequired(SUNDIALS " -")
+PrintRequired(NLOPT " ----")
+PrintRequired(PARCER " ---")
+PrintRequired(SPDLOG " ---")
+PrintRequired(OTF2 " -----")
+PrintRequired(STANMATH " -")
 
 FILE(APPEND ${_log_summary} "#\n")
 
@@ -126,7 +129,7 @@ endmacro(PrintOptional)
 
 # print glog status
 FILE(APPEND ${_log_summary} "#  Optional dependencies:\n")
-PrintOptional(GTEST " ----")
+PrintOptional(GTEST " -----")
 
 FILE(APPEND ${_log_summary} "#\n")
 

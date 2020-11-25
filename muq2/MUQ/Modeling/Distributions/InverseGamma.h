@@ -10,7 +10,9 @@ namespace muq {
     \f[
     \pi(x) = \frac{\beta^\alpha}{\Gamma(\alpha)}x^{-\alpha-1}\exp\left(-\frac{\beta}{x}\right),
     \f]
-    where \f$\alpha\f$ and \f$\beta\f$ are parameters in the distribution.
+    where \f$\alpha\f$ and \f$\beta\f$ are parameters in the distribution. For
+    multivariate \f$x\f$, it is assumed that all components of \f$x\f$ are independent.
+    However, each component can have different parameters \f$\alpha\f$ and \f$\beta\f$.
     */
     class InverseGamma : public Distribution {
     public:
@@ -18,23 +20,27 @@ namespace muq {
       InverseGamma(double       alphaIn,
                    double       betaIn);
 
+      InverseGamma(Eigen::VectorXd const& alphaIn,
+                   Eigen::VectorXd const& betaIn);
+
 
       virtual ~InverseGamma() = default;
 
 
-      const double alpha;
-      const double beta;
+      const Eigen::VectorXd alpha;
+      const Eigen::VectorXd beta;
 
     private:
 
-      const double logConst; // log( beta^alpha / Gamma(alpha) )
+      static double ComputeConstant(Eigen::VectorXd const& alphaIn,
+                                    Eigen::VectorXd const& betaIn);
+
+      const double logConst; // sum( log( beta^alpha / Gamma(alpha) ) )
 
       virtual double LogDensityImpl(ref_vector<Eigen::VectorXd> const& inputs) override;
 
       /// Sample the distribution
       virtual Eigen::VectorXd SampleImpl(ref_vector<Eigen::VectorXd> const& inputs) override;
-
-
 
     };
   } // namespace Modeling

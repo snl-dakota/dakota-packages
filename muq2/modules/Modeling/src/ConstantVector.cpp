@@ -11,6 +11,14 @@ ConstantVector::ConstantVector(std::vector<Eigen::VectorXd> const& outs) : ModPi
   }
 }
 
+ConstantVector::ConstantVector(std::vector<boost::any> const& outs) : ModPiece(Eigen::VectorXi(), OutSizes(outs))
+{
+  outputs.resize(outs.size());
+  for( unsigned int i=0; i<outs.size(); ++i ) {
+    assert(typeid(Eigen::VectorXd)==outs[i].type());
+    outputs.at(i) = boost::any_cast<Eigen::VectorXd>(outs[i]);
+  }
+}
 
 ConstantVector::ConstantVector(Eigen::VectorXd const& valIn) : ModPiece(Eigen::VectorXi(), valIn.size()*Eigen::VectorXi::Ones(1))
 {
@@ -22,6 +30,16 @@ Eigen::VectorXi ConstantVector::OutSizes(std::vector<Eigen::VectorXd> const& out
   Eigen::VectorXi oSizes(outs.size());
   for( unsigned int i=0; i<outs.size(); ++i ) {
     oSizes(i) = outs[i].size();
+  }
+
+  return oSizes;
+}
+
+Eigen::VectorXi ConstantVector::OutSizes(std::vector<boost::any> const& outs) {
+  Eigen::VectorXi oSizes(outs.size());
+  for( unsigned int i=0; i<outs.size(); ++i ) {
+    assert(typeid(Eigen::VectorXd)==outs[i].type());
+    oSizes(i) = boost::any_cast<Eigen::VectorXd>(outs[i]).size();
   }
 
   return oSizes;

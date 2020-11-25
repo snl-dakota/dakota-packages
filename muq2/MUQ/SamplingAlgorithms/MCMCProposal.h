@@ -25,8 +25,8 @@ namespace muq {
     class MCMCProposal : public std::enable_shared_from_this<MCMCProposal> {
     public:
 
-      MCMCProposal(boost::property_tree::ptree       const& pt,
-                   std::shared_ptr<AbstractSamplingProblem> prob);
+      MCMCProposal(boost::property_tree::ptree              const& pt,
+                   std::shared_ptr<AbstractSamplingProblem> const& probIn);
 
       virtual ~MCMCProposal() = default;
 
@@ -35,8 +35,9 @@ namespace muq {
 	 @param[in] pt The options for the MCMC kernel
 	 \return The MCMC proposal
        */
-      static std::shared_ptr<MCMCProposal> Construct(boost::property_tree::ptree       const& pt,
-                                                     std::shared_ptr<AbstractSamplingProblem> prob);
+      static std::shared_ptr<MCMCProposal> Construct(boost::property_tree::ptree              const& pt,
+                                                     std::shared_ptr<AbstractSamplingProblem> const& probIn);
+
 
       typedef std::function<std::shared_ptr<MCMCProposal>(boost::property_tree::ptree,std::shared_ptr<AbstractSamplingProblem>)> MCMCProposalConstructor;
       typedef std::map<std::string, MCMCProposalConstructor> MCMCProposalMap;
@@ -50,10 +51,10 @@ namespace muq {
        */
       virtual void Adapt(unsigned int const t, std::vector<std::shared_ptr<SamplingState>> const& state) {};
 
-      virtual std::shared_ptr<SamplingState> Sample(std::shared_ptr<SamplingState> currentState) = 0;
+      virtual std::shared_ptr<SamplingState> Sample(std::shared_ptr<SamplingState> const& currentState) = 0;
 
-      virtual double LogDensity(std::shared_ptr<SamplingState> currState,
-                                std::shared_ptr<SamplingState> propState) = 0;
+      virtual double LogDensity(std::shared_ptr<SamplingState> const& currState,
+                                std::shared_ptr<SamplingState> const& propState) = 0;
 
 #if MUQ_HAS_PARCER
       void SetCommunicator(std::shared_ptr<parcer::Communicator> newcomm);
@@ -62,7 +63,9 @@ namespace muq {
       const int blockInd = 0;
 
     protected:
-      
+
+      std::shared_ptr<AbstractSamplingProblem> prob;
+
 #if MUQ_HAS_PARCER
       std::shared_ptr<parcer::Communicator> comm;
 #endif

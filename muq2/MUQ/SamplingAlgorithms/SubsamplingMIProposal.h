@@ -20,10 +20,10 @@ namespace muq {
     public:
       SubsamplingMIProposal (pt::ptree const& pt, std::shared_ptr<AbstractSamplingProblem> prob, std::shared_ptr<SingleChainMCMC> coarseChain);
 
-      virtual std::shared_ptr<SamplingState> Sample(std::shared_ptr<SamplingState> currentState) override;
+      virtual std::shared_ptr<SamplingState> Sample(std::shared_ptr<SamplingState> const& currentState) override;
 
-      virtual double LogDensity(std::shared_ptr<SamplingState> currState,
-                                std::shared_ptr<SamplingState> propState) override;
+      virtual double LogDensity(std::shared_ptr<SamplingState> const& currState,
+                                std::shared_ptr<SamplingState> const& propState) override;
 
     private:
       std::shared_ptr<SingleChainMCMC> coarseChain;

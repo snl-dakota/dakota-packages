@@ -34,14 +34,14 @@ namespace muq{
 
       AbstractSamplingProblem(Eigen::VectorXi const& blockSizesIn);
 
-      enum SampleType {
-        Proposed,
-        Accepted
-      };
-
       virtual ~AbstractSamplingProblem() = default;
 
-      virtual double LogDensity(unsigned int const t, std::shared_ptr<SamplingState> const& state, AbstractSamplingProblem::SampleType type) = 0;
+      virtual double LogDensity(std::shared_ptr<SamplingState> const& state) = 0;
+
+      /** Default finite difference gradient implementation. */
+      virtual Eigen::VectorXd GradLogDensity(std::shared_ptr<SamplingState> const& state,
+                                             unsigned                       const  blockWrt);
+
 
       virtual std::shared_ptr<SamplingState> QOI();
 

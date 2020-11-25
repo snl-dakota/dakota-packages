@@ -79,4 +79,4 @@ function(CreateParallelTestGroup GROUP_NAME)
 
   set(${GROUP_NAME}_PARALLEL_TEST_SOURCES ${SOURCES} CACHE INTERNAL "Source files with parallel tests related to the ${GROUP_NAME} compile group.")
 
-endfunction(CreateTestGroup)
+endfunction(CreateParallelTestGroup)

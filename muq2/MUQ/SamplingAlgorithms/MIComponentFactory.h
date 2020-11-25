@@ -29,6 +29,7 @@ namespace muq {
       virtual std::shared_ptr<MIInterpolation> Interpolation (std::shared_ptr<MultiIndex> const& index) = 0;
       virtual Eigen::VectorXd StartingPoint (std::shared_ptr<MultiIndex> const& index) = 0;
       virtual std::shared_ptr<MultiIndex> FinestIndex() = 0;
+      virtual bool IsInverseProblem() { return true; }
 
     };
 

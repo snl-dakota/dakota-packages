@@ -2,7 +2,7 @@ include(ExternalProject)
 
 if(NOT DEFINED BOOST_EXTERNAL_SOURCE)
   #NOTE: when updated to 1.63.0, you can remove the serialization patch below.
-  set(BOOST_EXTERNAL_SOURCE http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.gz)
+  set(BOOST_EXTERNAL_SOURCE http://downloads.sourceforge.net/project/boost/boost/1.74.0/boost_1_74_0.tar.gz)
 endif()
 
 

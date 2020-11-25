@@ -34,12 +34,10 @@ namespace muq {
       /// The proposal distribution
       std::shared_ptr<muq::Modeling::GaussianBase> proposal;
 
-      virtual std::shared_ptr<SamplingState>
-      Sample(std::shared_ptr<SamplingState> currentState) override;
+      virtual std::shared_ptr<SamplingState> Sample(std::shared_ptr<SamplingState> const& currentState) override;
 
-      virtual double
-      LogDensity(std::shared_ptr<SamplingState> currState,
-                 std::shared_ptr<SamplingState> propState) override;
+      virtual double LogDensity(std::shared_ptr<SamplingState> const& currState,
+                                std::shared_ptr<SamplingState> const& propState) override;
 
 
     };

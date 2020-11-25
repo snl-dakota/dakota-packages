@@ -45,6 +45,20 @@ namespace muq {
                                      std::vector<Eigen::VectorXd> const& input,
                                      Eigen::VectorXd              const& vec);
 
+      virtual void ApplyHessianImpl(unsigned int                 const  outputDimWrt,
+                                    unsigned int                 const  inputDimWrt1,
+                                    unsigned int                 const  inputDimWrt2,
+                                    std::vector<Eigen::VectorXd> const& input,
+                                    Eigen::VectorXd              const& sens,
+                                    Eigen::VectorXd              const& vec);
+
+      virtual void ApplyHessianImpl(unsigned int                 const  outputDimWrt,
+                                    unsigned int                 const  inputDimWrt1,
+                                    unsigned int                 const  inputDimWrt2,
+                                    ref_vector<Eigen::VectorXd> const& input,
+                                    Eigen::VectorXd              const& sens,
+                                    Eigen::VectorXd              const& vec) override;
+
     private:
 
     };

@@ -4,11 +4,13 @@ namespace pt = boost::property_tree;
 using namespace muq::Modeling;
 using namespace muq::SamplingAlgorithms;
 
-MCMCProposal::MCMCProposal(boost::property_tree::ptree       const& pt,
-                           std::shared_ptr<AbstractSamplingProblem> prob) : blockInd(pt.get("BlockIndex",0)) {}
+MCMCProposal::MCMCProposal(boost::property_tree::ptree              const& pt,
+                           std::shared_ptr<AbstractSamplingProblem> const& probIn) : blockInd(pt.get("BlockIndex",0)),
+                                                                                     prob(probIn)
+{}
 
-std::shared_ptr<MCMCProposal> MCMCProposal::Construct(pt::ptree                         const& pt,
-                                                      std::shared_ptr<AbstractSamplingProblem> prob) {
+std::shared_ptr<MCMCProposal> MCMCProposal::Construct(pt::ptree                                const& pt,
+                                                      std::shared_ptr<AbstractSamplingProblem> const& prob) {
 
   // get the name of the proposal
   std::string proposalName = pt.get<std::string>("Method");
@@ -27,7 +29,6 @@ std::shared_ptr<MCMCProposal> MCMCProposal::Construct(pt::ptree                 
   }
 
   return iter->second(pt,prob);
-
 }
 
 std::shared_ptr<MCMCProposal::MCMCProposalMap> MCMCProposal::GetMCMCProposalMap() {

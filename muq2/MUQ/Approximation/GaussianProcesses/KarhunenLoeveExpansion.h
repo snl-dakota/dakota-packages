@@ -105,6 +105,8 @@ int main(){
                                Eigen::VectorXd      const& seedWtsIn,
                                boost::property_tree::ptree options = boost::property_tree::ptree());
 
+        virtual ~KarhunenLoeveExpansion() = default;
+
         /** Evaluates the KL modes at one or more locations.  Each column of the pts matrix contains a point where we want to evaluate the modes.  Each column of the output contains a mode.  Each row of the output corresponds to an input point.
         */
         virtual Eigen::MatrixXd GetModes(Eigen::Ref<const Eigen::MatrixXd> const& pts) const override;

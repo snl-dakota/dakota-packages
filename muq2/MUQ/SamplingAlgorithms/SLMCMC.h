@@ -22,6 +22,7 @@ namespace muq {
     class SLMCMC : public SamplingAlgorithm {
 
     public:
+      SLMCMC (pt::ptree pt, std::shared_ptr<MIComponentFactory> componentFactory, std::shared_ptr<MultiIndex> index);
       SLMCMC (pt::ptree pt, std::shared_ptr<MIComponentFactory> componentFactory);
 
       virtual std::shared_ptr<SampleCollection> GetSamples() const override;
@@ -30,14 +31,15 @@ namespace muq {
       Eigen::VectorXd MeanQOI();
 
       Eigen::VectorXd MeanParameter();
+      
+      void WriteToFile(std::string filename);
 
     protected:
       virtual std::shared_ptr<SampleCollection> RunImpl(std::vector<Eigen::VectorXd> const& x0) override;
 
     private:
       std::shared_ptr<MIComponentFactory> componentFactory;
-
-      std::shared_ptr<SingleChainMCMC> coarse_chain;
+      std::shared_ptr<SingleChainMCMC> single_chain;
     };
 
   }

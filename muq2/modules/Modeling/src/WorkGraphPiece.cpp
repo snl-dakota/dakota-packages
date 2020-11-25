@@ -10,6 +10,32 @@
 
 using namespace muq::Modeling;
 
+UpstreamPredicate::UpstreamPredicate() {}
+
+UpstreamPredicate::UpstreamPredicate(boost::graph_traits<Graph>::vertex_descriptor const& baseNode, Graph const& graph) {
+  UpstreamNodes(baseNode, graph);
+}
+
+bool UpstreamPredicate::operator()(const boost::graph_traits<Graph>::vertex_descriptor& node) const {
+  // is the node in the vector of depends?
+  return std::find(doesDepend.begin(), doesDepend.end(), node)!=doesDepend.end();
+}
+
+void UpstreamPredicate::UpstreamNodes(const boost::graph_traits<Graph>::vertex_descriptor& baseNode, Graph const& graph) {
+
+  // add this node to the list of downstream nodes
+  doesDepend.push_back(baseNode);
+
+  // loop through its dependencies
+  boost::graph_traits<Graph>::in_edge_iterator e, e_end;
+  boost::tie(e, e_end) = boost::in_edges(baseNode, graph);
+  for( ; e!=e_end; ++e ) {
+    // recursivley add its dependendcies to the downstream node list
+    UpstreamNodes(boost::target(*e, graph), graph);
+  }
+}
+
+
 DependentPredicate::DependentPredicate() {}
 
 DependentPredicate::DependentPredicate(boost::graph_traits<Graph>::vertex_descriptor const& baseNode, Graph const& graph) {

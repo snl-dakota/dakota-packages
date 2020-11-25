@@ -88,6 +88,11 @@ namespace muq {
           boxes[l]->Sample();
       }
 
+      if (verbosity > 0) {
+        for (int l = 0; l <= levels; l++)
+          boxes[l]->FinestChain()->PrintStatus("lvl " + std::to_string(l) + " ");
+      }
+
       return nullptr;
     }
 
@@ -95,6 +100,11 @@ namespace muq {
       return boxes[index];
     }
 
+    void GreedyMLMCMC::WriteToFile(std::string filename) {
+      for (auto box : boxes) {
+        box->WriteToFile(filename);
+      }
+    }
 
     Eigen::VectorXd GreedyMLMCMC::MeanQOI() {
       // Compute full QOI estimate
