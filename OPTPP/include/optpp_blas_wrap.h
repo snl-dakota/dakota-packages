@@ -11,7 +11,7 @@
   #define dnrm2 F77_FUNC(dnrm2, DNRM2)
   #define dcopy F77_FUNC(dcopy, DCOPY)
 #else
-  #include "cblas_config.h"
+  #include "optpp_blas_config.h"
   /* BLAS TYPE DEFINITIONS  */
   #define daxpy OPTPP_GLOBAL(daxpy, DAXPY)
   #define dswap OPTPP_GLOBAL(dswap, DSWAP)
