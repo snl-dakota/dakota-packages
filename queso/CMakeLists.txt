@@ -179,7 +179,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/contrib/getpot/getpot.h
 # Add one library in total
 add_library(queso ${queso_sources})
 target_link_libraries(queso 
-  ${MPI_CXX_LIBRARIES} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
+  ${MPI_CXX_LIBRARIES} ${GSL_LIBRARIES})
 # Apply MPI compiler/link options from Dakota MPI
 DakotaApplyMPISettings(queso)
 
