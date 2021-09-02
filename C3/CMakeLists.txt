@@ -62,28 +62,21 @@ else ()
     ##list(INSERT blas_lapack 0 "/projects/sems/install/rhel7-x86_64/dakota/tpl/gsl/1.15/gcc/4.8.5/base/lib/libgslcblas.so")
 
     # First try to use same CBLAS as QUESO's GSL dependence
-    set(c3_cblas_lib)
-    if(GSL_LIBRARIES)
-      foreach(gsllib ${GSL_LIBRARIES})
-	if(gsllib MATCHES "gslcblas")
-	  set(c3_cblas_lib "${gsllib}")
-	  message(STATUS "C3 using GSL CBLAS: ${c3_cblas_lib}")
-	  list(INSERT blas_lapack 0 "${c3_cblas_lib}")
-	  break()
-	endif()
-      endforeach()
-    endif()
-    # Fallback to hardwired ATLAS For RHEL7; choosing serial version if needed
-    if(NOT c3_cblas_lib)
+    if(GSL_CBLAS_LIBRARY)
+      message(STATUS "C3 using GSL CBLAS: ${GSL_CBLAS_LIBRARY}")
+      list(INSERT blas_lapack 0 "${GSL_CBLAS_LIBRARY}")
+    else()
+      # Fallback to hardwired ATLAS For RHEL7; choosing serial version if needed
       find_library(c3_atlas_lib NAMES atlas satlas PATHS "/usr/lib64/atlas/")
       if(c3_atlas_lib)
-	set(c3_cblas_lib ${c3_atlas_lib})
-	message(STATUS "C3 using ATLAS for CBLAS: ${c3_cblas_lib}")
+	message(STATUS "C3 using ATLAS for CBLAS: ${c3_atlas_lib}")
 	# NOTE: Putting atlas at end of link to reduce chance of DIFFs in Dakota
-	list(APPEND blas_lapack "${c3_cblas_lib}")
+	list(APPEND blas_lapack "${c3_atlas_lib}")
+      else()
+	# TODO: Fatal error if no CBLAS?
+	message(WARNING "C3: Explicit CBLAS library not included.")
       endif()
     endif()
-    # TODO: Fatal error if no CBLAS?
     message(STATUS "C3 total blas_lapack link: ${blas_lapack}")
 
 endif()
