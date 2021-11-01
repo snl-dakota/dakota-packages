@@ -102,6 +102,11 @@ Prepare Underlying Configuration Macros
 #   endif
 #endif
 
+#ifdef JEGA_HAVE_TEMPLATE_KEYWORD_QUALIFIER
+#   ifndef EDDY_HAVE_TEMPLATE_KEYWORD_QUALIFIER
+#       define EDDY_HAVE_TEMPLATE_KEYWORD_QUALIFIER
+#   endif
+#endif
 /*
 ================================================================================
 Post Configuration Includes

@@ -400,8 +400,11 @@ GeneticAlgorithm::GetCurrentFitnesses(
     EDDY_FUNC_DEBUGSCOPE
     if(this->_lastFtns.get() == 0x0)
     {
-        DesignGroupVector dgv(2, &this->_pop);
-        dgv[1] = &this->_cldrn;
+        DesignGroupVector dgv;
+        dgv.reserve(2);
+        if(this->_pop.SizeOF() > 0) dgv.push_back(&this->_pop);
+        if (this->_cldrn.SizeOF() > 0) dgv.push_back(&this->_cldrn);
+
         this->SetCurrentFitnesses(
             this->GetFitnessAssessor().AssessFitness(dgv)
             );
@@ -1002,8 +1005,10 @@ GeneticAlgorithm::DoFitnessAssessment(
 
     // create a vector of groups to be simultaneously considered
     // for fitness assessment.
-    DesignGroupVector gpvec(2, &this->_pop);
-    gpvec[1] = &this->_cldrn;
+    DesignGroupVector gpvec;
+    gpvec.reserve(2);
+    if(this->_pop.SizeOF() > 0) gpvec.push_back(&this->_pop);
+    if(this->_cldrn.SizeOF() > 0) gpvec.push_back(&this->_cldrn);
 
     // now use the fitness assessor operator on the collected groups.
     return this->GetFitnessAssessor().AssessFitness(gpvec);
@@ -1075,8 +1080,10 @@ GeneticAlgorithm::DoSelection(
     EDDY_FUNC_DEBUGSCOPE
 
     // create a vector of all groups to be selected from.
-    DesignGroupVector gpvec(2, &this->_pop);
-    gpvec[1] = &this->_cldrn;
+    DesignGroupVector gpvec;
+    gpvec.reserve(2);
+    if (this->_pop.SizeOF() > 0) gpvec.push_back(&this->_pop);
+    if (this->_cldrn.SizeOF() > 0) gpvec.push_back(&this->_cldrn);
 
     JEGA_LOGGING_IF_ON(const std::size_t iPopSize = this->_pop.GetSize());
     JEGA_LOGGING_IF_ON(const std::size_t iCldrnSize = this->_cldrn.GetSize());

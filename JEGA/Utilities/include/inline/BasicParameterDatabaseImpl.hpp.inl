@@ -138,8 +138,10 @@ BasicParameterDatabaseImpl::AddParamValue(
     MY_MAP_T<std::string, T>& theMap
     ) const
 {
+#ifdef JEGA_THREADSAFE
     typedef MY_MAP_T<std::string, T> MapT;
-    JEGA_IF_THREADSAFE(typename MapT::scoped_lock l(theMap);)
+    typename MapT::scoped_lock l(theMap);
+#endif
     theMap[tag] = value;
     return true;
 }
@@ -151,8 +153,10 @@ BasicParameterDatabaseImpl::HasParam(
     const MY_MAP_T<std::string, T>& in
     ) const
 {
+#ifdef JEGA_THREADSAFE
     typedef MY_MAP_T<std::string, T> MapT;
-    JEGA_IF_THREADSAFE(typename MapT::scoped_lock l(in);)
+    typename MapT::scoped_lock l(in);
+#endif
     return in.find(tag) != in.end();
 }
 

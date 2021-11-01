@@ -289,7 +289,7 @@ Design::CopyResponses(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(&from.GetDesignTarget() == &this->GetDesignTarget())
+    EDDY_ASSERT(&from.GetDesignTarget() == &this->GetDesignTarget());
 
     if(&from == this) return;
 

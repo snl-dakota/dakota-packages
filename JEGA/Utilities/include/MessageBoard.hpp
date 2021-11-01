@@ -101,8 +101,6 @@ Includes
 
 #ifdef JEGA_THREADSAFE
 #   include <threads/include/ts_vector.hpp>
-#else
-#   include <vector>
 #endif
 
 
@@ -200,6 +198,7 @@ class MessageBoard
             friend class MessageBoard;
 
             private:
+
                 void* _sender;
                 std::string _type;
                 std::string _tag;
@@ -382,8 +381,7 @@ class MessageBoard
         std::size_t
         SubscriptionListenerTag;
 
-        class IdentifierPredicate :
-            public std::unary_function<MessageIdentifier, bool>
+        class IdentifierPredicate
         {
             private:
 
@@ -448,8 +446,7 @@ class MessageBoard
         };
 
 
-        class WholessIdentifierPredicate :
-            public std::unary_function<MessageIdentifier, bool>
+        class WholessIdentifierPredicate
         {
             private:
 
@@ -547,7 +544,7 @@ class MessageBoard
             );
 
         template <typename PredT, typename CallbackT>
-        static
+        static inline
         Subscription
         Subscribe(
             const PredT& pred,
@@ -555,7 +552,7 @@ class MessageBoard
             );
 
         template <typename PredT, typename CallbackT>
-        static
+        static inline
         Subscription
         Subscribe(
             const boost::reference_wrapper<PredT>& pred,
@@ -563,7 +560,7 @@ class MessageBoard
             );
 
         template <typename PredT, typename CallbackT>
-        static
+        static inline
         Subscription
         Subscribe(
             const boost::reference_wrapper<PredT const>& pred,
@@ -768,13 +765,13 @@ class MessageInfo
         inline
         void
         OnSubscription(
-            MessageBoard::Subscription subsc
+            const MessageBoard::Subscription subsc
             );
 
         inline
         void
         OnSubscriptionCanceled(
-            MessageBoard::Subscription subsc
+            const MessageBoard::Subscription subsc
             );
 
     public:

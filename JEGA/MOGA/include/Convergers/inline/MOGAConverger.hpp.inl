@@ -60,7 +60,6 @@ Includes
 
 
 
-
 /*
 ================================================================================
 Begin Namespace
@@ -152,11 +151,52 @@ Inline Private Methods
 */
 
 
+#ifdef JEGA_MESSAGE_BOARD
+
+inline
+const JEGA::Utilities::MessageInfo&
+MOGAConverger::DEN_MSG_INFO(
+    )
+{
+    static const JEGA::Utilities::MessageInfo msgInfo(
+        JEGA::Utilities::MessageBoard::MessageIdentifier(
+            0x0, "metric_tracker", "density"
+            )
+        );
+
+    return msgInfo;
+}
 
 
+inline
+const JEGA::Utilities::MessageInfo&
+MOGAConverger::EXP_MSG_INFO(
+    )
+{
+    static const JEGA::Utilities::MessageInfo msgInfo(
+        JEGA::Utilities::MessageBoard::MessageIdentifier(
+            0x0, "metric_tracker", "expanse"
+            )
+        );
 
+    return msgInfo;
+}
 
+inline
+const JEGA::Utilities::MessageInfo&
+MOGAConverger::DEP_MSG_INFO(
+    )
+{
+    static const JEGA::Utilities::MessageInfo msgInfo(
+        JEGA::Utilities::MessageBoard::MessageIdentifier(
+            0x0, "metric_tracker", "depth"
+            )
+    );
 
+    return msgInfo;
+}
+
+#endif
 
 /*
 ================================================================================

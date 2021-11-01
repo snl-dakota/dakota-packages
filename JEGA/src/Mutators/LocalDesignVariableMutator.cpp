@@ -959,7 +959,7 @@ LocalDesignVariableMutator::ReadSingleChoiceOptionData(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(!line.empty() && line[0] == 'O')
+    EDDY_ASSERT(!line.empty() && line[0] == 'O');
 
     // The only thing we need to know about this kind of variable is that it
     // it is this kind and that it is not a constant.  We will do fairly simple
@@ -980,7 +980,7 @@ LocalDesignVariableMutator::ReadMultipleChoiceOptionData(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(!line.empty() && line[0] == 'O')
+    EDDY_ASSERT(!line.empty() && line[0] == 'O');
 
     // Get the option number.  We assume they are sequential but not including
     // any single change options.
@@ -1082,7 +1082,7 @@ LocalDesignVariableMutator::ReadVariableData(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(!line.empty() && line[0] == 'V')
+    EDDY_ASSERT(!line.empty() && line[0] == 'V');
 
     // Get the variable number.  We assume they are sequential.
     const size_t varNum = rm._varMap.size();
@@ -1134,7 +1134,7 @@ LocalDesignVariableMutator::ReadDateDVInfo(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(!line.empty() && (line[0] == 'c' || line[0] == 'x'))
+    EDDY_ASSERT(!line.empty() && (line[0] == 'c' || line[0] == 'x'));
 
     if(line[0] != 'c' && line[0] != 'x') return string();
 

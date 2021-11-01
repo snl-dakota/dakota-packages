@@ -138,8 +138,7 @@ relative_difference(
  * \brief A base class for the Min and Max predicates.
  */
 template <typename Comp>
-class CutoffPred :
-    public unary_function<double, bool>
+class CutoffPred
 {
     /*
     ============================================================================
@@ -149,7 +148,7 @@ class CutoffPred :
     protected:
 
         /// Cutoff value
-        argument_type _value;
+        double _value;
 
         /// The comparison operator to use on the passed in values.
         Comp _comp;
@@ -166,9 +165,9 @@ class CutoffPred :
          * \param val The value to test against the stored value.
          * \return True if \a val is greater than or equal to the stored value.
          */
-        result_type
+        bool
         operator ()(
-            argument_type val
+            double val
             )
         {
             EDDY_FUNC_DEBUGSCOPE
@@ -188,7 +187,7 @@ class CutoffPred :
          *            to.
          */
         CutoffPred(
-            argument_type val
+            double val
             ) :
                 _value(val),
                 _comp()
@@ -218,7 +217,7 @@ class MaxPred :
          *            to using greater than or equal to.
          */
         MaxPred(
-            argument_type val
+            double val
             ) :
                 CutoffPred<greater_equal<double> >(val)
         {
@@ -248,7 +247,7 @@ class MinPred :
          *            to using less than or equal to.
          */
         MinPred(
-            argument_type val
+            double val
             ) :
                 CutoffPred<less_equal<double> >(val)
         {
@@ -258,8 +257,7 @@ class MinPred :
 }; // class DiscreteDesignVariableNature::MinPred
 
 
-class EqComp :
-    public unary_function<double, bool>
+class EqComp
 {
     /*
     ============================================================================
@@ -279,9 +277,9 @@ class EqComp :
     */
     public:
 
-        result_type
+        bool
         operator ()(
-            argument_type val
+            double val
             )
         {
             EDDY_FUNC_DEBUGSCOPE
@@ -304,7 +302,6 @@ class EqComp :
             double value,
             double threshold
             ) :
-                unary_function<double, bool>(),
                 _value(value),
                 _threshold(threshold)
         {

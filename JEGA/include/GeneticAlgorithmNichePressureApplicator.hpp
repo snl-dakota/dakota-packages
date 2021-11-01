@@ -73,6 +73,8 @@ Includes
 // JEGAConfig.hpp should be the first include in all JEGA files.
 #include <../Utilities/include/JEGAConfig.hpp>
 
+#include <vector>
+
 #include <GeneticAlgorithmOperator.hpp>
 #include <../Utilities/include/DesignMultiSet.hpp>
 
@@ -202,7 +204,72 @@ class JEGA_SL_IEDECL GeneticAlgorithmNichePressureApplicator :
 
 
     protected:
+        
+        template <typename T>
+        class volatile_vector :
+            public std::vector<T>
+        {
+            private:
 
+                typedef std::vector<T> _my_base;
+                typedef volatile_vector<T> _my_type;
+
+            public:
+
+                typedef typename _my_base::iterator iterator;
+                typedef typename _my_base::const_iterator const_iterator;
+
+                typedef typename _my_base::size_type size_type;
+                typedef typename _my_base::value_type value_type;
+                typedef typename _my_base::allocator_type allocator_type;
+
+            public:
+        
+                inline
+                iterator
+                erase(
+                    size_type loc
+                    )
+                {
+                    return this->erase(this->begin() + loc);
+                }
+
+                iterator
+                erase(
+                    iterator loc
+                    )
+                {
+                    if(this->size() < 5) return this->_my_base::erase(loc);
+
+                    iterator b(this->begin());
+                    ptrdiff_t loci = std::distance<decltype(loc)>(b, loc);
+                    if(loci == (this->size()-1))
+                    {
+                        this->pop_back();
+                        return this->end();
+                    }
+
+                    b += loci;
+                    std::swap(*b, this->back());
+                    this->pop_back();
+                    return b;
+                }
+
+                template <typename ContT>
+                volatile_vector(
+                    const ContT& source,
+                    const std::size_t excludedMark
+                    ) :
+                        _my_base()
+                {
+                    this->reserve(source.size());
+
+                    for (typename ContT::const_iterator curr(source.begin());
+                        curr != source.end(); ++curr)
+                            if(!(*curr)->HasAttribute(excludedMark))
+                                this->push_back(*curr);
+                }
+        };
 
     private:
 

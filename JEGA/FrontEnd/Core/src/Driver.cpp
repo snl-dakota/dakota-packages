@@ -396,7 +396,7 @@ Driver::ExtractAllData(
     EDDY_FUNC_DEBUGSCOPE
 
     EDDY_DEBUG(!this->_initialized, "Must call Driver::InitializeJEGA prior to "
-                                    "extracting data for an algorithm.")
+                                    "extracting data for an algorithm.");
 
     try
     {

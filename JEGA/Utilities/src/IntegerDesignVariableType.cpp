@@ -109,9 +109,9 @@ struct SignedRounder
     static
     double
     Round(
-        const double& value,
-        const double& min,
-        const double& max
+        double value,
+        double min,
+        double max
         )
     {
         EDDY_FUNC_DEBUGSCOPE
@@ -135,9 +135,9 @@ struct IntegralRounder
     static
     double
     Round(
-        const double& value,
-        const double& min,
-        const double& max
+        double value,
+        double min,
+        double max
         )
     {
         EDDY_FUNC_DEBUGSCOPE
@@ -151,9 +151,9 @@ struct UnsignedRounder
     static
     double
     Round(
-        const double& value,
-        const double& min,
-        const double& max
+        double value,
+        double min,
+        double max
         )
     {
         EDDY_FUNC_DEBUGSCOPE

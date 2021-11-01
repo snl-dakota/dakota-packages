@@ -226,7 +226,7 @@ SimpleFunctorEvaluator::Evaluate(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_theFunctor != 0x0)
+    EDDY_ASSERT(this->_theFunctor != 0x0);
 
     JEGAIFLOG_CF_II_F(this->_theFunctor == 0x0, this->GetLogger(), this,
         text_entry(lfatal(), this->GetName() + ": Evaluation attempted prior "

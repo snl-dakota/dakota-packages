@@ -144,7 +144,7 @@ MDesign::SetVariable(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     this->_design->SetVariableValue(static_cast<size_t>(num), val);
 }
 
@@ -155,7 +155,7 @@ MDesign::SetObjective(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     this->_design->SetObjective(
         static_cast<size_t>(num), static_cast<obj_val_t>(val)
         );
@@ -168,7 +168,7 @@ MDesign::SetConstraint(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     this->_design->SetConstraint(
         static_cast<size_t>(num), static_cast<con_val_t>(val)
         );
@@ -180,7 +180,7 @@ MDesign::SetTag(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     if(this->_design->GetTag() != 0x0) FreeGCHandle(this->_design);
     GCHandle gch = GCHandle::Alloc(tag);
     this->_design->SetTag(GCHandle::ToIntPtr(gch).ToPointer());
@@ -199,7 +199,7 @@ MDesign::GetVariable(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->GetVariableValue(static_cast<size_t>(num));
 }
 
@@ -209,7 +209,7 @@ MDesign::GetVariableRep(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->GetVariableRep(static_cast<size_t>(num));
 }
 
@@ -219,7 +219,7 @@ MDesign::GetObjective(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->GetObjective(static_cast<size_t>(num));
 }
 
@@ -229,7 +229,7 @@ MDesign::GetConstraint(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->GetConstraint(static_cast<size_t>(num));
 }
 
@@ -238,7 +238,7 @@ MDesign::GetID(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->GetID();
 }
 
@@ -247,7 +247,7 @@ MDesign::GetTag(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     GCHandle gch = GetGCHandle(this->_design);
     return gch.IsAllocated::get() ? gch.Target::get() : nullptr;
 }
@@ -262,7 +262,7 @@ MDesign::GetNDV(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->GetNDV();
 
 } // MDesign::GetNDV
@@ -272,7 +272,7 @@ MDesign::GetNOF(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->GetNOF();
 
 } // MDesign::GetNOF
@@ -282,7 +282,7 @@ MDesign::GetNCN(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->GetNCN();
 
 } // MDesign::GetNCN
@@ -292,7 +292,7 @@ MDesign::IsEvaluated(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->IsEvaluated();
 }
 
@@ -301,7 +301,7 @@ MDesign::IsFeasible(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->IsFeasible();
 }
 
@@ -310,7 +310,7 @@ MDesign::SatisfiesBounds(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->SatisfiesBounds();
 }
 
@@ -319,7 +319,7 @@ MDesign::SatisfiesConstraints(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->SatisfiesConstraints();
 }
 
@@ -329,7 +329,7 @@ MDesign::SetIllconditioned(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->SetIllconditioned(lval);
 }
 
@@ -338,7 +338,7 @@ MDesign::IsIllconditioned(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return this->_design->IsIllconditioned();
 }
 
@@ -349,7 +349,7 @@ MDesign::ResetDesign(
 {
     EDDY_FUNC_DEBUGSCOPE
     this->_design = toWrap;
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
 }
 
 MDesign^
@@ -389,7 +389,7 @@ MDesign::Manifest(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
     return *this->_design;
 }
 
@@ -428,7 +428,7 @@ MDesign::MDesign(
         _design(toWrap)
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_design != 0x0)
+    EDDY_ASSERT(this->_design != 0x0);
 }
 
 MDesign::~MDesign(

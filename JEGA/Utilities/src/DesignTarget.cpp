@@ -399,29 +399,37 @@ DesignTarget::TakeDesign(
     EDDY_ASSERT(des != 0x0);
     EDDY_ASSERT(&des->GetDesignTarget() == this);
 
+    // If we are caching discards and the design is evaluated, cache it.
     if(this->_trackDiscards && des->IsEvaluated())
     {
         EDDY_SCOPEDLOCK(l, this->_mutexes->_discardMutex)
         this->_discCache->insert(des);
+        return;
     }
-    else
-    {
-        {
-            EDDY_SCOPEDLOCK(l, this->_mutexes->_discardMutex)
-            if(this->_guff.size() < this->_maxGuffSize)
-            {
-                // Must clear prior to unlocking mutex b/c otherwise the design
-                // could be pulled out and used prior to clearing, then get
-                // cleared, etc.
-                des->Dispose();
-                this->_guff.push_back(des);
-                return;
-            }
-        }
 
-        // if we make it here, we're not keeping the design at all.  Delete it.
-        delete des;
+    // Put an unaffiliated scope block here to manage the mutex lock.
+    {
+        EDDY_SCOPEDLOCK(l, this->_mutexes->_discardMutex)
+
+        // No matter what here, if we are tracking discards, we want it out
+        // of the discard cache b/c we are either going to put it into the
+        // guff or delete it outright.
+        if (this->_trackDiscards)
+            this->_discCache->erase_exacts(des);
+
+        if (this->_guff.size() < this->_maxGuffSize)
+        {
+            // Must clear prior to unlocking mutex b/c otherwise the design
+            // could be pulled out and used prior to clearing, then get
+            // cleared, etc.
+            des->Dispose();
+            this->_guff.push_back(des);
+            return;
+        }
     }
+
+    // if we make it here, we're not keeping the design at all.  Delete it.
+    delete des;
 }
 
 bool

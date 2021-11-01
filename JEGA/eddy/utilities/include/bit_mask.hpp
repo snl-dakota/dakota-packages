@@ -1364,7 +1364,7 @@ class bit_mask_facade
             ) const
         {
             EDDY_FUNC_DEBUGSCOPE
-            typedef std::basic_string<CharType, Traits, Alloc> string_type;
+            
             typedef
             std::basic_ostringstream<CharType, Traits, Alloc>
             ostringstream_type;
@@ -2159,7 +2159,11 @@ class bit_mask :
          * \return A basic_string containing CharType representations of the
          *         bits in this mask.
          */
-        template <typename CharType, typename Traits, typename Alloc>
+        template <
+            typename CharType = char,
+            typename Traits = std::char_traits<char>,
+            typename Alloc = std::allocator<char>
+            >
         std::basic_string<CharType, Traits, Alloc>
         to_string(
             ) const
@@ -2851,7 +2855,11 @@ class dynamic_bit_mask :
          * \return A basic_string containing CharType representations of the
          *         bits in this mask.
          */
-        template<typename CharType, typename Traits, typename Alloc>
+        template <
+            typename CharType = char,
+            typename Traits = std::char_traits<char>,
+            typename Alloc = std::allocator<char>
+            >
         std::basic_string<CharType, Traits, Alloc>
         to_string(
             ) const

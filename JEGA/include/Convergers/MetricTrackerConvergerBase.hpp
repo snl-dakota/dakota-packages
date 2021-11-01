@@ -181,10 +181,6 @@ class MetricTrackerConvergerBase :
 
     private:
 
-        JEGA_IF_MESSAGE_BOARD(
-            static JEGA::Utilities::MessageInfo METRIC_MSG_INFO;
-            static JEGA::Utilities::MessageInfo CURR_PCT_CHNG_INFO;
-            )
 
     private:
 
@@ -439,6 +435,20 @@ class MetricTrackerConvergerBase :
     */
     private:
 
+
+#ifdef JEGA_MESSAGE_BOARD
+
+        static inline
+        const JEGA::Utilities::MessageInfo&
+        MET_MSG_INFO(
+            );
+
+        static inline
+        const JEGA::Utilities::MessageInfo&
+        PCT_CHNG_MSG_INFO(
+            );
+
+#endif
 
 
 

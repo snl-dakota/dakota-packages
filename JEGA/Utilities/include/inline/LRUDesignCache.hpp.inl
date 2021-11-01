@@ -126,8 +126,11 @@ LRUDesignCache::indexed_list::on_accessed(
     const key_type& key
     )
 {
-    this->remove(key);
-    this->add(key);
+    EDDY_ASSERT(this->_data.size() == this->_indices.size());
+    const bool removed = this->remove(key);
+    EDDY_ASSERT(removed);
+    EDDY_ASSERT(this->_data.size() == this->_indices.size());
+    if(removed) this->add(key);
 }
 
 inline
@@ -137,6 +140,7 @@ LRUDesignCache::indexed_list::add(
     )
 {
     this->_indices[key] = this->_data.insert(this->_data.end(), key);
+    EDDY_ASSERT(this->_data.size() == this->_indices.size());
 }
 
 
@@ -233,9 +237,20 @@ LRUDesignCache::insert(
     const key_type& key
     )
 {
-    this->_data.insert(key);
-    this->_lruList.add(key);
-    this->manage_size();
+    if (this->_data.find_exact(key) != this->_data.end())
+    {
+        if(this->_doCache) this->_lruList.on_accessed(key);
+    }
+    else
+    {
+        this->_data.insert(key);
+        this->_lruList.add(key);
+        this->manage_size();
+    }
+
+    EDDY_ASSERT(
+        !this->_doCache || (this->_data.size() == this->_lruList.size())
+        );
 }
 
 inline
@@ -246,6 +261,10 @@ LRUDesignCache::erase(
 {
     if(this->_doCache) this->_lruList.remove(*loc);
     this->_data.erase(loc);
+
+    EDDY_ASSERT(
+        !this->_doCache || (this->_data.size() == this->_lruList.size())
+        );
 }
 
 inline
@@ -255,7 +274,13 @@ LRUDesignCache::erase(
     )
 {
     if(this->_doCache) this->_lruList.remove(key);
-    return this->_data.erase(key);
+    LRUDesignCache::size_type ret = this->_data.erase(key);
+
+    EDDY_ASSERT(
+        !this->_doCache || (this->_data.size() == this->_lruList.size())
+        );
+
+    return ret;
 }
 
 inline
@@ -269,6 +294,10 @@ LRUDesignCache::erase(
         this->_lruList.remove(*it);
 
     this->_data.erase(b, e);
+
+    EDDY_ASSERT(
+        !this->_doCache || (this->_data.size() == this->_lruList.size())
+        );
 }
 
 inline

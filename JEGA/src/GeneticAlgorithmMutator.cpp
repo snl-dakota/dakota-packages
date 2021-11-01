@@ -191,7 +191,7 @@ vector<DesignDVSortSet::iterator>
 GeneticAlgorithmMutator::ChooseDesignsToMutate(
     size_t howMany,
     DesignGroup& from,
-    const bool& allowRepeats
+    bool allowRepeats
     )
 {
     if(howMany == 0) return vector<DesignDVSortSet::iterator>();
@@ -217,7 +217,7 @@ GeneticAlgorithmMutator::ChooseDesignsToMutate(
     for(size_t i=1; i<howMany; ++i)
     {
         size_t iLoc = mutate_locs[i];
-        if(!allowRepeats && iLoc == last) continue;
+        if(!allowRepeats && (iLoc == last)) continue;
 		std::advance(tmIt, iLoc - last);
 		toMutate.push_back(tmIt);
         last = static_cast<eddy::utilities::int64_t>(iLoc);

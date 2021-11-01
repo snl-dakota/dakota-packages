@@ -59,7 +59,7 @@ Includes
 #include <limits>
 #include <algorithm>
 #include <utilities/include/extremes.hpp>
-
+#include <utilities/include/RandomNumberGenerator.hpp>
 
 
 
@@ -528,7 +528,8 @@ DesignStatistician::GetObjectiveFunctionExtremeDesigns(
             {
                 ret[of] = des;
             }
-            else if((pref == 0x0) && ((rand() % 2) == 0))
+            else if((pref == 0x0) &&
+                eddy::utilities::RandomNumberGenerator::RandomBoolean())
             {
                 ret[of] = des;
             }
@@ -605,6 +606,19 @@ DesignStatistician::SeparateDesigns(
     }
 
     return ret;
+}
+
+template <typename FwdIt>
+inline
+void
+DesignStatistician::MarkAllDesigns(
+    FwdIt first,
+    const FwdIt& end,
+    const std::size_t mark,
+    const bool value
+    )
+{
+    for (; first != end; ++first) (*first)->ModifyAttribute(mark, value);
 }
 
 template <typename FwdIt, typename IntoSet_T, typename Pred>

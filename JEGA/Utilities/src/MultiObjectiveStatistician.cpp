@@ -223,9 +223,9 @@ MultiObjectiveStatistician::FlushDominatedFrom(
     EDDY_FUNC_DEBUGSCOPE
 
     // begin by "unmarking" all of group.
-    for(DesignOFSortSet::const_iterator it(group.BeginOF());
-        it!=group.EndOF(); ++it)
-            (*it)->ModifyAttribute(MARK, false);
+    DesignStatistician::MarkAllDesigns(
+        group.BeginOF(), group.EndOF(), MARK, false
+        );
 
     // now separate the dominated from it.
     DesignOFSortSet dom(GetDominated(group.GetOFSortContainer()));
@@ -615,8 +615,7 @@ MultiObjectiveStatistician::ComputeDominatedByCounts(
 
 	for(DesignOFSortSet::const_iterator it(designs.begin());
 		it!=designs.end(); ++it)
-			(*it)->IsFeasible() ?
-			feasible.insert(*it) : infeasible.insert(*it);
+			(*it)->IsFeasible() ? feasible.insert(*it) : infeasible.insert(*it);
 
     // Prepare our return object containing our counts.
     DesignCountMap ret(designs.size());
@@ -682,8 +681,7 @@ MultiObjectiveStatistician::ComputeDominatingCounts(
 
 	for(DesignOFSortSet::const_iterator it(designs.begin());
 		it!=designs.end(); ++it)
-			(*it)->IsFeasible() ?
-			feasible.insert(*it) : infeasible.insert(*it);
+			(*it)->IsFeasible() ? feasible.insert(*it) : infeasible.insert(*it);
 
     // Prepare our return object containing our counts.
     DesignCountMap ret(designs.size());
@@ -741,8 +739,7 @@ MultiObjectiveStatistician::ComputeDominationCounts(
 
 	for(DesignOFSortSet::const_iterator it(designs.begin());
 		it!=designs.end(); ++it)
-			(*it)->IsFeasible() ?
-			feasible.insert(*it) : infeasible.insert(*it);
+			(*it)->IsFeasible() ? feasible.insert(*it) : infeasible.insert(*it);
 
     // Prepare our return object containing our counts.
     DesignDoubleCountMap ret(designs.size());

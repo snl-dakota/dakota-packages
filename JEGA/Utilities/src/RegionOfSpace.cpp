@@ -149,7 +149,7 @@ RegionOfSpace::Intersects(
     ) const
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_limits.size() == other._limits.size())
+    EDDY_ASSERT(this->_limits.size() == other._limits.size());
 
     if(&other == this) return true;
 
@@ -192,7 +192,7 @@ RegionOfSpace::Contains(
     ) const
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_limits.size() == other._limits.size())
+    EDDY_ASSERT(this->_limits.size() == other._limits.size());
 
     if(&other == this) return true;
 
@@ -222,7 +222,7 @@ RegionOfSpace::Intersection(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_limits.size() == other._limits.size())
+    EDDY_ASSERT(this->_limits.size() == other._limits.size());
 
     if(&other == this) return other;
 
@@ -355,7 +355,7 @@ RegionOfSpace::RegionOfSpace(
         _limits(nDim, var_rep_t(0), var_rep_t(0))
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(nDim > 0)
+    EDDY_ASSERT(nDim > 0);
 
     JEGAIFLOG_CF_II_G_F(nDim == 0, this, text_entry(lfatal(),
         "Cannot create a 0 dimensional region of space.")

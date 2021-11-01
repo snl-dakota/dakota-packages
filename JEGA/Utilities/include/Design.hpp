@@ -322,7 +322,8 @@ class JEGA_SL_IEDECL Design
         }; // class AttributePred
 
 #define DESIGN_BOOL_PRED_STRUCT(desMeth) \
-        struct desMeth##Pred : std::unary_function<Design, bool> { \
+        struct desMeth##Pred { \
+            typedef Design argument_type; \
             inline bool operator()(const Design& des) const { \
                 return des.desMeth(); \
             } \
@@ -422,19 +423,17 @@ class JEGA_SL_IEDECL Design
 
         }; // class DesignBoolFuncPred
 
-        struct IDHasher :
-            public std::unary_function<Design*, std::size_t>
+        struct IDHasher
         {
             std::size_t operator()(const Design* des) const {
                 return des->GetID();
-            }
+                }
             std::size_t operator()(const Design& des) const {
                 return des.GetID();
-            }
+                }
         };
 
-        struct IDEquals :
-            public std::binary_function<Design*, Design*, std::size_t>
+        struct IDEquals
         {
             std::size_t operator()(
                 const Design* des1, const Design* des2

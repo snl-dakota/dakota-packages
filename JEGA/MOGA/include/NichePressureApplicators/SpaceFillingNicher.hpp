@@ -88,11 +88,6 @@ Includes
 #include <../Utilities/include/DesignValueMap.hpp>
 #include <GeneticAlgorithmNichePressureApplicator.hpp>
 
-#ifdef JEGA_HAVE_BOOST
-#   include <boost/unordered_map.hpp>
-#else
-#   include <map>
-#endif
 
 
 
@@ -155,11 +150,6 @@ class SpaceFillingNicher;
 In-Namespace File Scope Typedefs
 ================================================================================
 */
-#ifdef JEGA_HAVE_BOOST
-#   define MAP_BASE boost::unordered_map
-#else
-#   define MAP_BASE std::map
-#endif
 
 
 
@@ -203,12 +193,14 @@ class SpaceFillingNicher :
         
         static const std::size_t DEFAULT_NUM_2_KEEP;
 
+        static const double DEFAULT_RANDOMIZED_PROPORTION;
+
     private:
 
         std::size_t _nDes2Keep;
 
-		mutable MAP_BASE<std::size_t, double> _distCache;
-
+        double _randProp;
+        
     /*
     ============================================================================
     Mutators
@@ -221,6 +213,10 @@ class SpaceFillingNicher :
             std::size_t numDesigns
             );
 
+        void
+        SetRandomizedProportion(
+            double randProp
+            );
 
     protected:
 
@@ -236,8 +232,13 @@ class SpaceFillingNicher :
     public:
 
         inline
-        const std::size_t&
+        std::size_t
         GetNumDesigns2Keep(
+            ) const;
+        
+        inline
+        double
+        GetRandomizedProportion(
             ) const;
 
 
@@ -293,7 +294,7 @@ class SpaceFillingNicher :
         double
         NormalizedObjVal(
             const JEGA::Utilities::Design& des,
-            const std::size_t& of,
+            size_t of,
 			const eddy::utilities::extremes<obj_val_t>& popExtremes
             );
 

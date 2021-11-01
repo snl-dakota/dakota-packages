@@ -229,14 +229,15 @@ DesignStatistician::ComputeSidePercentageViolation(
         // if there is none, we can move on.
         if(cviol == 0.0) continue;
 
+        const var_rep_t minRep = info.GetMinRep();
+        const var_rep_t maxRep = info.GetMaxRep();
+
         // now get the range which is what we will consider a 100% violation.
-        const var_rep_t range = info.GetRepRange();
+        const var_rep_t range = maxRep - minRep;
 
         // if the range is for some reason 0, we add a violation equal to the
         // rep value since we cannot really compute it.
-        if(range == 0.0) cviol = Math::Abs(
-            info.WhichRep(des) - info.GetMinRep()
-            );
+        if(range == 0.0) cviol = Math::Abs(info.WhichRep(des) - minRep);
 
         // otherwise, we add in our current violation percentage.
         else cviol = cviol/range * 100.0;

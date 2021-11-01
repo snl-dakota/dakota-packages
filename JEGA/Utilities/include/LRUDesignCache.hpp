@@ -206,8 +206,8 @@ class LRUDesignCache
                 typedef std::list<key_type> list_t;
                 typedef list_t::iterator list_iter_t;
                 typedef MAP_TYPE<key_type, list_iter_t> map_t;
-                typedef map_t::iterator set_iter_t;
-                typedef map_t::const_iterator set_citer_t;
+                typedef map_t::iterator map_iter_t;
+                typedef map_t::const_iterator map_citer_t;
 
                 list_t _data;
                 map_t _indices;
@@ -231,7 +231,7 @@ class LRUDesignCache
                 remove_first(
                     );
 
-                void
+                bool
                 remove(
                     const key_type& key
                     );
@@ -609,6 +609,10 @@ class LRUDesignCache
                 this->_data.insert(*it);
                 if(this->_doCache) this->_lruList.add(*it);
             }
+
+            EDDY_ASSERT(
+                !this->_doCache || (this->_data.size() == this->_lruList.size())
+                );
         }
 
         /// Looks for a duplicate of "key" existing within this container.
@@ -762,6 +766,7 @@ class LRUDesignCache
                 (this->size() <= other.size()) ? this->_data : other;
             const DesignDVSortSet& larger =
                 (&smaller == &this->_data) ? other : this->_data;
+            const bool noteAccess = (&larger == &this->_data);
 
             // The lower_bound of the first element of the larger in the
             // smaller will be where we start looking and the upper_bound of
@@ -780,7 +785,7 @@ class LRUDesignCache
                 const_iterator it(larger.test_for_clone(*s));
                 if(it != le)
                 {
-                    this->on_accessed(it);
+                    if(noteAccess) this->on_accessed(it);
                     ++clonecount;
                 }
             }
@@ -833,44 +838,6 @@ class LRUDesignCache
         //    const key_type key,
         //    std::size_t mark = MARK
         //    );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         //const key_type&
         //operator [](

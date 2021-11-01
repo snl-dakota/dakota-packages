@@ -428,9 +428,7 @@ FlatFileInitializer::Initialize(
     // requested minimum size.
     if(into.GetSize() < minsize)
     {
-        // we will use the random unique initializer to fill
-        // in the rest.
-
+        // we will use the random unique initializer to fill in the rest.
         JEGALOG_II(this->GetLogger(), lverbose(), this,
             text_entry(lverbose(), this->GetName() + ": The desired number of "
                 "designs were not found in the supplied file(s).  Using the "

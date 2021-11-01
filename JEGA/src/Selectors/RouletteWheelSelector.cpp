@@ -68,6 +68,7 @@ Includes
 #include <Selectors/RouletteWheelSelector.hpp>
 #include <utilities/include/EDDY_DebugScope.hpp>
 #include <../Utilities/include/DesignGroupVector.hpp>
+#include <../Utilities/include/DesignStatistician.hpp>
 #include <utilities/include/RandomNumberGenerator.hpp>
 
 
@@ -204,14 +205,9 @@ RouletteWheelSelector::ClearSelectionAttributes(
     DesignGroupVector::const_iterator git(from.begin());
 
     for(; git!=from.end(); ++git)
-    {
-        // prepare to iterate the Designs of this group
-        DesignOFSortSet::const_iterator dit((*git)->BeginOF());
-        const DesignOFSortSet::const_iterator de((*git)->EndOF());
-        for(; dit!=de; ++dit)
-            // clear the SEL_ATT while we're here
-            (*dit)->ModifyAttribute(SEL_ATT, false);
-    }
+        DesignStatistician::MarkAllDesigns(
+            (*git)->BeginOF(), (*git)->EndOF(), SEL_ATT, false
+            );
 }
 
 void

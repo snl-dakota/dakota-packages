@@ -122,7 +122,7 @@ Static Member Data Definitions
 ================================================================================
 */
 const size_t SpaceFillingNicher::DEFAULT_NUM_2_KEEP(100);
-
+const double SpaceFillingNicher::DEFAULT_RANDOMIZED_PROPORTION(0.5);
 
 
 
@@ -146,9 +146,37 @@ SpaceFillingNicher::SetNumDesigns2Keep(
     this->_nDes2Keep = numDesigns;
 
     JEGALOG_II(this->GetLogger(), lverbose(), this,
-        ostream_entry(lverbose(),
-            this->GetName() + ": Number of designs now = "
+        ostream_entry(
+            lverbose(), this->GetName() + ": Number of designs now = "
             ) << this->_nDes2Keep
+        )
+}
+
+void
+SpaceFillingNicher::SetRandomizedProportion(
+    double randProp
+    )
+{
+    EDDY_FUNC_DEBUGSCOPE
+        
+    JEGAIFLOG_CF_II(randProp < 0.0, this->GetLogger(), lquiet(), this,
+        text_entry(lquiet(),
+            this->GetName() + ": Random proportion value is negative.  This is"
+            "not allowed.  The value will be corrected to 0.")
+        )
+        
+    JEGAIFLOG_CF_II(randProp > 1.0, this->GetLogger(), lquiet(), this,
+        text_entry(lquiet(),
+            this->GetName() + ": Random proportion value is greater than 1."
+            "  This is not allowed.  The value will be corrected to 1.")
+        )
+
+    this->_randProp = Math::Max(0.0, Math::Min(randProp, 1.0));
+
+    JEGALOG_II(this->GetLogger(), lverbose(), this,
+        ostream_entry(
+            lverbose(), this->GetName() + ": Randomized Proportion now = "
+            ) << this->_randProp
         )
 }
 
@@ -230,32 +258,9 @@ SpaceFillingNicher::ComputeDistance(
 {
     EDDY_FUNC_DEBUGSCOPE
 
-	typedef MAP_BASE<size_t, double>::iterator dmIt_T;
-
-    // Start by testing the des1 then des2 hash.  If found, great.
-    // If it is not, then test the des2 then des1 hash.
-
-    size_t hVal = hash(des1, des2);
-
-	std::pair<dmIt_T, bool> insDat =
-        this->_distCache.insert(std::make_pair(hVal, 0.0));
-
-	if(!insDat.second) return insDat.first->second;
-
-    // The item was not found with des1 before des2.  So we must test des2
-    // before des1.  Don't do an insert though and be sure to update the
-    // 1 then 2 entry that was just added.
-    hVal = hash(des2, des1);
-    dmIt_T d2t1 = this->_distCache.find(hVal);
-    if(d2t1 != this->_distCache.end())
-    {
-        insDat.first->second = d2t1->second;
-        return d2t1->second;
-    }
-
     const size_t nof = this->GetDesignTarget().GetNOF();
 
-    double dist = 0;
+    double dist = 0.0;
     
     for(size_t of=0; of<nof; ++of)
     {
@@ -266,9 +271,7 @@ SpaceFillingNicher::ComputeDistance(
         dist += delta * delta;
     }
 
-	const double ret = sqrt(dist);
-	insDat.first->second = ret;
-    return ret;
+    return dist;
 }
 
 
@@ -342,6 +345,19 @@ SpaceFillingNicher::PollForParameters(
 
     this->SetNumDesigns2Keep(this->_nDes2Keep);
 
+    success = ParameterExtractor::GetDoubleFromDB(
+        db, "method.randomized_proportion", this->_randProp
+        );
+
+    // If we did not find the population size either, warn about it and move
+    // on to using the default size.  Note that if !success, then
+    // _nDes2Keep has not been altered.
+    JEGAIFLOG_CF_II(!success, this->GetLogger(), lverbose(), this,
+        text_entry(lverbose(), this->GetName() + ": The randomized proportion "
+            "parameter was not found in the parameter database.  Using the "
+            "default value.")
+        )
+
     return this->GeneticAlgorithmNichePressureApplicator::PollForParameters(db);
 }
 
@@ -373,7 +389,6 @@ SpaceFillingNicher::PreSelection(
                "pre-selection phase of niche pressure application."
         )
 }
-
 
 void
 SpaceFillingNicher::ApplyNichePressure(
@@ -412,9 +427,6 @@ SpaceFillingNicher::ApplyNichePressure(
     //    else ++it;
     //}
 
-    for(DesignDVSortSet::const_iterator it(population.BeginDV());
-        it!=population.EndDV(); ++it) (*it)->ModifyAttribute(TABOO_MARK, false);
-
     // we will need the number of objectives for a few things here.
     const size_t nof = target.GetNOF();
 
@@ -432,7 +444,17 @@ SpaceFillingNicher::ApplyNichePressure(
         ostream_entry(lverbose(), this->GetName() + ": Population size "
             "before niching is ") << population.GetSize() << "."
         )
-
+        
+    // The number of designs that will be randomly selected
+    const size_t nRandSels = static_cast<size_t>(
+        std::round(n2Keep * this->GetRandomizedProportion())
+        );
+    
+    JEGALOG_II(this->GetLogger(), lverbose(), this,
+        ostream_entry(lverbose(), this->GetName() + ": Number of designs that "
+            "will be selected randomly is ") << nRandSels << "."
+        )
+        
     const DesignOFSortSet& popByOf = population.GetOFSortContainer();
 
     JEGA_LOGGING_IF_ON(size_t prevPopSize = popByOf.size();)
@@ -455,22 +477,45 @@ SpaceFillingNicher::ApplyNichePressure(
             ostream_entry(lverbose(), this->GetName() + ": Final population "
                 "size after niching is ") << population.GetSize() << "."
             )
-
-        this->_distCache.clear();
-
+            
         return;
     }
 
-    // Now continue by extracting the Pareto extremes
-    size_t nTagged = this->TagTabooNicheDesigns(pareto);
+    DesignStatistician::MarkAllDesigns(
+        population.BeginDV(), population.EndDV(), TABOO_MARK, false
+        );
 
-    while(nTagged < n2Keep)
+    typedef DesignOFSortSet::const_iterator DOS_CIT;
+    // Now continue by extracting the Pareto extremes
+    this->TagTabooNicheDesigns(pareto);
+
+    typedef std::vector<Design*>::const_iterator DV_CIT;
+    std::vector<Design*> tagged;
+    tagged.reserve(pareto.size());
+    for (DOS_CIT it(pareto.begin()); it != pareto.end(); ++it)
+        if ((**it).HasAttribute(TABOO_MARK)) tagged.push_back(*it);
+
+    volatile_vector<Design*> randRems(pareto, TABOO_MARK);
+
+    // Now do the random selections.
+    while (tagged.size() < n2Keep)
+    {
+        size_t tagLoc = RandomNumberGenerator::UniformInt<size_t>(
+            0, randRems.size() - 1
+            );
+
+        Design* toTag = randRems[tagLoc];
+        toTag->ModifyAttribute(TABOO_MARK, true);
+        tagged.push_back(toTag);
+        randRems.erase(tagLoc);
+    }
+
+    while(tagged.size() < n2Keep)
     {
         Design* ldDes = 0x0;
         double largeDist = 0.0;
 
-        for(DesignOFSortSet::const_iterator it(pareto.begin());
-            it!=pareto.end(); ++it)
+        for(DOS_CIT it(pareto.begin()); it!=pareto.end(); ++it)
         {
             Design& des = **it;
             if(des.HasAttribute(TABOO_MARK)) continue;
@@ -481,16 +526,13 @@ SpaceFillingNicher::ApplyNichePressure(
             // Find the smallest distance to a marked point.
             double smallDist = std::numeric_limits<double>::max();
 
-            for(DesignOFSortSet::const_iterator jt(pareto.begin());
-                jt!=pareto.end(); ++jt)
+            for(std::size_t j=0; j<tagged.size(); ++j)
             {
-                // We are looking for the smallest distance to a tagged design.
-                // So if jt is not tagged, then we are not interested.
-                if(!(*jt)->HasAttribute(TABOO_MARK)) continue;
-
                 // We don't need to test for it!=jt b/c we know "it" is not
                 // tagged and "jt" is so they cannot be the same.
-                double dist = this->ComputeDistance(des, **jt, popExtremes);
+                double dist = this->ComputeDistance(
+                    des, *tagged[j], popExtremes
+                    );
                 if(dist < smallDist) smallDist = dist;
             }
 
@@ -504,7 +546,7 @@ SpaceFillingNicher::ApplyNichePressure(
         if(ldDes != 0x0)
         {
             ldDes->ModifyAttribute(TABOO_MARK, true);
-            ++nTagged;
+            tagged.push_back(ldDes);
         }
     }
 
@@ -532,8 +574,6 @@ SpaceFillingNicher::ApplyNichePressure(
         ostream_entry(lverbose(), this->GetName() + ": Final population size "
             "after niching is ") << population.GetSize() << "."
         )
-
-	this->_distCache.clear();
 }
 
 
@@ -569,7 +609,8 @@ SpaceFillingNicher::SpaceFillingNicher(
     GeneticAlgorithm& algorithm
     ) :
         GeneticAlgorithmNichePressureApplicator(algorithm),
-        _nDes2Keep(DEFAULT_NUM_2_KEEP)
+        _nDes2Keep(DEFAULT_NUM_2_KEEP),
+        _randProp(DEFAULT_RANDOMIZED_PROPORTION)
 {
     EDDY_FUNC_DEBUGSCOPE
 }
@@ -578,7 +619,8 @@ SpaceFillingNicher::SpaceFillingNicher(
     const SpaceFillingNicher& copy
     ) :
         GeneticAlgorithmNichePressureApplicator(copy),
-        _nDes2Keep(copy._nDes2Keep)
+        _nDes2Keep(copy._nDes2Keep),
+        _randProp(copy._randProp)
 {
     EDDY_FUNC_DEBUGSCOPE
 }
@@ -588,7 +630,8 @@ SpaceFillingNicher::SpaceFillingNicher(
     GeneticAlgorithm& algorithm
     ) :
         GeneticAlgorithmNichePressureApplicator(copy, algorithm),
-        _nDes2Keep(copy._nDes2Keep)
+        _nDes2Keep(copy._nDes2Keep),
+        _randProp(copy._randProp)
 {
     EDDY_FUNC_DEBUGSCOPE
 }

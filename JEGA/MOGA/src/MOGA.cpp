@@ -185,6 +185,7 @@ MOGA::ReclaimOptimal(
     // can iterate while reclaiming designs and so we'll have an OF sort set.
     DesignGroup discardGroup(target, discards.DVSortSet());
     discardGroup.FlushNonEvaluatedDesigns();
+    discardGroup.FlushIllconditionedDesigns();
 
     // Get the current population.
     DesignGroup& pop = this->GetPopulation();

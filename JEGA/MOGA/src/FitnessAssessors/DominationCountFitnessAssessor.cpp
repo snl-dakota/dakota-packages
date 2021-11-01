@@ -74,7 +74,6 @@ Includes
 
 
 
-
 /*
 ================================================================================
 Namespace Using Directives
@@ -230,7 +229,6 @@ DominationCountFitnessAssessor::Clone(
     return new DominationCountFitnessAssessor(*this, algorithm);
 }
 
-
 const FitnessRecord*
 DominationCountFitnessAssessor::AssessFitness(
     const DesignGroupVector& groups
@@ -242,6 +240,8 @@ DominationCountFitnessAssessor::AssessFitness(
         text_entry(ldebug(), this->GetName() + ": Assessing fitness.")
         )
 
+    if(groups.empty()) return new FitnessRecord(0);
+
     const size_t gSize = groups.GetTotalDesignCount();
 
     // prepare our resulting fitness record.
@@ -250,22 +250,22 @@ DominationCountFitnessAssessor::AssessFitness(
     // look for the abort conditions.
     if(gSize == 0) return ret;
 
-    // Now use a MultiObjectiveStatistician to compute the domination counts.
-    const DesignCountMap res(
+    DesignCountMap res((groups.size() > 1) ?
         MultiObjectiveStatistician::ComputeDominatedByCounts(
             DesignStatistician::CollectDesignsByOF(groups)
-            )
-        );
+            ) :
+        MultiObjectiveStatistician::ComputeDominatedByCounts(
+            groups[0]->GetOFSortContainer()
+            ));
 
     // Now go through and fill up our basic fitness record.  Recall that the
     // higher fitnesses are considered better so we will negate our counts to
     // make smaller better.
-    for(DesignCountMap::const_iterator it(res.begin()); it!=res.end(); ++it)
+    for (DesignCountMap::const_iterator it(res.begin()); it != res.end(); ++it)
         ret->AddFitness((*it).first, -static_cast<double>((*it).second));
 
     // finally return our result.
     return ret;
-
 }
 
 

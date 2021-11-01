@@ -249,6 +249,8 @@ LayerFitnessAssessor::AssessFitness(
         text_entry(ldebug(), this->GetName() + ": Assessing fitness.")
         )
 
+    if (groups.empty()) return new FitnessRecord(0);
+
     const size_t gSize = groups.GetTotalDesignCount();
 
     // prepare our resulting fitness record.

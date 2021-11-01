@@ -389,7 +389,7 @@ BitManipulator::ToBinaryString(
     // now load up the string.
     for(size_t b=nbits-1; b>0 && v!=0.0; --b)
     {
-        eddy::utilities::uintmax_t bv = (1 << b);
+        eddy::utilities::uintmax_t bv = (eddy::utilities::uintmax_t(1) << b);
         if(v >= bv)
         {
             ret.set_bit(b);

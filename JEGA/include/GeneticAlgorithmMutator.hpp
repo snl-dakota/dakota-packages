@@ -270,7 +270,7 @@ class JEGA_SL_IEDECL GeneticAlgorithmMutator :
         ChooseDesignsToMutate(
             std::size_t howMany,
             JEGA::Utilities::DesignGroup& from,
-            const bool& allowRepeats = true
+            bool allowRepeats = true
             );
 
     /*

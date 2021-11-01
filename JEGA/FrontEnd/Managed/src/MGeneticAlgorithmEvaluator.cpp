@@ -131,7 +131,7 @@ MGeneticAlgorithmEvaluator::GetNumberEvaluations(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_evaler != 0x0)
+    EDDY_ASSERT(this->_evaler != 0x0);
     return this->_evaler->GetNumberEvaluations();
 }
 
@@ -140,7 +140,7 @@ MGeneticAlgorithmEvaluator::GetMaxEvaluations(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_evaler != 0x0)
+    EDDY_ASSERT(this->_evaler != 0x0);
     return this->_evaler->GetMaxEvaluations();
 }
 
@@ -149,7 +149,7 @@ MGeneticAlgorithmEvaluator::GetEvaluationConcurrency(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_evaler != 0x0)
+    EDDY_ASSERT(this->_evaler != 0x0);
     return this->_evaler->GetEvaluationConcurrency();
 }
 
@@ -170,7 +170,7 @@ MGeneticAlgorithmEvaluator::IsMaxEvalsExceeded(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_evaler != 0x0)
+    EDDY_ASSERT(this->_evaler != 0x0);
     return this->_evaler->IsMaxEvalsExceeded();
 }
 
@@ -179,7 +179,7 @@ MGeneticAlgorithmEvaluator::IsMaxEvalsReached(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_evaler != 0x0)
+    EDDY_ASSERT(this->_evaler != 0x0);
     return this->_evaler->IsMaxEvalsReached();
 }
 
@@ -220,7 +220,7 @@ MGeneticAlgorithmEvaluator::Manifest(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_evaler != 0x0)
+    EDDY_ASSERT(this->_evaler != 0x0);
     return *this->_evaler;
 }
 
@@ -256,7 +256,7 @@ MGeneticAlgorithmEvaluator::MGeneticAlgorithmEvaluator(
         _evaler(toWrap)
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_evaler != 0x0)
+    EDDY_ASSERT(this->_evaler != 0x0);
 }
 
 

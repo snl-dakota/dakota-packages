@@ -448,7 +448,7 @@ template <typename DesContT>
 std::size_t
 MultiObjectiveStatistician::TagParetoExtremeDesigns(
     const DesContT& designs,
-    const std::size_t& tag
+    size_t tag
     )
 {
     EDDY_FUNC_DEBUGSCOPE
@@ -510,7 +510,7 @@ std::size_t
 MultiObjectiveStatistician::MarkOneOfBestDesigns(
     const DesContT& designs,
     const ObjectiveFunctionInfo& ofInfo,
-    const std::size_t& tag
+    size_t tag
     )
 {
     EDDY_FUNC_DEBUGSCOPE
@@ -522,9 +522,13 @@ MultiObjectiveStatistician::MarkOneOfBestDesigns(
     for(++it; it!=e; ++it)
         if(ofInfo.GetPreferredDesign(*best, **it) == *it) best = *it;
 
-    best->ModifyAttribute(tag, true);
+    if (!best->HasAttribute(tag))
+    {
+        best->ModifyAttribute(tag, true);
+        return 1;
+    }
 
-    return 1;
+    return 0;
 }
 
 template <typename DesContT>

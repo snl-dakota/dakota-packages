@@ -144,7 +144,7 @@ MGeneticAlgorithm::Manifest(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_theAlg != 0x0)
+    EDDY_ASSERT(this->_theAlg != 0x0);
     return *this->_theAlg;
 }
 
@@ -161,7 +161,7 @@ MGeneticAlgorithm::GetBestDesign(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_theAlg != 0x0)
+    EDDY_ASSERT(this->_theAlg != 0x0);
     const Design* best = this->_theAlg->GetBestDesign();
     if(best == 0x0) return nullptr;
     return gcnew MSolution(*best);
@@ -172,7 +172,7 @@ MGeneticAlgorithm::GetCurrentSolution(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_theAlg != 0x0)
+    EDDY_ASSERT(this->_theAlg != 0x0);
 
     DesignOFSortSet solutions(this->_theAlg->GetCurrentSolution());
 
@@ -190,7 +190,7 @@ MGeneticAlgorithm::GetCurrentPopulation(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_theAlg != 0x0)
+    EDDY_ASSERT(this->_theAlg != 0x0);
 
     const DesignOFSortSet& solutions =
         this->_theAlg->GetPopulation().GetOFSortContainer();
@@ -331,7 +331,7 @@ MGeneticAlgorithm::MGeneticAlgorithm(
         _wrappedEvaler(nullptr)
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_theAlg != 0x0)
+    EDDY_ASSERT(this->_theAlg != 0x0);
 }
 
 MGeneticAlgorithm::~MGeneticAlgorithm(

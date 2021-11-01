@@ -107,20 +107,6 @@ Static Member Data Definitions
 ================================================================================
 */
 
-JEGA_IF_MESSAGE_BOARD(
-    MessageInfo MOGAConverger::DENSITY_MSG_INFO(
-        MessageBoard::MessageIdentifier(0x0, "metric_tracker", "density")
-        );
-
-    MessageInfo MOGAConverger::EXPANSE_MSG_INFO(
-        MessageBoard::MessageIdentifier(0x0, "metric_tracker", "expanse")
-        );
-
-    MessageInfo MOGAConverger::DEPTH_MSG_INFO(
-        MessageBoard::MessageIdentifier(0x0, "metric_tracker", "depth")
-        );
-)
-
 
 
 
@@ -247,6 +233,10 @@ MOGAConverger::GetMaxRangeChange(
     for(extremes<obj_val_t>::size_type i=0; i<size; ++i)
     {
         const double overallRange = this->_prevParExtremes.get_range(i);
+
+        // Something possible here is that the overall range (previous range)
+        // is non-zero but the new range is 0.  In that case, the currChng will
+        // always be -1.
         const double currChng = overallRange == 0.0 ?
             newParExtremes.get_range(i) :
             (newParExtremes.get_range(i) - overallRange) / overallRange;
@@ -499,7 +489,7 @@ MOGAConverger::GetMetricValue(
         // If posting, only post the specific.  Those interested in the
         // general should be using appropriate predicates to get this post.
         JEGA_IF_MESSAGE_BOARD(
-            if(EXPANSE_MSG_INFO.WillPost() || this->_expanseMsgInfo.WillPost())
+            if(EXP_MSG_INFO().WillPost() || this->_expanseMsgInfo.WillPost())
                 this->_expanseMsgInfo.Post(maxExp);
         )
 
@@ -509,7 +499,7 @@ MOGAConverger::GetMetricValue(
         const double denIncAbs = std::fabs(denInc);
 
         JEGA_IF_MESSAGE_BOARD(
-            if(DENSITY_MSG_INFO.WillPost() || this->_densityMsgInfo.WillPost())
+            if(DEN_MSG_INFO().WillPost() || this->_densityMsgInfo.WillPost())
                 this->_densityMsgInfo.Post(denInc);
         )
 
@@ -519,7 +509,7 @@ MOGAConverger::GetMetricValue(
         const double fracDomAbs = std::fabs(fracDom);
 
         JEGA_IF_MESSAGE_BOARD(
-            if(DEPTH_MSG_INFO.WillPost() || this->_depthMsgInfo.WillPost())
+            if(DEP_MSG_INFO().WillPost() || this->_depthMsgInfo.WillPost())
                 this->_depthMsgInfo.Post(fracDom);
         )
 

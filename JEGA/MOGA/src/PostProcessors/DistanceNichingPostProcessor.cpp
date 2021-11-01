@@ -403,9 +403,10 @@ DistanceNichingPostProcessor::PostProcess(
     const size_t nof = target.GetNOF();
 
     // Make sure that the Taboo mark is clear on all designs.
-    for(DesignDVSortSet::const_iterator it(group.BeginDV());
-        it!=group.EndDV(); ++it) (*it)->ModifyAttribute(TABOO_MARK, false);
-
+    DesignStatistician::MarkAllDesigns(
+        group.BeginDV(), group.EndDV(), TABOO_MARK, false
+        );
+    
     // Synchronize the lists just in case.
     group.SynchronizeOFAndDVContainers();
 

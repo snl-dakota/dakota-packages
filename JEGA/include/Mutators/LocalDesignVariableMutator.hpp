@@ -545,7 +545,7 @@ class LocalDesignVariableMutator :
 		bool
 		DvIsVar(
             const roadmap& rm,
-			const std::size_t& dvNum
+			size_t dvNum
 			) const;
 
     /*

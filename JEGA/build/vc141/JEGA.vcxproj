@@ -1273,7 +1273,9 @@ lib.exe /OUT:"$(OutDir)libjega.lib" "..\..\eddy\threads\vc141\x64\$(Configuratio
       <PreprocessSuppressLineNumbers Condition="'$(Configuration)|$(Platform)'=='Release_mt_sl|x64'">false</PreprocessSuppressLineNumbers>
     </ClCompile>
     <ClCompile Include="..\..\Utilities\src\DesignGroupVector.cpp" />
-    <ClCompile Include="..\..\Utilities\src\DesignStatistician.cpp" />
+    <ClCompile Include="..\..\Utilities\src\DesignStatistician.cpp">
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug_mt_sl|x64'">false</PreprocessToFile>
+    </ClCompile>
     <ClCompile Include="..\..\Utilities\src\DesignTarget.cpp" />
     <ClCompile Include="..\..\Utilities\src\DesignVariableInfo.cpp" />
     <ClCompile Include="..\..\Utilities\src\DesignVariableNatureBase.cpp" />

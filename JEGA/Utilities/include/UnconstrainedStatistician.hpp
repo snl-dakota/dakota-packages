@@ -179,12 +179,10 @@ class UnconstrainedStatistician
 
         /// A base class for Penalizer functors.
         /**
-         * This class inherits the unary_function and provides a single method
-         * useful for determining whether or not a Design is ok for penalty
-         * computations.
+         * This class provides a single method useful for determining whether or
+         * not a Design is ok for penalty computations.
          */
-        class Penalizer :
-            public std::unary_function<Design*, double>
+        class Penalizer
         {
             /*
             ====================================================================

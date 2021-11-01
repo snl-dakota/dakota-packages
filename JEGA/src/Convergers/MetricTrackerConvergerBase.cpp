@@ -108,19 +108,6 @@ const DoubleStack::size_type MetricTrackerConvergerBase::DEFAULT_NUM_GENS(10);
 
 const double MetricTrackerConvergerBase::DEFAULT_CHNG(0.1);
 
-JEGA_IF_MESSAGE_BOARD(
-    MessageInfo MetricTrackerConvergerBase::METRIC_MSG_INFO(
-        MessageBoard::MessageIdentifier(0x0, "metric_track_converger", "metric")
-        );
-
-    MessageInfo MetricTrackerConvergerBase::CURR_PCT_CHNG_INFO(
-        MessageBoard::MessageIdentifier(
-            0x0, "metric_track_converger", "curr_pct_chng"
-            )
-        );
-)
-
-
 /*
 ================================================================================
 Mutators
@@ -238,7 +225,7 @@ MetricTrackerConvergerBase::CheckConvergence(
     // If posting, only post the specific.  Those interested in the general
     // should be using appropriate predicates to get this post.
     JEGA_IF_MESSAGE_BOARD(
-        if(METRIC_MSG_INFO.WillPost() || this->_metricMsgInfo.WillPost())
+        if(MET_MSG_INFO().WillPost() || this->_metricMsgInfo.WillPost())
             this->_metricMsgInfo.Post(metric);
         )
 
@@ -299,7 +286,7 @@ MetricTrackerConvergerBase::CheckConvergence(
     // If posting, only post the specific.  Those interested in the general
     // should be using appropriate predicates to get this post.
     JEGA_IF_MESSAGE_BOARD(
-        if(CURR_PCT_CHNG_INFO.WillPost() || this->_pctChngMsgInfo.WillPost())
+        if(PCT_CHNG_MSG_INFO().WillPost() || this->_pctChngMsgInfo.WillPost())
             this->_pctChngMsgInfo.Post(pctChng);
         )
 

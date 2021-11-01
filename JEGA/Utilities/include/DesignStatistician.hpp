@@ -2969,6 +2969,16 @@ class DesignStatistician
             Pred predicate,
             eddy::utilities::int32_t cutoff
             );
+        
+        template <typename FwdIt>
+        static inline
+        void
+        MarkAllDesigns(
+            FwdIt first,
+            const FwdIt& end,
+            const std::size_t mark,
+            const bool value = true
+            );
 
     /*
     ============================================================================
@@ -3016,7 +3026,7 @@ class DesignStatistician
             const typename FromSet_T::iterator& end,
             Pred predicate
             );
-
+        
         /**
          * \brief Separates the Designs for which \a predicate returns true
          *        from \a from

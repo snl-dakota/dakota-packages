@@ -64,6 +64,7 @@ Includes
 #include <../Utilities/include/DesignGroup.hpp>
 #include <utilities/include/EDDY_DebugScope.hpp>
 #include <../Utilities/include/WeightedSumMap.hpp>
+#include <../Utilities/include/DesignGroupVector.hpp>
 #include <../Utilities/include/ParameterExtractor.hpp>
 #include <../Utilities/include/DesignStatistician.hpp>
 #include <../Utilities/include/SingleObjectiveStatistician.hpp>
@@ -238,6 +239,8 @@ PenaltyFitnessAssessorBase::AssessFitness(
     JEGALOG_II(this->GetLogger(), ldebug(), this,
         text_entry(ldebug(), this->GetName() + ": Assessing fitness.")
         )
+
+    if (groups.empty()) return new FitnessRecord(0);
 
     // Get a set of all weighted sums.
     WeightedSumMap wSums(SingleObjectiveStatistician::ComputeWeightedSums(

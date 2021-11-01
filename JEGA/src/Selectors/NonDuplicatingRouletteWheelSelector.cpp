@@ -66,6 +66,7 @@ Includes
 #include <../Utilities/include/Logging.hpp>
 #include <utilities/include/EDDY_DebugScope.hpp>
 #include <../Utilities/include/DesignGroupVector.hpp>
+#include <../Utilities/include/DesignStatistician.hpp>
 #include <utilities/include/RandomNumberGenerator.hpp>
 #include <Selectors/NonDuplicatingRouletteWheelSelector.hpp>
 
@@ -268,12 +269,11 @@ NonDuplicatingRouletteWheelSelector::Select(
         DesignGroupVector::const_iterator git(from.begin());
 
         for(; git!=from.end(); ++git)
-        {
             // prepare to iterate the Designs of this group
-            DesignOFSortSet::const_iterator e((*git)->EndOF());
-            for(DesignOFSortSet::const_iterator it((*git)->BeginOF());
-                it!=e; ++it) (*it)->ModifyAttribute(SEL_ATT, true);
-        }
+            DesignStatistician::MarkAllDesigns(
+                (*git)->BeginOF(), (*git)->EndOF(), SEL_ATT, true
+                );
+
         count = tsize;
     }
     else

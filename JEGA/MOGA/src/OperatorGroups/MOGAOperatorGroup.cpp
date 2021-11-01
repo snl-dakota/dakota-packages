@@ -63,9 +63,9 @@ Includes
 #include <../MOGA/include/FitnessAssessors/LayerFitnessAssessor.hpp>
 #include <../MOGA/include/PostProcessors/DistanceNichingPostProcessor.hpp>
 #include <../MOGA/include/FitnessAssessors/DominationCountFitnessAssessor.hpp>
-//#include <../MOGA/include/NichePressureApplicators/SpaceFillingNicher.hpp>
+#include <../MOGA/include/NichePressureApplicators/SpaceFillingNicher.hpp>
 #include <../MOGA/include/NichePressureApplicators/RadialNichePressureApplicator.hpp>
-//#include <../MOGA/include/NichePressureApplicators/RandomNichePressureApplicator.hpp>
+#include <../MOGA/include/NichePressureApplicators/RandomNichePressureApplicator.hpp>
 #include <../MOGA/include/NichePressureApplicators/DistanceNichePressureApplicator.hpp>
 #include <../MOGA/include/NichePressureApplicators/MaxDesignsNichePressureApplicator.hpp>
 
@@ -252,12 +252,12 @@ MOGAOperatorGroup::AcquireOperators(
         DO_REGISTER(
             NichePressureApplicatorRegistry, MaxDesignsNichePressureApplicator
             );
-        //DO_REGISTER(
-        //    NichePressureApplicatorRegistry, RandomNichePressureApplicator
-        //    );
-        //DO_REGISTER(
-        //    NichePressureApplicatorRegistry, SpaceFillingNicher
-        //    );
+        DO_REGISTER(
+            NichePressureApplicatorRegistry, RandomNichePressureApplicator
+            );
+        DO_REGISTER(
+            NichePressureApplicatorRegistry, SpaceFillingNicher
+            );
         DO_REGISTER(PostProcessorRegistry, DistanceNichingPostProcessor);
 
 #undef DO_REGISTER

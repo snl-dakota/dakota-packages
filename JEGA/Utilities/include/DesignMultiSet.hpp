@@ -826,9 +826,18 @@ class JEGA_SL_IEDECL DesignMultiSet :
     */
     private:
 
-
-
-
+        inline
+        void
+        mark_all_designs(
+            iterator first,
+            const iterator& end,
+            const std::size_t mark,
+            const bool value
+            )
+        {
+            for (; first != end; ++first)
+                (*first)->ModifyAttribute(mark, value);
+        }
 
     /*
     ============================================================================
@@ -883,8 +892,7 @@ class JEGA_SL_IEDECL DesignMultiSet :
  * \brief The class that will serve as a predicate for sorting Designs by
  *        design variable.
  */
-class JEGA_SL_IEDECL DVMultiSetPredicate :
-    public std::binary_function<Design*, Design*, bool>
+class JEGA_SL_IEDECL DVMultiSetPredicate
 {
     /*
     ============================================================================
@@ -923,7 +931,7 @@ class JEGA_SL_IEDECL DVMultiSetPredicate :
             ) const
         {
             EDDY_FUNC_DEBUGSCOPE
-            EDDY_ASSERT(&d1->GetDesignTarget() == &d2->GetDesignTarget())
+            EDDY_ASSERT(&d1->GetDesignTarget() == &d2->GetDesignTarget());
 
             const std::size_t ndv = d1->GetDesignTarget().GetNDV();
 
@@ -1047,8 +1055,7 @@ class JEGA_SL_IEDECL DesignDVSortSet :
  * \brief The class that will serve as a predicate for sorting Designs by
  *        objective function
  */
-class JEGA_SL_IEDECL OFMultiSetPredicate :
-    public std::binary_function<Design*, Design*, bool>
+class JEGA_SL_IEDECL OFMultiSetPredicate
 {
     /*
     ============================================================================
@@ -1226,8 +1233,7 @@ class JEGA_SL_IEDECL DesignOFSortSet :
 }; // class DesignOFSortSet
 
 /// The class that will serve as a predicate for sorting Designs by constraint
-class JEGA_SL_IEDECL CNMultiSetPredicate :
-    public std::binary_function<Design*, Design*, bool>
+class JEGA_SL_IEDECL CNMultiSetPredicate
 {
     /*
     ============================================================================
@@ -1266,7 +1272,7 @@ class JEGA_SL_IEDECL CNMultiSetPredicate :
             ) const
         {
             EDDY_FUNC_DEBUGSCOPE
-            EDDY_ASSERT(&d1->GetDesignTarget() == &d2->GetDesignTarget())
+            EDDY_ASSERT(&d1->GetDesignTarget() == &d2->GetDesignTarget());
 
             // start iterating the constraints.  Most of the time,
             // it will not be necessary to go past the first one.

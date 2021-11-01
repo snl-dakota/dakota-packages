@@ -390,7 +390,7 @@ public ref class MMessageBoard
                 ~Subscription(
                     )
                 {
-                    delete _subsc;
+                    delete this->_subsc;
                 }
 
         };

@@ -531,8 +531,9 @@ MaxDesignsNichePressureApplicator::ApplyNichePressure(
     if(population.IsEmpty()) return;
 
     // Make sure that the Taboo mark is clear on all designs.
-    for(DesignDVSortSet::const_iterator it(population.BeginDV());
-        it!=population.EndDV(); ++it) (*it)->ModifyAttribute(TABOO_MARK, false);
+    DesignStatistician::MarkAllDesigns(
+        population.BeginDV(), population.EndDV(), TABOO_MARK, false
+        );
 
     // in case we are not caching, we will need the target below.
     DesignTarget& target = this->GetDesignTarget();

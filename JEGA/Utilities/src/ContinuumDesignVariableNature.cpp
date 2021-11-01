@@ -60,6 +60,7 @@ Includes
 #include <../Utilities/include/JEGAConfig.hpp>
 
 #include <cfloat>
+#include <limits>
 #include <type_traits>
 #include <utilities/include/Math.hpp>
 #include <../Utilities/include/Logging.hpp>

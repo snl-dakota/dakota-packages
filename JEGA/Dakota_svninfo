@@ -1,11 +1,12 @@
 Path: .
-URL: https://software.sandia.gov/svn/JEGA/trunk
-Repository Root: https://software.sandia.gov/svn/JEGA
+Working Copy Root Path: /home/briadam/dakota/source/packages/external/trunk
+URL: https://teamforge.sandia.gov/svn/repos/jega/trunk
+Repository Root: https://teamforge.sandia.gov/svn/repos/jega
 Repository UUID: 59939028-7f1d-0410-b52d-a77c8a17edaf
-Revision: 826
+Revision: 855
 Node Kind: directory
 Schedule: normal
 Last Changed Author: jpeddy
-Last Changed Rev: 826
-Last Changed Date: 2019-01-16 15:37:26 -0700 (Wed, 16 Jan 2019)
+Last Changed Rev: 855
+Last Changed Date: 2021-11-01 10:58:27 -0600 (Mon, 01 Nov 2021)
 

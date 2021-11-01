@@ -298,7 +298,7 @@ class MaxDesignsNichePressureApplicator :
 
 
         inline
-        const std::size_t&
+        size_t
         GetMaximumDesigns(
             ) const;
 

@@ -146,16 +146,19 @@ Accessors
 Public Methods
 ================================================================================
 */
-void
+bool
 LRUDesignCache::indexed_list::remove(
     const key_type& key
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    set_iter_t it(this->_indices.find(key));
-    if(it == this->_indices.end()) return;
+    map_iter_t it(this->_indices.find(key));
+    if(it == this->_indices.end()) return false;
+    const size_type oSize = this->_data.size();
     this->_data.erase(it->second);
     this->_indices.erase(it);
+    EDDY_ASSERT(this->_data.size() == this->_indices.size());
+    return this->_data.size() < oSize;
 }
 
 
@@ -179,6 +182,10 @@ LRUDesignCache::erase_exacts(
         if(*bounds.first == key) this->erase(bounds.first++);
         else ++bounds.first;
     }
+
+    EDDY_ASSERT(
+        !this->_doCache || (this->_data.size() == this->_lruList.size())
+        );
 
     // return the difference in size from the beginning.
     return isize - this->_data.size();
@@ -204,14 +211,28 @@ LRUDesignCache::manage_size(
 {
     EDDY_FUNC_DEBUGSCOPE
 
-    if(this->_doCache)
-	{
-		while(this->_data.size() > this->_maxSize)
-		{
-			this->_data.erase(this->_lruList.front());
-			this->_lruList.remove_first();
-		}
-	}
+    if (this->_doCache)
+    {
+        EDDY_ASSERT(this->_data.size() == this->_lruList.size());
+
+        while (this->_data.size() > this->_maxSize)
+        {
+            key_type toDel = this->_lruList.front();
+            const DesignDVSortSet::size_type nRem =
+                this->_data.erase_exacts(toDel);
+
+            this->_lruList.remove_first();
+
+            // If nRem is greater than 1, then we may have additional instances
+            // of toDel in the LRU list.  Get them out.
+            if (nRem > 1)
+                while (this->_lruList.remove(toDel));
+
+            delete toDel;
+        }
+
+        EDDY_ASSERT(this->_data.size() == this->_lruList.size());
+    }
 }
 
 /*

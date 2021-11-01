@@ -80,6 +80,8 @@ Static Member Data Definitions
 template <typename Pred>
 const std::size_t DesignMultiSet<Pred>::MARK = 7;
 
+
+
 /*
 ================================================================================
 Inline Mutators
@@ -415,8 +417,7 @@ DesignMultiSet<Pred>::mark(
     iterator_pair bounds(this->equal_range(key));
 
     // unmark all those before the range
-    for(iterator it(this->begin()); it!=bounds.first; ++it)
-        (*it)->ModifyAttribute(mark, false);
+    mark_all_designs(this->begin(), bounds.first(), mark, false);
 
     // now mark all those in the range.  Also track our number marked.
     for(; bounds.first!=bounds.second; ++bounds.first)
@@ -426,9 +427,7 @@ DesignMultiSet<Pred>::mark(
     }
 
     // now unmark all those after the range.
-    const const_iterator e(this->end());
-    for(; bounds.second!=e; ++bounds.second)
-        (*bounds.second)->ModifyAttribute(mark, false);
+    mark_all_designs(bounds.second, this->end(), mark, false);
 
     return nmarked;
 }
@@ -449,8 +448,7 @@ DesignMultiSet<Pred>::mark_not_exact(
     iterator_pair bounds(this->equal_range(key));
 
     // unmark all those before the range
-    for(iterator it(this->begin()); it!=bounds.first; ++it)
-        (*it)->ModifyAttribute(mark, false);
+    mark_all_designs(this->begin(), bounds.first, mark, false);
 
     // now mark all those in the range that are not the same exact
     // object as key.  Also track our number marked.
@@ -462,9 +460,7 @@ DesignMultiSet<Pred>::mark_not_exact(
     }
 
     // now unmark all those after the range.
-    const const_iterator e(this->end());
-    for(; bounds.second!=e; ++bounds.second)
-        (*bounds.second)->ModifyAttribute(mark, false);
+    mark_all_designs(bounds.second, this->end(), mark, false);
 
     return nmarked;
 }
@@ -476,7 +472,7 @@ DesignMultiSet<Pred>::pop_front(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(!this->empty())
+    EDDY_ASSERT(!this->empty());
     this->base_type::erase(this->base_type::begin());
 
 } // DesignMultiSet::pop_front
@@ -488,7 +484,7 @@ DesignMultiSet<Pred>::pop_back(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(!this->empty())
+    EDDY_ASSERT(!this->empty());
 
     // cannot use --end() on some platforms.
     iterator it(this->base_type::end());
@@ -505,7 +501,7 @@ DesignMultiSet<Pred>::replace(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(where != this->end())
+    EDDY_ASSERT(where != this->end());
 
     this->base_type::erase(where);
     return this->base_type::insert(key);

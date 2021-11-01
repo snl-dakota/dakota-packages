@@ -108,8 +108,7 @@ Begin Namespace
 namespace JEGA {
     namespace Algorithms {
 
-
-
+        
 
 
 /*
@@ -315,9 +314,10 @@ RandomNichePressureApplicator::ApplyNichePressure(
     if(population.IsEmpty()) return;
 
     // Make sure that the Taboo mark is clear on all designs.
-    for(DesignDVSortSet::const_iterator it(population.BeginDV());
-        it!=population.EndDV(); ++it) (*it)->ModifyAttribute(TABOO_MARK, false);
-
+    DesignStatistician::MarkAllDesigns(
+        population.BeginDV(), population.EndDV(), TABOO_MARK, false
+        );
+    
     // in case we are not caching, we will need the target below.
     DesignTarget& target = this->GetDesignTarget();
 
@@ -332,7 +332,7 @@ RandomNichePressureApplicator::ApplyNichePressure(
 
     // See if there are fewer solutions in the population than we are to
     // niche to.  If so, we keep them all.
-    if(population.SizeOF() < n2Keep) return;
+    if(population.SizeOF() <= n2Keep) return;
 
     JEGALOG_II(this->GetLogger(), lverbose(), this,
         ostream_entry(lverbose(), this->GetName() + ": Population size "
@@ -343,11 +343,7 @@ RandomNichePressureApplicator::ApplyNichePressure(
 
     JEGA_LOGGING_IF_ON(std::size_t prevPopSize = popByOf.size();)
 
-    vector<const Design*> allDesVec;
-    allDesVec.reserve(popByOf.size());
-
-    for(DesignOFSortSet::const_iterator curr(popByOf.begin());
-        curr!=popByOf.end(); ++curr) allDesVec.push_back(*curr);
+    volatile_vector<const Design*> allDesVec(popByOf, TABOO_MARK);
     
     // Start at the end of the list and remove the required number all the while
     // skipping any taboo.
@@ -359,7 +355,7 @@ RandomNichePressureApplicator::ApplyNichePressure(
 			0, static_cast<int>(allDesVec.size() - 1)
 			);
         const Design* des = allDesVec[index];
-        if(des->HasAttribute(TABOO_MARK)) continue;
+        allDesVec.erase(index);
 
         const bool buffered = this->BufferDesign(des);
         population.Erase(des);

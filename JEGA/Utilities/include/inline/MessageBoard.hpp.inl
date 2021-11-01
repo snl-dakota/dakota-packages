@@ -287,19 +287,6 @@ MessageBoard::Subscription::Subscription(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 template <typename PredT, typename CallbackT>
 inline
 MessageBoard::Subscription
@@ -368,7 +355,8 @@ MessageBoard::RemoveSubscriptionListener(
     JEGA_IF_THREADSAFE(
         SubscriptionListenerCallbackVector::scoped_lock l(SLVEC())
         );
-    SLVEC().erase(SLVEC().begin() + tag);
+    SLVEC()[tag] = 0;
+    //SLVEC().erase(SLVEC().begin() + tag);
 }
 
 inline
@@ -380,7 +368,8 @@ MessageBoard::RemoveSubscriptionCanceledListener(
     JEGA_IF_THREADSAFE(
         SubscriptionListenerCallbackVector::scoped_lock l(SCLVEC())
         );
-    SCLVEC().erase(SCLVEC().begin() + tag);
+    SCLVEC()[tag] = 0;
+    //SCLVEC().erase(SCLVEC().begin() + tag);
 }
 
 inline
@@ -436,9 +425,14 @@ MessageInfo::Post(
     const T& msg
     ) const
 {
-    std::ostringstream ostr;
-    ostr << msg;
-    return this->Post(ostr.str());
+    if (this->WillPost())
+    {
+        std::ostringstream ostr;
+        ostr << msg;
+        MessageBoard::PostMessage(this->_msgId, ostr.str());
+        return true;
+    }
+    return false;
 }
 
 inline
@@ -487,7 +481,7 @@ Inline Private Methods
 inline
 void
 MessageInfo::OnSubscription(
-    MessageBoard::Subscription subsc
+    const MessageBoard::Subscription subsc
     )
 {
     if(subsc.Check(this->_msgId)) ++this->_listenerCt;
@@ -496,7 +490,7 @@ MessageInfo::OnSubscription(
 inline
 void
 MessageInfo::OnSubscriptionCanceled(
-    MessageBoard::Subscription subsc
+    const MessageBoard::Subscription subsc
     )
 {
     if(this->_listenerCt > 0 && subsc.Check(this->_msgId))

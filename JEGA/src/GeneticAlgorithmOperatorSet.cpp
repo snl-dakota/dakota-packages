@@ -232,7 +232,7 @@ Accessors
 */
 #define GET_BODY(opname) \
     EDDY_FUNC_DEBUGSCOPE \
-    EDDY_ASSERT(this->opname != 0x0) \
+    EDDY_ASSERT(this->opname != 0x0); \
     return *this->opname;
 
 #define GET_METHOD(optype, opname) \

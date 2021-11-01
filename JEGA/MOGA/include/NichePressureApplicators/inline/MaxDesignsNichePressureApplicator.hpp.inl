@@ -114,7 +114,7 @@ MaxDesignsNichePressureApplicator::GetDistancePercentage(
 }
 
 inline
-const std::size_t&
+size_t
 MaxDesignsNichePressureApplicator::GetMaximumDesigns(
     ) const
 {

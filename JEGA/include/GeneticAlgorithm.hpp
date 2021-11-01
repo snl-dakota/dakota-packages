@@ -498,7 +498,7 @@ class JEGA_SL_IEDECL GeneticAlgorithm
             );
 
         inline
-        const std::size_t&
+        std::size_t
         GetStartTime(
             ) const;
 

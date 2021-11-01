@@ -866,7 +866,7 @@ class MultiObjectiveStatistician
         std::size_t
         TagParetoExtremeDesigns(
             const DesContT& designs,
-            const std::size_t& tag
+            size_t tag
             );
 
         /**
@@ -1195,7 +1195,7 @@ class MultiObjectiveStatistician
         MarkOneOfBestDesigns(
             const DesContT& designs,
             const ObjectiveFunctionInfo& ofInfo,
-            const std::size_t& tag
+            size_t tag
             );
 
         template <typename DesContT>

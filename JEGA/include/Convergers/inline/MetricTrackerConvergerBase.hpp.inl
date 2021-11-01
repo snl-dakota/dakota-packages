@@ -188,6 +188,39 @@ Inline Private Methods
 ================================================================================
 */
 
+#ifdef JEGA_MESSAGE_BOARD
+
+inline
+const JEGA::Utilities::MessageInfo&
+MetricTrackerConvergerBase::MET_MSG_INFO(
+    )
+{
+    static const JEGA::Utilities::MessageInfo msgInfo(
+        JEGA::Utilities::MessageBoard::MessageIdentifier(
+            0x0, "metric_track_converger", "metric"
+            )
+        );
+
+    return msgInfo;
+}
+
+
+inline
+const JEGA::Utilities::MessageInfo&
+MetricTrackerConvergerBase::PCT_CHNG_MSG_INFO(
+    )
+{
+    static const JEGA::Utilities::MessageInfo msgInfo(
+        JEGA::Utilities::MessageBoard::MessageIdentifier(
+            0x0, "metric_track_converger", "curr_pct_chng"
+            )
+        );
+
+    return msgInfo;
+}
+
+#endif
+
 
 
 

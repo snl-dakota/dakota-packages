@@ -107,7 +107,7 @@ Inline Accessors
 ================================================================================
 */
 inline
-const std::size_t&
+size_t
 RandomNichePressureApplicator::GetMaximumDesigns(
     ) const
 {

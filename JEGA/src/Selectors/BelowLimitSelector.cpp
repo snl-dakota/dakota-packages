@@ -292,7 +292,7 @@ BelowLimitSelector::PollForParameters(
     )
 {
     EDDY_FUNC_DEBUGSCOPE
-
+        
     bool success = ParameterExtractor::GetDoubleFromDB(
         db, "method.jega.fitness_limit", this->_limit
         );

@@ -237,8 +237,8 @@ class SimpleFunctorEvaluator :
                 bool
                 Evaluate(
                     const std::vector<double>& X,
-                    const std::vector<obj_val_t>& F,
-                    const std::vector<con_val_t>& G
+                    std::vector<obj_val_t>& F,
+                    std::vector<con_val_t>& G
                     ) = 0;
 
             /*

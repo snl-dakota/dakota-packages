@@ -138,7 +138,7 @@ inline
 bool
 LocalDesignVariableMutator::DvIsVar(
 	const roadmap& rm,
-	const std::size_t& dvNum
+	size_t dvNum
 	) const
 {
     return rm._hiOptVar < 0 ||

@@ -66,7 +66,6 @@ Includes
 #include <GeneticAlgorithmFitnessAssessor.hpp>
 #include <utilities/include/EDDY_DebugScope.hpp>
 #include <../Utilities/include/LRUDesignCache.hpp>
-#include <../Utilities/include/DesignGroupVector.hpp>
 #include <../Utilities/include/DesignStatistician.hpp>
 #include <../Utilities/include/ParameterExtractor.hpp>
 #include <../Utilities/include/SingleObjectiveStatistician.hpp>
@@ -227,7 +226,9 @@ SOGA::ReclaimOptimal(
     // separate the feasible from the discards because
     // That's all we're interested in.
     DesignDVSortSet feasible(
-        DesignStatistician::GetFeasible(discards.DVSortSet())
+        DesignStatistician::GetNonIllconditioned(
+            DesignStatistician::GetFeasible(discards.DVSortSet())
+            )
         );
 
     // if there are no feasible, get out.
@@ -365,8 +366,7 @@ SOGA::FlushNonOptimal(
     if(bests.second.size() == pop.SizeDV()) return;
 
     // unset all 7 attributes in all designs.
-    for(DesignDVSortSet::const_iterator it(pop.BeginDV());
-        it!=pop.EndDV(); ++it) (*it)->ModifyAttribute(7, false);
+    DesignStatistician::MarkAllDesigns(pop.BeginDV(), pop.EndDV(), 7, false);
 
     // tag all the bests with a marker so we can flush the others.
     for(vector<DesignOFSortSet::const_iterator>::const_iterator it(

@@ -100,7 +100,7 @@ DesignVariableInfo::GetType(
     ) const
 {
     EDDY_FUNC_DEBUGSCOPE
-    EDDY_ASSERT(this->_type != 0x0)
+    EDDY_ASSERT(this->_type != 0x0);
     return *this->_type;
 }
 

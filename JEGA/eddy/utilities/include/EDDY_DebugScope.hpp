@@ -104,7 +104,7 @@ Preprocessor Definitions and Macros
 #   define EDDY_DEBUG(a, b)                                                 \
         if(a) {                                                             \
             eddy::utilities::EDDY_Debug::_Report((b), __FILE__, __LINE__);  \
-        }
+        } else void(0)
 
     /// This macro causes a scope trace with messaging (but no abort).
     /**
@@ -118,7 +118,7 @@ Preprocessor Definitions and Macros
 #   define EDDY_WARNING(a, b)                                               \
         if(a) {                                                             \
             eddy::utilities::EDDY_Debug::_Warning((b), __FILE__, __LINE__); \
-        }
+        } else void(0)
 
     /// This macro causes a scope trace and program abort.
     /**
@@ -131,7 +131,7 @@ Preprocessor Definitions and Macros
 #   define EDDY_ASSERT(a)                                                   \
         if(!(a)) {                                                          \
             eddy::utilities::EDDY_Debug::_Assert(#a, __FILE__, __LINE__);   \
-        }
+        } else void(0)
 
     /// This macro enables catching of signal \a a.
     /**
@@ -200,7 +200,7 @@ Preprocessor Definitions and Macros
 #   define EDDY_MESSAGE(a, b)                                               \
         if(a) {                                                             \
             eddy::utilities::EDDY_Debug::_Message((b),__FILE__,__LINE__);   \
-        }
+        } else void(0)
 
     /// This macro causes execution of the statement \a a.
     /**

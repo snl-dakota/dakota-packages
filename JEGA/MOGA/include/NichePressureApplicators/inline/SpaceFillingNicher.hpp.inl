@@ -109,11 +109,20 @@ Inline Accessors
 
 
 inline
-const std::size_t&
+std::size_t
 SpaceFillingNicher::GetNumDesigns2Keep(
     ) const
 {
     return this->_nDes2Keep;
+}
+
+
+inline
+double
+SpaceFillingNicher::GetRandomizedProportion(
+    ) const
+{
+    return this->_randProp;
 }
 
 
@@ -144,7 +153,7 @@ Inline Subclass Visible Methods
 double
 SpaceFillingNicher::NormalizedObjVal(
     const JEGA::Utilities::Design& des,
-    const size_t& of,
+    size_t of,
 	const eddy::utilities::extremes<obj_val_t>& popExtremes
     )
 {

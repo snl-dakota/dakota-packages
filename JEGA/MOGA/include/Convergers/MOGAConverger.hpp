@@ -218,11 +218,6 @@ class MOGAConverger :
     */
     private:
 
-        JEGA_IF_MESSAGE_BOARD(
-            static JEGA::Utilities::MessageInfo DENSITY_MSG_INFO;
-            static JEGA::Utilities::MessageInfo EXPANSE_MSG_INFO;
-            static JEGA::Utilities::MessageInfo DEPTH_MSG_INFO;
-            )
 
     private:
 
@@ -549,6 +544,24 @@ class MOGAConverger :
             );
 
 
+#ifdef JEGA_MESSAGE_BOARD
+
+        static inline
+        const JEGA::Utilities::MessageInfo&
+        DEN_MSG_INFO(
+            );
+            
+        static inline
+        const JEGA::Utilities::MessageInfo&
+        EXP_MSG_INFO(
+            );
+                
+        static inline
+        const JEGA::Utilities::MessageInfo&
+        DEP_MSG_INFO(
+            );
+
+#endif
 
     /*
     ============================================================================
