@@ -52,8 +52,6 @@ add_library(jega
   Mutators/RandomDesignVariableMutator.cpp 
   Mutators/UniformOffsetMutator.cpp 
   NichePressureApplicators/NullNichePressureApplicator.cpp
-  NichePressureApplicators/RandomNichePressureApplicator.cpp
-  NichePressureApplicators/SpaceFillingNicher.cpp
   OperatorGroups/AllOperators.cpp 
   OperatorGroups/DuplicateFreeOperatorGroup.cpp 
   OperatorGroups/NullOperatorGroup.cpp 

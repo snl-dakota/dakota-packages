@@ -6,6 +6,8 @@ add_library(moga
   src/NichePressureApplicators/DistanceNichePressureApplicator.cpp 
   src/NichePressureApplicators/MaxDesignsNichePressureApplicator.cpp 
   src/NichePressureApplicators/RadialNichePressureApplicator.cpp 
+  src/NichePressureApplicators/RandomNichePressureApplicator.cpp
+  src/NichePressureApplicators/SpaceFillingNicher.cpp
   src/OperatorGroups/DominationCountOperatorGroup.cpp 
   src/OperatorGroups/MOGAOperatorGroup.cpp 
   src/PostProcessors/DistanceNichingPostProcessor.cpp
