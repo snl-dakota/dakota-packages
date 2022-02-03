@@ -3761,7 +3761,7 @@ realpair* SciPlotListReturnPtr (Widget wi, int idnum, int* num_xy_pairs)
   SciPlotList *p;
   SciPlotWidget w;
   if (!XtIsSciPlot(wi))
-    return;
+    return NULL;
   w = (SciPlotWidget) wi;
 
   p = _ListFind(w, idnum);
@@ -3792,7 +3792,7 @@ Boolean SciPlotQuickUpdateCheck (Widget wi)
 {
   SciPlotWidget w;
   if (!XtIsSciPlot(wi))
-    return;
+    return False;
   w = (SciPlotWidget) wi;
 
   return CheckMinMax(w);
