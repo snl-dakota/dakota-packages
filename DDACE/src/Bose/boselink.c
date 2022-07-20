@@ -12,7 +12,7 @@ int bose(struct GF *gf, int **A, int ncol);
 int bush(struct GF *gf, int **A, int str, int ncol);
 void GF_free(struct GF *gf);
 int GF_getfield(int q, struct GF *gf);
-
+void free_imatrix(int **m, int nrl, int nrh, int ncl, int nch);
 
 int bose_link( int n, int ninputs, int str, int ***AA )
 {
