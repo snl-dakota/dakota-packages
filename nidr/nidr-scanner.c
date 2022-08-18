@@ -515,6 +515,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #include <stdlib.h>	/* possibly redundant, but necessary for strtod on some systems */
 
+/* for isatty() */
+#if defined(_WIN32) || defined(_WIN64)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
 static int my_nidr_input(char*, int);
 extern char *nidr_KWscopy(const char*);
 
