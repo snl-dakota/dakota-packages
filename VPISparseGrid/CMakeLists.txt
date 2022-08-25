@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.17)
 PROJECT("VPISparseGrid" CXX)
 
 # Set the export name for install targets; parent packages likely want

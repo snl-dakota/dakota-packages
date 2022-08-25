@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.17)
 project(ddace C CXX Fortran)
 
 include(CheckFunctionExists)

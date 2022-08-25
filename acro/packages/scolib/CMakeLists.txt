@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.17)
 project(scolib)
 set(ExportTarget ${CMAKE_PROJECT_NAME}-targets CACHE STRING
   "Name for the export target for ${CMAKE_PROJECT_NAME}")

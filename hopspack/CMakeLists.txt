@@ -11,7 +11,7 @@
 
 
 #---- Specify the CMake version required.
-CMAKE_MINIMUM_REQUIRED (VERSION 2.8.9)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.17)
 
 #---- Declaring the project name will define ${HOPSPACK_SOURCE_DIR} to be
 #---- the path to this source file, and ${HOPSPACK_BINARY_DIR} to be the path

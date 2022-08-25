@@ -4,7 +4,7 @@
 # Revision 0.1 - dbhart - 20100701
 
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.17)
 project(UTILIB)
 set(ExportTarget ${CMAKE_PROJECT_NAME}-targets CACHE STRING 
   "Name for the export target for ${CMAKE_PROJECT_NAME}")

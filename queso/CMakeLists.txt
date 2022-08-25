@@ -2,7 +2,7 @@
 # examples, etc.).  Does not properly manage all QUESO
 # build/conditional compile settings.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.17)
 
 project(Queso CXX)
 

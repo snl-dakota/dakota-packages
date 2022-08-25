@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.17)
 project(PSUADE)
 
 # Set the export name for install targets; parent packages likely want

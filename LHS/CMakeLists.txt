@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.17)
 project(LHS C Fortran)
 set(CMAKE_MODULE_PATH ${LHS_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${LHS_SOURCE_DIR}")

@@ -11,7 +11,7 @@
 #   build src-scanner: nidr-scanner.c nidr-parser.h nidr-parser.c nidrgen.c
 #   NOTE: target "nidr-generated-files" must be explictly invoked
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.17)
 
 project(NIDR)
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 project(DFFTPACK C Fortran)
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${DFFTPACK_SOURCE_DIR}")
   include(FortranCInterface)
