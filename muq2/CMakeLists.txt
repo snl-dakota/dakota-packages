@@ -166,6 +166,8 @@ MESSAGE("${MUQ_LOG_SUMMARY}")
 ###############################################
 # Add a target to build documentation
 ###############################################
+option(MUQ_ENABLE_DOCS "MUQ: Whether to build Doxygen docs" OFF)
+if(MUQ_ENABLE_DOCS)
 # add a target to generate API documentation with Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
@@ -200,5 +202,6 @@ if(DOXYGEN_FOUND)
 
 	endif(Python3_Interpreter_FOUND)
 endif(DOXYGEN_FOUND)
+endif()
 
-add_subdirectory(examples EXCLUDE_FROM_ALL)
+#add_subdirectory(examples EXCLUDE_FROM_ALL)
