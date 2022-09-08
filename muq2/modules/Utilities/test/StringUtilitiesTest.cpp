@@ -56,3 +56,13 @@ TEST(Utilities, StringSplit)
         EXPECT_EQ(truth.at(i), parts.at(i));
 
 }
+
+TEST(Utilities, StringCombine)
+{   
+    std::string truth = "String1-String2-String3";
+    std::vector<std::string> input = {"String1", "String2", "String3"};
+
+    std::string output = Combine(input, '-');
+
+    EXPECT_EQ(truth, output);
+}

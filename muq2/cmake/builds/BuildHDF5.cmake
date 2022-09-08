@@ -11,21 +11,29 @@ if(NOT HDF5_EXTERNAL_SOURCE)
 
 endif()
 
+set(HDF5_CFLAGS "-Wno-error=implicit-function-declaration")
 if(MUQ_USE_OPENMPI)
-	set(HDF5_PARALLEL_FLAG	"--enable-parallel" "CFLAGS=-fPIC -I${MPI_INCLUDE_DIR}")
+	set(HDF5_PARALLEL_FLAG	"--enable-parallel")
+  set(HDF5_CFLAGS "${HDF5_CFLAGS} -fPIC -I${MPI_INCLUDE_DIR}")
 endif()
+
+if(CMAKE_OSX_ARCHITECTURES)
+  set(HDF5_CFLAGS "${HDF5_CFLAGS} -arch arm64 -arch x86_64")
+endif()
+
+#set(HDF5_CFLAGS "\"${HDF5_CFLAGS}\"")
+message(STATUS "${CMAKE_CURRENT_BINARY_DIR}/external/hdf5/src/HDF5/hdf5-${MUQ_INTERNAL_HDF5_VERSION}/configure  CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=${HDF5_CFLAGS} ${HDF5_PARALLEL_FLAG} --prefix=${HDF5_INSTALL_DIR} --enable-production --disable-examples")
 
 set(HDF5_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/muq_external/)
 ExternalProject_Add(
   HDF5
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/external/hdf5
     URL ${HDF5_EXTERNAL_SOURCE}
-    CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}; ${CMAKE_CURRENT_BINARY_DIR}/external/hdf5/src/HDF5/hdf5-${MUQ_INTERNAL_HDF5_VERSION}/configure  CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ${HDF5_PARALLEL_FLAG} --prefix=${HDF5_INSTALL_DIR} --enable-production --disable-examples
-    BUILD_COMMAND make install
+    CONFIGURE_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/external/hdf5/src/HDF5/hdf5-${MUQ_INTERNAL_HDF5_VERSION}/configure  CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=${HDF5_CFLAGS} ${HDF5_PARALLEL_FLAG} --prefix=${HDF5_INSTALL_DIR} --enable-production --disable-examples
+    BUILD_COMMAND $(MAKE) install
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
 )
-
 
 
 set_property( TARGET HDF5 PROPERTY FOLDER "Externals")

@@ -32,8 +32,9 @@ TEST(MCMC, InfMALA) {
   pt.put("Kernel1.Method","MHKernel");
   pt.put("Kernel1.Proposal", "MyProposal"); // the proposal
   pt.put("Kernel1.MyProposal.Method", "InfMALAProposal");
-  pt.put("Kernel1.MyProposal.Beta", 0.8);
   pt.put("Kernel1.MyProposal.StepSize", 0.2);
+  pt.put("Kernel1.MyProposal.Beta", 0.3);
+
   pt.put("Kernel1.MyProposal.PriorNode", "Prior"); // The node in the WorkGraph containing the prior density
 
   // create a Gaussian distribution---the sampling problem is built around characterizing this distribution
@@ -93,9 +94,11 @@ TEST(MCMC, InfMALA) {
 
   Eigen::VectorXd sampMean = samps->Mean();
   Eigen::MatrixXd sampCov = samps->Covariance();
+  
+  Eigen::VectorXd mcse = samps->StandardError();
 
-  EXPECT_NEAR(postMean(0), sampMean(0), 1e-2);
-  EXPECT_NEAR(postMean(1), sampMean(1), 1e-2);
+  EXPECT_NEAR(postMean(0), sampMean(0), 3.0*mcse(0));
+  EXPECT_NEAR(postMean(1), sampMean(1), 3.0*mcse(1));
 
   EXPECT_GE(N, dens->GetNumCalls("Evaluate"));
   EXPECT_GE(N, dens->GetNumCalls("Gradient"));

@@ -1,6 +1,5 @@
 #include "MUQ/Approximation/GaussianProcesses/MaternKernel.h"
 
-#include "MUQ/Modeling/LinearAlgebra/LinearOperator.h"
 #include "MUQ/Modeling/LinearAlgebra/EigenLinearOperator.h"
 
 #include "MUQ/Approximation/GaussianProcesses/StateSpaceGP.h"
@@ -99,7 +98,7 @@ std::tuple<std::shared_ptr<muq::Modeling::LinearSDE>, std::shared_ptr<muq::Model
 
     poly = poly.head(poly.size()-1).eval();
 
-    auto F = std::make_shared<muq::Modeling::CompanionMatrix>(-1.0*poly);
+    std::shared_ptr<muq::Modeling::LinearOperator> F = std::make_shared<muq::Modeling::CompanionMatrix>(-1.0*poly);
 
     std::vector<Eigen::Triplet<double>> Lcoeffs;
     Lcoeffs.push_back(Eigen::Triplet<double>(poly.size()-1,0,1.0));
@@ -112,7 +111,6 @@ std::tuple<std::shared_ptr<muq::Modeling::LinearSDE>, std::shared_ptr<muq::Model
     Eigen::MatrixXd Q(1,1);
     Q(0,0) = q;
 
-
     // Set up the stochastic differential equation
     auto sde = std::make_shared<muq::Modeling::LinearSDE>(F, L, Q, sdeOptions);
 
@@ -124,7 +122,7 @@ std::tuple<std::shared_ptr<muq::Modeling::LinearSDE>, std::shared_ptr<muq::Model
     Eigen::SparseMatrix<double> Hmat(1,poly.size());
     Hmat.setFromTriplets(Hcoeffs.begin(), Hcoeffs.end());
 
-    auto H = muq::Modeling::LinearOperator::Create(Hmat);
+    std::shared_ptr<muq::Modeling::LinearOperator> H = muq::Modeling::LinearOperator::Create(Hmat);
 
     // Solve the continuous time Lyapunov equation to find the stationary covariance
     Q = L->Apply(L->Apply(q*Eigen::VectorXd::Ones(1)).transpose());

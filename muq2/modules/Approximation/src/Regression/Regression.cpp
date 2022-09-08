@@ -290,10 +290,9 @@ void Regression::ComputeBasisDerivatives(Eigen::VectorXd const& point, std::vect
   }
 }
 
-Regression::PoisednessCost::PoisednessCost(std::shared_ptr<Regression const> parent, std::vector<Eigen::RowVectorXd> const& lagrangeCoeff, unsigned int const inDim) : CostFunction(Eigen::VectorXi::Constant(1, inDim)), parent(parent), lagrangeCoeff(lagrangeCoeff) {}
+Regression::PoisednessCost::PoisednessCost(std::shared_ptr<Regression const> parent, std::vector<Eigen::RowVectorXd> const& lagrangeCoeff, unsigned int const inDim) : CostFunction(inDim), parent(parent), lagrangeCoeff(lagrangeCoeff) {}
 
-double Regression::PoisednessCost::CostImpl(ref_vector<Eigen::VectorXd> const& input) {
-  const Eigen::VectorXd& x = input[0];
+double Regression::PoisednessCost::Cost() {
 
   const Eigen::RowVectorXd phi = parent->VandermondeMatrix(std::vector<Eigen::VectorXd>(1, x));
 
@@ -303,8 +302,8 @@ double Regression::PoisednessCost::CostImpl(ref_vector<Eigen::VectorXd> const& i
   return -1.0*lambda.norm();
 }
 
-void Regression::PoisednessCost::GradientImpl(unsigned int const inputDimWrt, muq::Modeling::ref_vector<Eigen::VectorXd> const& input, Eigen::VectorXd const& sensitivity) {
-  assert(inputDimWrt==0);
+void Regression::PoisednessCost::GradientImpl(unsigned int outWrt, unsigned inWrt, muq::Modeling::ref_vector<Eigen::VectorXd> const& input, Eigen::VectorXd const& sensitivity) {
+  assert(inWrt==0);
   const Eigen::VectorXd& x = input[0];
 
   const Eigen::RowVectorXd phi = parent->VandermondeMatrix(std::vector<Eigen::VectorXd>(1, x));

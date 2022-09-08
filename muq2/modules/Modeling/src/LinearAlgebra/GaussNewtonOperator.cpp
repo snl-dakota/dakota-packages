@@ -32,10 +32,11 @@ GaussNewtonOperator::GaussNewtonOperator(std::shared_ptr<ModPiece>     const& fo
 Eigen::MatrixXd GaussNewtonOperator::Apply(Eigen::Ref<const Eigen::MatrixXd> const& x)
 {
   Eigen::MatrixXd output(rows(),x.cols());
+  Eigen::VectorXd sens = Eigen::VectorXd::Ones(1);
 
   for(unsigned int i=0; i<x.cols(); ++i){
     Eigen::VectorXd temp = forwardModel->ApplyJacobian(0,inWrt,inputs,x.col(i).eval());
-    temp = noiseModel->ApplyHessian(0, 0, 0, noiseInputs, Eigen::VectorXd::Ones(1), temp);
+    temp = noiseModel->ApplyHessian(0, 0, 0, noiseInputs, sens, temp);
     output.col(i) = forwardModel->Gradient(0,inWrt,inputs,temp);
     output.col(i) *= scale;
     output.col(i) += nugget*x.col(i);

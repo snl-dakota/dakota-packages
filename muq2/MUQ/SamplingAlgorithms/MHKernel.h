@@ -42,6 +42,7 @@ namespace muq {
 
       virtual inline double AcceptanceRate() const {return double(numAccepts)/double(numCalls);};
 
+      virtual void SetBlockInd(int newBlockInd) override{blockInd = newBlockInd; proposal->SetBlockInd(newBlockInd);};
 
     protected:
       std::shared_ptr<MCMCProposal> proposal;

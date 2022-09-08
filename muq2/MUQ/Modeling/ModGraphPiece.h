@@ -96,6 +96,8 @@ namespace muq {
       /** Returns the output ModPiece. */
       std::shared_ptr<ModPiece> GetOutputPiece() const{return outputPiece;};
 
+      //virtual void SetWarnLevel(unsigned int newLevel) override{};
+
     private:
 
       // Indices are [outWrt][inWrt]

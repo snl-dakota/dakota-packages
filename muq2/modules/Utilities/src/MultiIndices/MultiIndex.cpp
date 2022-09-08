@@ -44,9 +44,8 @@ MultiIndex::MultiIndex(std::initializer_list<unsigned> const& indIn) : MultiInde
 
       maxValue = std::max<int>(maxValue, *it);
       totalOrder += *it;
-
-      i++;
     }
+    i++;
   }
 }
 

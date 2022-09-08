@@ -1,6 +1,8 @@
 #ifndef PARALLELABSTRACTSAMPLINGPROBLEM_H_
 #define PARALLELABSTRACTSAMPLINGPROBLEM_H_
 
+#include "MUQ/config.h"
+
 #if MUQ_HAS_MPI
 
 #if !MUQ_HAS_PARCER
@@ -10,6 +12,7 @@
 #include <parcer/Communicator.h>
 #include "MUQ/SamplingAlgorithms/AbstractSamplingProblem.h"
 #include "MUQ/SamplingAlgorithms/ParallelFlags.h"
+#include "MUQ/SamplingAlgorithms/SamplingState.h"
 
 namespace muq {
   namespace SamplingAlgorithms {

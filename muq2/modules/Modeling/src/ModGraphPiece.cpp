@@ -326,6 +326,7 @@ std::shared_ptr<ModGraphPiece> ModGraphPiece::JacobianGraph(unsigned int        
 
   for(auto node = adjointRunOrders[inputDimWrt].rbegin(); node!=adjointRunOrders[inputDimWrt].rend(); ++node){
     std::string baseName = wgraph->graph[*node]->name;
+    
     auto piece = std::dynamic_pointer_cast<ModPiece>(filtGraph[*node]->piece);
 
     int inDegree = boost::in_degree(*node, filtGraph);
@@ -333,7 +334,7 @@ std::shared_ptr<ModGraphPiece> ModGraphPiece::JacobianGraph(unsigned int        
 
     auto modCast = std::dynamic_pointer_cast<ModPiece>(filtGraph[*node]->piece);
     assert(modCast);
-
+    //std::cout << "Working on node " << baseName << ", " << outDegree << ", " << inDegree << std::endl;
     /** If the node has multiple inputs, than we have to sum the Jacobians for each of them.
         Here, we add a SumPiece if necessary, and store the name of the node returning the cumulative Jacobian action.
     */
@@ -343,8 +344,9 @@ std::shared_ptr<ModGraphPiece> ModGraphPiece::JacobianGraph(unsigned int        
         std::stringstream jacName;
         jacName << baseName << "_CumulativeJacobian[" << filtGraph[*eout.first]->outputDim << "]";
         cumNames[baseName].at(filtGraph[*eout.first]->outputDim) = jacName.str();
-
-        jacGraph.AddNode(std::make_shared<SumPiece>(modCast->outputSizes(filtGraph[*eout.first]->outputDim),inDegree), jacName.str());
+        
+        if(!jacGraph.HasNode(jacName.str()))
+          jacGraph.AddNode(std::make_shared<SumPiece>(modCast->outputSizes(filtGraph[*eout.first]->outputDim),inDegree), jacName.str());
       }else if(inDegree==1){
         std::stringstream jacName;
         jacName << baseName << "_Jacobian[" << filtGraph[*eout.first]->outputDim <<  ",0]";

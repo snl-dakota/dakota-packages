@@ -5,6 +5,7 @@
 
 #include "MUQ/SamplingAlgorithms/MCMCProposal.h"
 #include "MUQ/SamplingAlgorithms/SingleChainMCMC.h"
+#include "MUQ/Utilities/MultiIndices/MultiIndex.h"
 
 namespace pt = boost::property_tree;
 
@@ -18,7 +19,7 @@ namespace muq {
      */
     class SubsamplingMIProposal : public MCMCProposal {
     public:
-      SubsamplingMIProposal (pt::ptree const& pt, std::shared_ptr<AbstractSamplingProblem> prob, std::shared_ptr<SingleChainMCMC> coarseChain);
+      SubsamplingMIProposal (pt::ptree const& pt, std::shared_ptr<AbstractSamplingProblem> prob, std::shared_ptr<muq::Utilities::MultiIndex> coarseIndex, std::shared_ptr<SingleChainMCMC> coarseChain);
 
       virtual std::shared_ptr<SamplingState> Sample(std::shared_ptr<SamplingState> const& currentState) override;
 
@@ -26,6 +27,8 @@ namespace muq {
                                 std::shared_ptr<SamplingState> const& propState) override;
 
     private:
+      std::string multiindexToConfigString (std::shared_ptr<muq::Utilities::MultiIndex> index);
+
       std::shared_ptr<SingleChainMCMC> coarseChain;
       int sampleID = 0;
       int sampleWeight = 0;

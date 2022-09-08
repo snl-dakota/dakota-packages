@@ -719,7 +719,19 @@ void WorkGraph::Print(std::ostream& fout) const
 
 std::shared_ptr<WorkPiece> WorkGraph::GetPiece(std::string const& name)
 {
-  return graph[*GetNodeIterator(name)]->piece;
+  boost::graph_traits<Graph>::vertex_iterator v, v_end;
+  boost::tie(v, v_end) = vertices(graph);
+
+  auto iter = GetNodeIterator(name);
+  if(iter==v_end)
+    return nullptr;
+
+  auto ptr = graph[*iter];
+  if(ptr){
+    return graph[*GetNodeIterator(name)]->piece;
+  }else{
+    return nullptr;
+  }
 }
 std::shared_ptr<WorkPiece> WorkGraph::GetPiece(boost::graph_traits<Graph>::vertex_descriptor it)
 {

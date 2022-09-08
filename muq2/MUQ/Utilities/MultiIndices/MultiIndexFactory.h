@@ -75,6 +75,17 @@ namespace muq {
       static std::shared_ptr<MultiIndexSet> CreateFullTensor(const Eigen::RowVectorXi& orders,
                                                              std::shared_ptr<MultiIndexLimiter> limiter = std::make_shared<NoLimiter>());
 
+      /** @brief Construct an anisotropic multiindex set based on a priori information on the importance of each dimension.
+       @details Given a weight vector \f$ w = (w_i)_{i=1}^d \f$ with \f$ w_i \in [0,1] \f$ and a cutoff threshold \f$ \epsilon \in (0,1)\f$,
+                the anisotropic multiindex set contains all d-dimensional multiindices \f$ \nu = (\nu_i)_{i=1}^d \f$ for which
+                \f$ w^\nu := \prod_{i=1}^d w_i^{\nu_i} > \epsilon \f$.
+                The algorithm is further described as Algorithm 2 in <ul><li> Zech, Jakob. <i>Sparse-grid approximation of high-dimensional parametric PDEs.</i> ETH Zurich, 2018. </li></ul>
+       @param weights A vector of weights representing the importance of each dimension.
+       @param epsilon Cutoff threshold \f$ \epsilon \in (0,1)\f$. Multiindices with \f$ w^\nu > \epsilon \f$ are excluded from the multiindex set.
+       @return A shared_ptr to an instance of MultiIndexSet
+       */
+      static std::shared_ptr<MultiIndexSet> CreateAnisotropic(const Eigen::RowVectorXf& weights, const double epsilon);
+
 
       /** @brief Creates a single multiindex with one nonzero term.
           @details Constructs a MultiIndex of length totalDim that contains a

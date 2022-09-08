@@ -9,6 +9,8 @@
 #include <iostream>
 #include <exception>
 
+#include "MUQ/Utilities/Demangler.h"
+
 namespace muq
 {
 namespace Modeling
@@ -16,11 +18,18 @@ namespace Modeling
 
 
 class LinearOperatorTypeException: public std::exception
-{
+{   
+public:
+  LinearOperatorTypeException(std::string const& type){
+    msg = "Tried creating a linear operator from an unsupported type " + type + ".  Make sure all necessary headers are included and a child of LinearOperator exists for this type.";
+  };
+
   virtual const char* what() const throw()
   {
-    return "Tried creating a linear operator from an unsupported type.  Make sure all necessary headers are included and a child of LinearOperator exists for this type.";
+    return msg.c_str();
   }
+
+  std::string msg;
 };
 
 class LinearOperator;
@@ -30,7 +39,7 @@ struct LinearOperatorFactory
 {
     static std::shared_ptr<LinearOperator> Create(MatrixType const& A)
     {
-        throw LinearOperatorTypeException();
+        throw LinearOperatorTypeException(muq::Utilities::demangle(typeid(A).name()));
 
         return std::shared_ptr<LinearOperator>();
 

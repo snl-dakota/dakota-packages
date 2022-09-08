@@ -16,11 +16,12 @@ CreateCompileGroup(
     SAMPLING_PROBLEMS
     "Implement sampling sampling problems for MCMC."
     muqSamplingAlgorithms
-    "MODELING_CORE;APPROXIMATION_REGRESSION"
+    "MODELING_CORE"
     ""
     ""
 
     SamplingProblem.cpp
+    InferenceProblem.cpp
 )
 
 CreateCompileGroup(
@@ -39,34 +40,38 @@ CreateCompileGroup(
     SAMPLING_ALGORITHM
     "Implement sampling algorithms such as Monte Carlo, importance sampling, and Markov chain Monte Carlo"
     muqSamplingAlgorithms
-    "UTILITIES_CORE;UTILITIES_MULTIINDEX;MODELING_CORE;MODELING_DISTRIBUTIONS;UTILITIES_CORE;UTILITIES_HDF5;SAMPLING_PROBLEMS"
+    "UTILITIES_CORE;UTILITIES_HDF5;UTILITIES_MULTIINDEX;MODELING_CORE;MODELING_DISTRIBUTIONS;SAMPLING_PROBLEMS"
     ""
     ""
+    
     AbstractSamplingProblem.cpp
     SamplingAlgorithm.cpp
-    #MonteCarlo.cpp
     ImportanceSampling.cpp
     SingleChainMCMC.cpp
+    ParallelTempering.cpp
 
     SamplingState.cpp
     SampleCollection.cpp
-    #DistributedCollection.cpp
+    SampleEstimator.cpp
     MarkovChain.cpp
 
     TransitionKernel.cpp
     DummyKernel.cpp
     MIDummyKernel.cpp
-    #MCKernel.cpp
-    #ISKernel.cpp
     MHKernel.cpp
     DRKernel.cpp
     DILIKernel.cpp
+
+    # MIMCMC Stack
     MIKernel.cpp
     GreedyMLMCMC.cpp
     MIMCMC.cpp
     MIMCMCBox.cpp
+    MultiIndexEstimator.cpp
+    DefaultComponentFactory.cpp
     SLMCMC.cpp
     SubsamplingMIProposal.cpp
+    
     GMHKernel.cpp
 
     MCMCFactory.cpp
@@ -77,11 +82,15 @@ CreateCompileGroup(
     MHProposal.cpp
     AMProposal.cpp
     MALAProposal.cpp
+    SMMALAProposal.cpp
     InfMALAProposal.cpp
     MixtureProposal.cpp
+    IndependenceProposal.cpp
 
     InverseGammaProposal.cpp
     CrankNicolsonProposal.cpp
+
+    Diagnostics.cpp
 )
 
 if(MUQ_USE_MPI)
@@ -97,6 +106,8 @@ if(MUQ_USE_MPI)
       DistributedCollection.cpp
       ParallelAbstractSamplingProblem.cpp
       ParallelMIComponentFactory.cpp
+      ParallelMIMCMCWorker.cpp
+      ParallelFixedSamplesMIMCMC.cpp
   )
 
 endif()

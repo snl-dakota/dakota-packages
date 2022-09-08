@@ -1,6 +1,8 @@
 #ifndef PARALLELIZABLEMICOMPONENTFACTORY_H_
 #define PARALLELIZABLEMICOMPONENTFACTORY_H_
 
+#include "MUQ/config.h"
+
 #if MUQ_HAS_MPI
 
 #include "MUQ/SamplingAlgorithms/MIComponentFactory.h"

@@ -65,9 +65,32 @@ TEST(SampleCollectionMetaTest, List){
 
   for(auto& str : anyList)
     std::cout << str << std::endl;
-    
+
   std::set<std::string> allList = collection.ListMeta(true);
   EXPECT_EQ(1,allList.size());
+}
+
+TEST_F(SampleCollectionTest, Segment){
+
+  auto newColl = collection.head(10);
+  EXPECT_EQ(10, newColl->size());
+
+  EXPECT_EQ(collection.at(0), newColl->at(0));
+  EXPECT_EQ(collection.at(2), newColl->at(2));
+  EXPECT_EQ(collection.at(9), newColl->at(9));
+
+  newColl = collection.tail(10);
+  EXPECT_EQ(10, newColl->size());
+
+  EXPECT_EQ(collection.at(numSamps-1), newColl->at(9));
+  EXPECT_EQ(collection.at(numSamps-3), newColl->at(7));
+  EXPECT_EQ(collection.at(numSamps-10), newColl->at(0));
+
+  newColl = collection.segment(100,100,2);
+  EXPECT_EQ(50,newColl->size());
+  EXPECT_EQ(collection.at(100), newColl->at(0));
+  EXPECT_EQ(collection.at(102), newColl->at(1));
+  EXPECT_EQ(collection.at(198), newColl->at(49));
 }
 
 TEST_F(SampleCollectionTest, Mean)
@@ -152,7 +175,7 @@ TEST_F(SampleCollectionTest, ToWeights)
 TEST_F(SampleCollectionTest, ESS)
 {
   double ess = collection.ESS()(0);
-  EXPECT_NEAR(std::pow(weights.sum(),2.0) / weights.array().square().sum(), ess, 5e-11);
+  EXPECT_NEAR(std::pow(weights.sum(),2.0) / weights.array().square().sum(), ess, 0.2*ess);
 }
 
 

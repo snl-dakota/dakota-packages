@@ -176,13 +176,15 @@ void HDF5File::CreateGroup(std::string const& name) {
 
     // make sure the parent exists by recursively creating it
     if(!DoesGroupExist(parentPath))
-	CreateGroup(parentPath);
+      CreateGroup(parentPath);
 
     // create the group
     hid_t newgroup = H5Gcreate2(fileID, name.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     // close the group
     H5Gclose(newgroup);
+
+    FlushFile();
 }
 
 void HDF5File::WriteStringAttribute(std::string const& datasetName,
@@ -194,7 +196,7 @@ void HDF5File::WriteStringAttribute(std::string const& datasetName,
 
     // Create the group or dataset in necessary
     if( !DoesDataSetExist(datasetName) || !DoesGroupExist(datasetName) )
-	CreateGroup(datasetName);
+      CreateGroup(datasetName);
 
     // write the attribute
     H5LTset_attribute_string(fileID, datasetName.c_str(), attributeName.c_str(), attribute.c_str());

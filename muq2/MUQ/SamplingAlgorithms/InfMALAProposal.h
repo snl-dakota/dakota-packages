@@ -1,10 +1,9 @@
 #ifndef INFMALAPROPOSAL_H_
 #define INFMALAPROPOSAL_H_
 
-#include "MUQ/Modeling/Distributions/Gaussian.h"
-#include "MUQ/Modeling/ModPiece.h"
+#include "MUQ/Modeling/Distributions/GaussianBase.h"
 
-#include "MUQ/SamplingAlgorithms/CrankNicolsonProposal.h"
+#include "MUQ/SamplingAlgorithms/MCMCProposal.h"
 
 namespace muq {
   namespace SamplingAlgorithms {
@@ -15,37 +14,56 @@ namespace muq {
     @brief An implement of the dimension-independent MALA (or Inf-MALA) proposal.
 
     @details
-    This class implements the a modification of the \f$\infty-\f$MALA proposal of
-    Beskos et al., 2017.   The proposal takes the form
+    This class implements the \f$\infty-\f$MALA proposal (and its
+    geometry-aware version: \f$\infty-\f$mMALA proposal) described in Beskos et
+    al., 2017.   The proposal takes the form
     \f[
-    u^\prime = \bar{u} + \sqrt{1-\beta^2} (u_c-\bar{u}) + \beta\left( z + \tau \Sigma\, \nabla \log \pi(u_c) \right)
+    u^\prime = \rho u + \sqrt{1 - \rho^2} \frac{\sqrt{h}}{2} \left\{ u - K
+    C^{-1} (u - u_0) - K \nabla \Phi \right\} + \sqrt{1-\rho} z
     \f]
-    where \f$\bar{u}\f$ is an estimate of the posterior mean (e.g., the prior mean or posterior MAP), \f$u_c\f$ is the current state of the chain, \f$z\sim N(0,C)\f$ is a normal
-    random variable with a strategically chosen covariance \f$C\f$ (often the prior covariance), and \f$u^\prime\f$
-    is the propsed point.  The parameters \f$\beta\f$ and \f$\tau\f$ control the size and offset or the proposal.
-    When \f$\tau=0\f$, this proposal is identical to the standard CrankNicolsonProposal.  Also note that unlike the usual MALA
-    proposal, the variance of the \f$\infty-\f$MALA proposal does not depend on the step size \f$\tau\f$.
+    where \f$u\f$ is the current state of the chain, \f$\rho = \frac{4 - h}{4 +
+    h}\f$ with \f$h\f$ being the step size used to discretize the Langevin SDE,
+    \f$u_0\f$ is the prior mean, \f$C\f$ is the prior covariance, \f$\Phi\f$ is
+    the negagive log likelihood (note that \f$\nabla \pi_\text{post} = - C^{-1}
+    (u - u_0) - \nabla \Phi\f$), \f$z\sim N(0,K)\f$ is a normal random
+    variable with a strategically chosen covariance \f$K\f$, and \f$u^\prime\f$
+    is the propsed point.  
+    
+    Note that the above proposal is the geometry-aware version, and it is the
+    \f$\infty-\f$MALA proposal when \f$K = C\f$.
 
     <B>Configuration Parameters:</B>
     Parameter Key | Type | Default Value | Description |
     ------------- | ------------- | ------------- | ------------- |
-    "Beta"  | double | 0.5 | The proposal scaling \f$\beta\f$ defined above. |
-    "StepSize" | double | 1.0 | The parameter \f$\tau\f$ governing the MALA shift in the direction of the gradient. |
-    "PriorNode" | string | - | (Optional)  If specified, this class assumes the target density was constructed from a WorkGraph and will set the value of the covariance \f$C\f$ to the covariance of the Gaussian density at the specified node. |
+    "StepSize" | double | 1.0 | The step size used to discrete the Langevin SDE. |
     */
-    class InfMALAProposal : public CrankNicolsonProposal {
+    class InfMALAProposal : public MCMCProposal {
     public:
 
+      /**
+      Construct the Inf-mMALA proposal with identity covariance for \f$K\f$.
+      */
+      InfMALAProposal(boost::property_tree::ptree           const& pt,
+                      std::shared_ptr<AbstractSamplingProblem>     prob);
+
+      /**
+      Construct the Inf-mMALA proposal with strategically chosen Gaussian
+      distribution zDistIn for \f$z\f$.
+      */
       InfMALAProposal(boost::property_tree::ptree           const& pt,
                       std::shared_ptr<AbstractSamplingProblem>     prob,
-                      std::shared_ptr<muq::Modeling::GaussianBase> prior);
-
-      InfMALAProposal(boost::property_tree::ptree       const& pt,
-                      std::shared_ptr<AbstractSamplingProblem> prob);
+                      std::shared_ptr<muq::Modeling::GaussianBase> zDistIn);
 
       virtual ~InfMALAProposal() = default;
 
     protected:
+
+      double stepSize;
+      
+      double rho;
+
+      // The proposal distribution
+      std::shared_ptr<muq::Modeling::GaussianBase> zDist;
 
       virtual std::shared_ptr<SamplingState> Sample(std::shared_ptr<SamplingState> const& currentState) override;
 
@@ -59,10 +77,8 @@ namespace muq {
       */
       Eigen::VectorXd GetSigmaGrad(std::shared_ptr<SamplingState> const& currentState) const;
 
-      double stepSize;
 
     }; // class InfMALAProposal
-
   } // namespace SamplingAlgoirthms
 } // namespace muq
 

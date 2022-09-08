@@ -4,6 +4,8 @@
 #include <memory>
 
 #include "MUQ/Modeling/LinearAlgebra/LinearOperator.h"
+#include "MUQ/Modeling/LinearAlgebra/EigenLinearOperator.h"
+
 #include "MUQ/Modeling/LinearSDE.h"
 
 #include "MUQ/Approximation/GaussianProcesses/GaussianProcess.h"

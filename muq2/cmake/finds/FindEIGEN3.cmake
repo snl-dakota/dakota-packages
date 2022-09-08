@@ -21,6 +21,6 @@ include(FindPackageHandleStandardArgs)
 
 # handle the QUIETLY and REQUIRED arguments and set LIBXML2_FOUND to TRUE
 # if all listed variables are TRUE
-find_package_handle_standard_args(eigen3 DEFAULT_MSG EIGEN3_INCLUDE_DIR)
+find_package_handle_standard_args(EIGEN3 DEFAULT_MSG EIGEN3_INCLUDE_DIR)
 
 mark_as_advanced(EIGEN3_INCLUDE_DIR)

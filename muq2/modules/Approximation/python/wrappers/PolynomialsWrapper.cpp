@@ -43,7 +43,10 @@ void muq::Approximation::PythonBindings::PolynomialsWrapper(py::module &m)
     .def("SetCoeffs", &BasisExpansion::SetCoeffs)
     .def("Multis", &BasisExpansion::Multis)
     .def("BuildVandermonde", &BasisExpansion::BuildVandermonde)
-    .def("BuildDerivMatrix", &BasisExpansion::BuildDerivMatrix);
+    .def("BuildDerivMatrix", &BasisExpansion::BuildDerivMatrix)
+    .def("ToHDF5", (void (BasisExpansion::*)(std::string, std::string) const) &BasisExpansion::ToHDF5, py::arg("filename"),py::arg("groupName")="/")
+    .def_static("FromHDF5", [](std::string filename, std::string dsetName){return BasisExpansion::FromHDF5(filename, dsetName);})
+    .def_static("FromHDF5", [](std::string filename){return BasisExpansion::FromHDF5(filename, "/");});
 
   py::class_<IndexedScalarBasis, std::shared_ptr<IndexedScalarBasis>> iSB(m, "IndexedScalarBasis");
   iSB

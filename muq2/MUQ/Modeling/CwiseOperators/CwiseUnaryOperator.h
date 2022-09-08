@@ -5,6 +5,8 @@
 #include <stan/math/fwd/scal.hpp>
 
 #include "MUQ/Modeling/ModPiece.h"
+#include "MUQ/Utilities/StringUtilities.h"
+#include "MUQ/Utilities/Demangler.h"
 
 namespace muq{
   namespace Modeling{
@@ -17,7 +19,29 @@ namespace muq{
     public:
       CwiseUnaryOperator(unsigned int dim) : ModPiece(dim*Eigen::VectorXi::Ones(1), dim*Eigen::VectorXi::Ones(1)){};
 
+    protected:
+
+      virtual std::string CreateName() const override
+      {
+        int status;
+        std::stringstream ss;
+
+        std::string className = muq::Utilities::demangle(typeid(*this).name());
+        className = muq::Utilities::StringUtilities::Split(className, '<').at(1);
+        className = muq::Utilities::StringUtilities::Split(className, ',').at(0);
+        className.erase(0,2);
+        className.erase(className.size()-1,className.size());
+
+        // Clean up the class name to remove long templates
+        ss << "CwiseUnaryOperator_" << className << "_" << id;
+
+        return ss.str();
+      }
+
+
     private:
+
+
       virtual void EvaluateImpl(ref_vector<Eigen::VectorXd> const& in) override
       {
         outputs.resize(1);

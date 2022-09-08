@@ -1,6 +1,8 @@
 #ifndef PARALLELFLAGS_H_
 #define PARALLELFLAGS_H_
 
+#include "MUQ/config.h"
+
 #if MUQ_HAS_MPI
 
 namespace muq {

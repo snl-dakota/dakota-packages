@@ -10,46 +10,6 @@
 namespace muq {
   namespace SamplingAlgorithms {
 
-    class CSProjector : public muq::Modeling::LinearOperator
-    {
-    public:
-
-      CSProjector(std::shared_ptr<Eigen::MatrixXd> const& Uin,
-                  std::shared_ptr<Eigen::MatrixXd> const& Win) : LinearOperator(Uin->rows(), Win->rows()),
-                                                                 U(Uin), W(Win){};
-
-      virtual ~CSProjector() = default;
-
-      /** Apply the linear operator to a vector */
-      virtual Eigen::MatrixXd Apply(Eigen::Ref<const Eigen::MatrixXd> const& x) override;
-
-      /** Apply the transpose of the linear operator to a vector. */
-      virtual Eigen::MatrixXd ApplyTranspose(Eigen::Ref<const Eigen::MatrixXd> const& x) override;
-
-    private:
-      std::shared_ptr<Eigen::MatrixXd> U, W;
-    };
-
-
-    class LIS2Full : public muq::Modeling::LinearOperator
-    {
-    public:
-      LIS2Full(std::shared_ptr<Eigen::MatrixXd> const& Uin,
-               std::shared_ptr<Eigen::MatrixXd> const& Lin) : LinearOperator(Uin->rows(), Uin->cols()),
-                                                              U(Uin), L(Lin){};
-
-      virtual ~LIS2Full() = default;
-
-      /** Apply the linear operator to a vector */
-      virtual Eigen::MatrixXd Apply(Eigen::Ref<const Eigen::MatrixXd> const& x) override;
-
-      /** Apply the transpose of the linear operator to a vector. */
-      virtual Eigen::MatrixXd ApplyTranspose(Eigen::Ref<const Eigen::MatrixXd> const& x) override;
-
-    private:
-      std::shared_ptr<Eigen::MatrixXd> U, L;
-    };
-
     /**
     @class AverageHessian
     @details During the construction of the LIS, we need the average Hessian.
@@ -87,7 +47,7 @@ namespace muq {
     {
     public:
       AverageHessian(unsigned int                            numOldSamps,
-                     std::shared_ptr<Eigen::MatrixXd> const& oldUIn,
+                     std::shared_ptr<Eigen::ColPivHouseholderQR<Eigen::MatrixXd>> const& uQRIn,
                      std::shared_ptr<Eigen::MatrixXd> const& oldWIn,
                      std::shared_ptr<Eigen::VectorXd> const& oldValsIn,
                      std::shared_ptr<muq::Modeling::LinearOperator> const& newHess);
@@ -100,11 +60,59 @@ namespace muq {
 
     private:
       const double numSamps;
-      std::shared_ptr<Eigen::MatrixXd> oldU, oldW;
+      std::shared_ptr<Eigen::MatrixXd> oldW;
+      std::shared_ptr<Eigen::ColPivHouseholderQR<Eigen::MatrixXd>> uQR; // holds the QR decomp of U
+
       std::shared_ptr<Eigen::VectorXd> oldEigVals;
       std::shared_ptr<muq::Modeling::LinearOperator> newHess;
+      Eigen::MatrixXd thinQ;
 
     };
+
+    class CSProjector : public muq::Modeling::LinearOperator
+    {
+    public:
+
+      CSProjector(std::shared_ptr<Eigen::MatrixXd> const& Uin,
+                  std::shared_ptr<Eigen::MatrixXd> const& Win,
+                  unsigned int                            lisDimIn) : LinearOperator(Uin->rows(), Win->rows()),
+                                                                 U(Uin), W(Win), lisDim(lisDimIn){};
+
+      virtual ~CSProjector() = default;
+
+      /** Apply the linear operator to a vector */
+      virtual Eigen::MatrixXd Apply(Eigen::Ref<const Eigen::MatrixXd> const& x) override;
+
+      /** Apply the transpose of the linear operator to a vector. */
+      virtual Eigen::MatrixXd ApplyTranspose(Eigen::Ref<const Eigen::MatrixXd> const& x) override;
+
+    private:
+      std::shared_ptr<Eigen::MatrixXd> U, W;
+      unsigned int lisDim;
+    };
+
+
+    class LIS2Full : public muq::Modeling::LinearOperator
+    {
+    public:
+      LIS2Full(std::shared_ptr<Eigen::MatrixXd> const& Uin,
+               std::shared_ptr<Eigen::VectorXd> const& Lin) : LinearOperator(Uin->rows(), Lin->rows()),
+                                                              U(Uin), L(Lin), lisDim(Lin->rows()){};
+
+      virtual ~LIS2Full() = default;
+
+      /** Apply the linear operator to a vector */
+      virtual Eigen::MatrixXd Apply(Eigen::Ref<const Eigen::MatrixXd> const& x) override;
+
+      /** Apply the transpose of the linear operator to a vector. */
+      virtual Eigen::MatrixXd ApplyTranspose(Eigen::Ref<const Eigen::MatrixXd> const& x) override;
+
+    private:
+      std::shared_ptr<Eigen::MatrixXd> U;
+      std::shared_ptr<Eigen::VectorXd> L;
+      const unsigned int lisDim;
+    };
+
 
     /**
       @ingroup MCMCKernels
@@ -125,6 +133,8 @@ namespace muq {
       "Adapt Start" | int | 1 | The number of MCMC steps taken before updating the LIS. |
       "Adapt End" | int | -1 | No LIS updates will occur after this number of MCMC steps.  If negative, the LIS will continue to be updated until the end of the chain. |
       "Initial Weight" | int | 100 | "Weight" or number of samples given to the to initial Hessian.  The weight on the previous average Hessian estimate is given by $(N+W)/(N+W+1)$, where $N$ is the number of MCMC steps taken and $W$ is this parameter. |
+      "Hess Tolerance" | double | 1e-4 | The lower bound on eigenvalues used to construct the low-rank approximation of the global expected Hessian. |
+      "LIS Tolerance" | double | 0.1 | Lower bound on eigenvalues used to construct local and global likelihood informed subspaces.  Must be larger than Hess Tolerance. |
       "Eigensolver Block" | String | - | A string pointing to a block of eigensolver options for solving the generalized eigenvalue problems. |
 
      */
@@ -200,17 +210,44 @@ namespace muq {
       static std::shared_ptr<muq::Modeling::ModPiece> CreateLikelihood(std::shared_ptr<muq::Modeling::ModPiece> const& forwardModel,
                                                                        std::shared_ptr<muq::Modeling::ModPiece> const& noiseDensity);
 
-      Eigen::MatrixXd const& LISVecs() const{return *lisU;};
-      Eigen::VectorXd const& LISVals() const{return *lisEigVals;};
+      Eigen::MatrixXd const& LISVecs() const{return *hessU;};
+      Eigen::VectorXd const& LISVals() const{return *hessEigVals;};
+      Eigen::MatrixXd const& LISW() const{return *hessW;};
+      Eigen::VectorXd const& LISL() const{return *lisL;};
+
+      /** Returns the dimension of the LIS. */
+      unsigned int LISDim() const{return lisDim;};
+
+      /** Create the likelihood informed subspace for the first time. */
+      void CreateLIS(std::vector<Eigen::VectorXd> const& currState);
+
+      /** Returns the low dimensional LIS representation of a vector \f$x\f$
+          defined in the full parameter space.
+      */
+      Eigen::VectorXd ToLIS(Eigen::VectorXd const& x) const;
+
+      /** Returns a vector in the full space given a vector \f$r\f$ in the
+          low dimensional LIS.
+      */
+      Eigen::VectorXd FromLIS(Eigen::VectorXd const& r) const;
+
+      /** Projects a point \f$x\in\mathbb{R}^N\f$ in the full parameter space to
+          a point \f$y\in\mathbb{R}^N\f$ that has the same dimension as \f$x\f$
+          but lies on the complementary space.
+      */
+      Eigen::VectorXd ToCS(Eigen::VectorXd const& x) const;
+
 
     protected:
+
+      std::pair<Eigen::MatrixXd, Eigen::VectorXd> ComputeLocalLIS(std::vector<Eigen::VectorXd> const& currState);
+
 
       /** Sets up the LIS based on the eigenvalues and eigenvectors solving the problem $Hu = \lambda \Gamma^{-1}u$
       */
       void SetLIS(Eigen::VectorXd const& eigVals, Eigen::MatrixXd const& eigVecs);
 
-      /** Create the likelihood informed subspace for the first time. */
-      void CreateLIS(std::vector<Eigen::VectorXd> const& currState);
+
 
       /** Update the likelihood informed subspace using Hessian information at a
           new point.
@@ -233,16 +270,19 @@ namespace muq {
       std::shared_ptr<muq::Modeling::ModPiece> noiseDensity;
 
       // A matrix containing the eigenvectors of the generalized eigenvalue problem Hv = lam*\Gamma^{-1}v
-      std::shared_ptr<Eigen::MatrixXd> lisU;
+      std::shared_ptr<Eigen::MatrixXd> hessU;
 
-      // A vector of the LIS eigenvalues
-      std::shared_ptr<Eigen::VectorXd> lisEigVals;
+      // The following matrices hold a QR decomposition of hessU
+      std::shared_ptr<Eigen::ColPivHouseholderQR<Eigen::MatrixXd>> hessUQR;
+
+      // A vector of eigenvalues of the generalized eigenvalue problem.  Only values above hessValTol are kept.
+      std::shared_ptr<Eigen::VectorXd> hessEigVals;
 
       // W = \Gamma^{-1} v
-      std::shared_ptr<Eigen::MatrixXd> lisW;
+      std::shared_ptr<Eigen::MatrixXd> hessW;
 
-      // L is the Cholesky factor of the approximate posterior covariance projected onto the subspace
-      std::shared_ptr<Eigen::MatrixXd> lisL;
+      // L is the Cholesky factor of the approximate posterior covariance projected onto the LIS
+      std::shared_ptr<Eigen::VectorXd> lisL;
 
       // Defines the operation from the LIS to the full space
       std::shared_ptr<muq::Modeling::LinearOperator> lisToFull;
@@ -266,6 +306,25 @@ namespace muq {
       const int adaptStart;
       const int adaptEnd;
       const int initialHessSamps;
+
+      /* The size of the LIS.  Note that the LIS can have a smaller dimension
+       than the number of eigenvalue/eigenvector pairs kept to approximate the
+       global hessian.  The number of eigenvalues greater than lisValTol dictates
+       the LIS dimension
+      */
+      unsigned int lisDim=0;
+
+      /* Threshold on eigenvalues defining the low rank approximation of the global
+        hessian.  Note that this toleran is typically smaller than the tolerance
+        used to define the LIS.  In Cui et al., this was set to 1e-4.
+      */
+      const double hessValTol;
+
+      /* Threshold on eigenvalues used to define local and global LIS
+         approximations.  Modes with eigenavalues greater than this threshold
+         will be used.  In Cui et al., this was set to 0.1
+      */
+      const double lisValTol;
 
       unsigned int numLisUpdates;
     };

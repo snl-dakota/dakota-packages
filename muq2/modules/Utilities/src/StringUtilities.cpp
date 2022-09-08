@@ -28,6 +28,17 @@ std::vector<std::string> muq::Utilities::StringUtilities::Split(std::string str,
 }
 
 
+std::string muq::Utilities::StringUtilities::Combine(std::vector<std::string> strs, char delim)
+{
+    std::string output = strs.at(0);
+    for(unsigned int i=1; i<strs.size(); ++i){
+        output.push_back(delim);
+        output += strs.at(i);
+    }
+    return output;
+}
+
+
 std::string muq::Utilities::StringUtilities::Strip(std::string str)
 {
     // remove whitespace from the beginning

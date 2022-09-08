@@ -6,7 +6,7 @@ using namespace muq::Approximation;
 void ObservationInformation::FillSelfCov(std::shared_ptr<KernelBase> kernel,
                                          Eigen::Ref<Eigen::MatrixXd> covBlock)
 {
-  covBlock = H->Apply( H->Apply( BuildBaseCovariance(kernel) ).transpose() );
+  covBlock = H->Apply( H->Apply( BuildBaseCovariance(kernel) ).transpose() ) + obsCov;
 }
 
 void ObservationInformation::FillCrossCov(Eigen::Ref<const Eigen::VectorXd> const& otherLoc,

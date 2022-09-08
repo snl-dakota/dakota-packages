@@ -115,11 +115,11 @@ namespace muq {
 
 	        virtual ~PoisednessCost() = default;
 
+          virtual double Cost() override;
+
       private:
 
-	       virtual double CostImpl(muq::Modeling::ref_vector<Eigen::VectorXd> const& input) override;
-
-	        virtual void GradientImpl(unsigned int const inputDimWrt, muq::Modeling::ref_vector<Eigen::VectorXd> const& input, Eigen::VectorXd const& sensitivity) override;
+	        virtual void GradientImpl(unsigned int outWrt, unsigned int inWrt, muq::Modeling::ref_vector<Eigen::VectorXd> const& input, Eigen::VectorXd const& sensitivity) override;
 
 	        std::shared_ptr<Regression const> parent;
 
@@ -135,11 +135,11 @@ namespace muq {
 
       private:
 
-	virtual void EvaluateImpl(muq::Modeling::ref_vector<Eigen::VectorXd> const& input) override;
+      virtual void EvaluateImpl(muq::Modeling::ref_vector<Eigen::VectorXd> const& input) override;
 
-	virtual void JacobianImpl(unsigned int const outputDimWrt,
-                                  unsigned int const inputDimWrt,
-                                  muq::Modeling::ref_vector<Eigen::VectorXd> const& input) override;
+      virtual void JacobianImpl(unsigned int const outputDimWrt,
+                                      unsigned int const inputDimWrt,
+                                      muq::Modeling::ref_vector<Eigen::VectorXd> const& input) override;
 
           const double alpha;
       };

@@ -4,6 +4,8 @@
 #include <iostream>
 
 #include "MUQ/Approximation/Polynomials/OrthogonalPolynomial.h"
+#include "MUQ/Utilities/HDF5/H5Object.h"
+
 
 using namespace muq::Utilities;
 using namespace muq::Approximation;
@@ -277,3 +279,27 @@ Eigen::MatrixXd PolynomialChaosExpansion::MainSensitivity() const
 
   return result;
 }
+
+
+void PolynomialChaosExpansion::ToHDF5(muq::Utilities::H5Object &group) const
+{
+  BasisExpansion::ToHDF5(group);
+  group.attrs["expansion_type"] = "PCE";
+}
+
+std::shared_ptr<PolynomialChaosExpansion> PolynomialChaosExpansion::FromHDF5(std::string filename, std::string groupName)
+{
+  std::shared_ptr<PolynomialChaosExpansion> output = std::dynamic_pointer_cast<PolynomialChaosExpansion>(BasisExpansion::FromHDF5(filename,groupName));
+  if(!output)
+    throw std::runtime_error("Could not read PolynomialChaosExpansion from group \"" + groupName + "\".  HDF5 file does not seem to contain a PCE.  Is the \"expansion_type\" attribute set to \"PCE\"?");
+  return output;
+}
+
+std::shared_ptr<PolynomialChaosExpansion> PolynomialChaosExpansion::FromHDF5(muq::Utilities::H5Object &group)
+{
+  std::shared_ptr<PolynomialChaosExpansion> output = std::dynamic_pointer_cast<PolynomialChaosExpansion>(BasisExpansion::FromHDF5(group));
+  if(!output)
+    throw std::runtime_error("Could not read PolynomialChaosExpansion from group \"" + group.Path() + "\".  HDF5 file does not seem to contain a PCE.  Is the \"expansion_type\" attribute set to \"PCE\"?");
+  return output;
+}
+

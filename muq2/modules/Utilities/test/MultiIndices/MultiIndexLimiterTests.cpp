@@ -362,3 +362,36 @@ TEST(Utilities_MultiIndicies, ValidDimensionLimiter)
   feasible = limiter->IsFeasible(multi);
   EXPECT_FALSE(feasible);
 }
+
+/*
+  Utilities_MultiIndicies.AnisotropicLimiter
+  ---------------------------------------
+
+  Purpose:
+  Check that the AnisotropicLimiter returns the expected boolean flags for exemplary multi-indices.
+
+  Test:
+  For a anisotropic limiter with weights [.5, .25, .1] and epsilon = .1 we expect the following results:
+    * For multi1 = (1) we have .5^1 = .5 > .1 => multi1 is feasible.
+    * For multi2 = (0,2,1) we have .25^2 * .1^1 = .00625 < .1 => multi2 is not feasible.
+*/
+TEST(Utilities_MultiIndicies, AnisotropicLimiter)
+{
+  // AnisotropicLimiter.
+  Eigen::RowVectorXf weights(3);
+  weights << .5, .25, .1; // std::initializer_list<float>( {} ),
+  AnisotropicLimiter limiter(weights, .1);
+
+  // Test feasible MultiIndex.
+  auto multi1 = make_shared<MultiIndex>(std::initializer_list<unsigned>( {1} ));
+  EXPECT_TRUE(limiter.IsFeasible(multi1));
+
+  // Test infeasible MultiIndex.
+  auto multi2 = make_shared<MultiIndex>(std::initializer_list<unsigned>( {0,2,1} ));
+  EXPECT_FALSE(limiter.IsFeasible(multi2));
+
+  // Test constructor throws when passed invalid arguments
+  EXPECT_THROW(AnisotropicLimiter(weights, 1.2), std::invalid_argument);
+  weights[0] = 4.5;
+  EXPECT_THROW(AnisotropicLimiter(weights, .1), std::invalid_argument);
+}

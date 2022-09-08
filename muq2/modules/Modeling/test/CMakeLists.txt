@@ -15,6 +15,7 @@ CreateTestGroup(
     CombineVectorsTests.cpp
     SumPieceTests.cpp
     MultiLogisticTest.cpp
+    LinearSDETests.cpp
 )
 
 CreateTestGroup(
@@ -59,4 +60,5 @@ CreateTestGroup(
     DistributionsTests/UniformDistributionTests.cpp
     DistributionsTests/GaussianDistributionTests.cpp
     DistributionsTests/DensityProductTests.cpp
+    DistributionsTests/GammaTests.cpp
 )

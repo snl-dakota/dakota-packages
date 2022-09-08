@@ -15,7 +15,7 @@ namespace muq {
 namespace Approximation {
 
   /** @class PCEFactory
-      @ingroup PolynomialChaos
+      @ingroup polychaos
       @brief Factory class for constructing a pseudo-spectral polynomial chaos
              approximation using a fixed quadrature rule.
   */

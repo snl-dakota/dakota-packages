@@ -217,6 +217,51 @@ std::shared_ptr<MultiIndexSet> muq::Utilities::MultiIndexFactory::CreateFullTens
 }
 
 
+std::shared_ptr<MultiIndexSet> muq::Utilities::MultiIndexFactory::CreateAnisotropic(const Eigen::RowVectorXf& weights, const double epsilon)
+{
+  auto getNextIndex = [](Eigen::RowVectorXi base, unsigned int d) {
+      auto nextIndex = make_shared<MultiIndex>(base);
+      nextIndex->SetValue(d, nextIndex->GetValue(d) + 1);
+      return nextIndex;
+  };
+
+  auto limiter = make_shared<AnisotropicLimiter>(weights, epsilon);
+  auto indexSet = make_shared<MultiIndexSet>(weights.size(),limiter);
+
+  Eigen::RowVectorXi base = Eigen::RowVectorXi::Zero(weights.size());
+  auto nextIndex = make_shared<MultiIndex>(base);
+  indexSet->AddMulti(nextIndex);
+
+  unsigned int d = 0;
+
+  while(true) {
+    d = 0;
+    nextIndex = getNextIndex(base, d);
+    while(!limiter->IsFeasible(nextIndex)) {
+      if (base[d] != 0) {
+        base[d] = 0;
+        ++d;
+        if (d >= base.size()) {
+          base.conservativeResize(base.size() + 1);
+          base[d] = 0;
+        }
+      }else if (base.sum() > 0){
+        d = 0;
+        while ((d < base.size() - 1) && (base[d] == 0))
+          ++d;
+      }else{
+        return indexSet;
+      }
+      nextIndex = getNextIndex(base, d);
+    }
+
+    ++base[d];
+    indexSet->AddMulti(nextIndex);
+  }
+  return indexSet;
+}
+
+
 std::shared_ptr<MultiIndex> MultiIndexFactory::CreateSingleTerm(int totalDim, int nonzeroDim, int order)
 {
   shared_ptr<MultiIndex> output = make_shared<MultiIndex>(totalDim);

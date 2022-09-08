@@ -141,11 +141,8 @@ void muq::Approximation::PythonBindings::GaussianWrapper(py::module &m)
   py::class_<StateSpaceGP, GaussianProcess, std::shared_ptr<StateSpaceGP>>
     stateSpace(m, "StateSpaceGP");
   stateSpace
-    .def(py::init<MeanFunctionBase&, KernelBase&>())
-    .def(py::init<MeanFunctionBase&, KernelBase&, boost::property_tree::ptree>())
     .def(py::init<std::shared_ptr<MeanFunctionBase>, std::shared_ptr<KernelBase>>())
-    .def(py::init<std::shared_ptr<MeanFunctionBase>, std::shared_ptr<KernelBase>,
-                  boost::property_tree::ptree>())
+    .def(py::init<std::shared_ptr<MeanFunctionBase>, std::shared_ptr<KernelBase>, boost::property_tree::ptree>())
     .def("Sample", &StateSpaceGP::Sample)
     .def("Predict", &StateSpaceGP::Predict)
     .def("PredictMean", &StateSpaceGP::PredictMean)

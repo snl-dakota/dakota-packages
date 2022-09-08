@@ -1,6 +1,9 @@
 #ifndef PARALLELMIMCMCBOX_H_
 #define PARALLELMIMCMCBOX_H_
 
+#include "MUQ/config.h"
+
+
 #if MUQ_HAS_MPI
 
 #if !MUQ_HAS_PARCER
@@ -15,6 +18,8 @@
 #include "MUQ/SamplingAlgorithms/DummyKernel.h"
 #include "MUQ/SamplingAlgorithms/MIDummyKernel.h"
 #include "MUQ/SamplingAlgorithms/MIKernel.h"
+#include "MUQ/SamplingAlgorithms/MHKernel.h"
+
 #include "MUQ/Utilities/MultiIndices/MultiIndexFactory.h"
 
 namespace pt = boost::property_tree;
@@ -36,7 +41,8 @@ namespace muq {
     public:
 
       ParallelMIMCMCBox(boost::property_tree::ptree const& pt, std::shared_ptr<MIComponentFactory> componentFactory, std::shared_ptr<MultiIndex> boxHighestIndex, std::shared_ptr<parcer::Communicator> global_comm, std::shared_ptr<PhonebookClient> phonebookClient, std::shared_ptr<muq::Utilities::OTF2TracerBase> tracer)
-       : componentFactory(componentFactory),
+       : QOIDiff(std::make_shared<MarkovChain>()),
+         componentFactory(componentFactory),
          boxHighestIndex(boxHighestIndex)
       {
         pt::ptree ptChains;
@@ -92,7 +98,6 @@ namespace muq {
               spdlog::debug("Rank {} burned in", global_comm->GetRank());
               tracer->leaveRegion(TracerRegions::BurnIn);
 
-
             } else { // or we have to request proposals from the next coarser chain
               std::shared_ptr<MultiIndex> remoteIndex = MultiIndex::Copy(boxLowestIndex);
               int maxCoeffId;
@@ -101,9 +106,9 @@ namespace muq {
 
               remoteIndex->SetValue(maxCoeffId, maxEntry - 1);
 
-              coarse_problem = componentFactory->SamplingProblem(remoteIndex); // TODO: Try to avoid this
+              auto remote_problem = componentFactory->SamplingProblem(remoteIndex); // TODO: Try to avoid this
 
-              auto coarse_proposal = std::make_shared<RemoteMIProposal>(ptBlockID, coarse_problem, global_comm, remoteIndex, boxHighestIndex, phonebookClient);
+              auto coarse_proposal = std::make_shared<RemoteMIProposal>(ptBlockID, remote_problem, global_comm, remoteIndex, boxHighestIndex, phonebookClient);
               auto startingPoint = componentFactory->StartingPoint(boxLowestIndex);
               auto problem = componentFactory->SamplingProblem(boxLowestIndex);
               auto proposal = componentFactory->Proposal(boxLowestIndex, problem);
@@ -111,7 +116,7 @@ namespace muq {
 
               std::vector<std::shared_ptr<TransitionKernel>> kernels(1);
               if (componentFactory->IsInverseProblem())
-                kernels[0] = std::make_shared<MIKernel>(ptBlockID,problem,coarse_problem,proposal,coarse_proposal,proposalInterpolation,nullptr);
+                kernels[0] = std::make_shared<MIKernel>(ptBlockID,problem,remote_problem,proposal,coarse_proposal,proposalInterpolation,nullptr);
               else
                 kernels[0] = std::make_shared<MIDummyKernel>(ptBlockID, problem, proposal, coarse_proposal, proposalInterpolation, coarse_chain);
 
@@ -130,8 +135,7 @@ namespace muq {
 
             auto problem = componentFactory->SamplingProblem(index);
             auto proposal = componentFactory->Proposal(index, problem);
-            auto coarse_proposal = componentFactory->CoarseProposal(index, coarse_problem, coarse_chain);
-            //auto coarse_proposal = componentFactory->CoarseProposal(index, coarse_problem, coarse_chain);
+            auto coarse_proposal = componentFactory->CoarseProposal(index, boxLowestIndex, coarse_problem, coarse_chain);
             auto proposalInterpolation = componentFactory->Interpolation(index);
             auto startingPoint = componentFactory->StartingPoint(index);
 
@@ -146,11 +150,13 @@ namespace muq {
 
             boxChains[boxIndices->MultiToIndex(boxIndex)] = chain;
 
-            if (boxIndex->Max() == 1)
+            if (*boxIndex == *boxSize)
               finestProblem = problem;
           }
 
         }
+        if (boxHighestIndex->Max() == 0)
+          finestProblem = coarse_problem;
       }
 
       std::shared_ptr<AbstractSamplingProblem> GetFinestProblem() {
@@ -171,12 +177,51 @@ namespace muq {
       }
 
       void Sample() {
-        for (uint i = 0; i < boxIndices->Size(); i++) {
+        // Set up valid sample vector with arbitrary number of components in order to store contribution to telescoping sum
+        const int num_components = GetFinestProblem()->blockSizesQOI.size();
+        std::vector<Eigen::VectorXd> sampDiff(num_components);
+        for (int component = 0; component < num_components; component++) {
+          sampDiff[component] = Eigen::VectorXd::Zero(GetFinestProblem()->blockSizesQOI[component]);
+        }
+
+        /*
+        auto chain = boxChains[boxIndices->MultiToIndex(boxHighestIndex)];
+        chain->AddNumSamps(1);
+        chain->Run();*/
+
+        // Advance chains
+        for (unsigned int i = 0; i < boxIndices->Size(); i++) {
           std::shared_ptr<MultiIndex> boxIndex = (*boxIndices)[i];
           auto chain = boxChains[boxIndices->MultiToIndex(boxIndex)];
           chain->AddNumSamps(1);
           chain->Run();
         }
+
+        for (unsigned int i = 0; i < boxIndices->Size(); i++) {
+          std::shared_ptr<MultiIndex> boxIndex = (*boxIndices)[i];
+          auto chain = boxChains[boxIndices->MultiToIndex(boxIndex)];
+
+          // Add new sample to difference according to chain's position in telescoping sum
+          if (chain->GetQOIs()->size() > 0) {
+            auto new_state = chain->GetQOIs()->back();
+
+            std::shared_ptr<MultiIndex> index = std::make_shared<MultiIndex>(*boxLowestIndex + *boxIndex);
+            auto indexDiffFromTop = std::make_shared<MultiIndex>(*boxHighestIndex - *index);
+
+            if (indexDiffFromTop->Sum() % 2 == 0) {
+              for (int component = 0; component < num_components; component++) {
+                sampDiff[component] += new_state->state[component];
+              }
+            } else {
+              for (int component = 0; component < num_components; component++) {
+                sampDiff[component] -= new_state->state[component];
+              }
+            }
+          }
+        }
+        if (boxChains[0]->GetQOIs()->size() > 0)
+          QOIDiff->Add(std::make_shared<SamplingState>(sampDiff));
+
       }
 
       Eigen::VectorXd MeanQOI() {
@@ -199,8 +244,13 @@ namespace muq {
         return sampMean;
       }
 
+      std::shared_ptr<SampleCollection> GetQOIDiff() {
+        return QOIDiff;
+      }
+
     private:
 
+      std::shared_ptr<SampleCollection> QOIDiff;
 
       std::shared_ptr<MIComponentFactory> componentFactory;
       std::shared_ptr<MultiIndex> boxHighestIndex;
@@ -208,7 +258,7 @@ namespace muq {
       std::shared_ptr<MultiIndexSet> boxIndices;
       std::vector<std::shared_ptr<SingleChainMCMC>> boxChains;
       std::vector<std::shared_ptr<SingleChainMCMC>> tailChains;
-      std::shared_ptr<AbstractSamplingProblem> finestProblem;
+      std::shared_ptr<AbstractSamplingProblem> finestProblem = nullptr;
     };
 
   }

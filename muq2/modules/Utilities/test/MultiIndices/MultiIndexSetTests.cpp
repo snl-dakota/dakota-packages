@@ -6,6 +6,8 @@
 #include "MUQ/Utilities/MultiIndices/MultiIndexSet.h"
 #include "MUQ/Utilities/MultiIndices/MultiIndexFactory.h"
 #include "MUQ/Utilities/MultiIndices/MultiIndexLimiter.h"
+#include "MUQ/Utilities/HDF5/H5Object.h"
+
 
 using namespace std;
 
@@ -315,4 +317,33 @@ TEST(Utilities_MultiIndices, Expand)
   // Check the result of IsAdmissable().
   bool admiss = indexFamily->IsAdmissible(multi);
   EXPECT_TRUE(admiss);
+}
+
+
+TEST(Utilities_MultiIndices, SaveLoadHDF5)
+{ 
+  std::string filename = "SavedMultis.h5";
+  std::shared_ptr<MultiIndexSet> mset1 = MultiIndexFactory::CreateFullTensor(2, 4);
+  std::shared_ptr<MultiIndexSet> mset2;
+
+  {
+    muq::Utilities::H5Object fout = muq::Utilities::OpenFile(filename);
+    mset1->ToHDF5(fout, "/multis");
+  }
+
+  {
+    muq::Utilities::H5Object fin = muq::Utilities::OpenFile(filename);
+    mset2 = MultiIndexSet::FromHDF5(fin["/multis"]);
+  }
+
+  std::remove(filename.c_str());
+
+  EXPECT_EQ(mset1->Size(), mset2->Size());
+  
+  for(unsigned int i=0; i<mset1->Size(); ++i){
+    auto multi1 = mset1->at(i);
+    auto multi2 = mset2->at(i);
+    for(unsigned int j=0; j<2; ++j)
+      EXPECT_EQ(multi1->GetValue(j), multi2->GetValue(j));
+  }
 }

@@ -40,3 +40,31 @@ herr_t muq::Utilities::H5LTset_attribute(hid_t       loc_id,
   }
   return -1;
 }
+
+
+std::string muq::Utilities::H5TypeToString(hid_t type)
+{ 
+  if(type==H5T_NATIVE_DOUBLE){
+    return "double";
+  }else if(type==H5T_NATIVE_LDOUBLE){
+    return "long double";
+  }else if(type==H5T_NATIVE_INT){
+    return "int";
+  }else if(type==H5T_NATIVE_LONG){
+    return "long";
+  }else if(type==H5T_NATIVE_ULONG){
+    return "unsigned long";
+  }else if(type==H5T_NATIVE_UINT){
+    return "unsigned int";
+  }else if(type==H5T_NATIVE_FLOAT){
+    return "float";
+  }else if(type==H5T_NATIVE_USHORT){
+    return "unsigned short";
+  }else if(type==H5T_NATIVE_SHORT){
+    return "short";
+  }else if(type==H5T_NATIVE_CHAR){
+    return "char";
+  }else{
+    return "?";
+  }
+}

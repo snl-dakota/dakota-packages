@@ -10,6 +10,7 @@ namespace muq {
 
     /**
     @defgroup Quadrature
+    @ingroup polychaos
     @brief Tools for constructing univariate and multivariate quadrature rules.
     @details
     \section gsec Gauss Quadrature

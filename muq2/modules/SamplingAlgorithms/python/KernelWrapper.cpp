@@ -27,7 +27,8 @@ void PythonBindings::KernelWrapper(py::module &m) {
     .def("PreStep", &TransitionKernel::PreStep)
     .def("PostStep", &TransitionKernel::PostStep)
     .def("Step", &TransitionKernel::Step)
-    .def_readonly("blockInd", &TransitionKernel::blockInd);
+    .def("GetBlockInd", &TransitionKernel::GetBlockInd)
+    .def("SetBlockInd", &TransitionKernel::SetBlockInd);
 
 
   py::class_<MHKernel, TransitionKernel, std::shared_ptr<MHKernel>> mhKern(m, "MHKernel");
@@ -42,6 +43,7 @@ void PythonBindings::KernelWrapper(py::module &m) {
   py::class_<DRKernel, TransitionKernel, std::shared_ptr<DRKernel>>(m, "DRKernel")
     .def(py::init( [](py::dict d, std::shared_ptr<AbstractSamplingProblem> problem) {return new DRKernel(ConvertDictToPtree(d), problem);}))
     .def(py::init( [](py::dict d, std::shared_ptr<AbstractSamplingProblem> problem, std::vector<std::shared_ptr<MCMCProposal>> proposals, std::vector<double> scales) {return new DRKernel(ConvertDictToPtree(d), problem, proposals, scales);}))
+    .def(py::init( [](py::dict d, std::shared_ptr<AbstractSamplingProblem> problem, std::vector<std::shared_ptr<MCMCProposal>> proposals) {return new DRKernel(ConvertDictToPtree(d), problem, proposals);}))
     .def("PostStep", &DRKernel::PostStep)
     .def("Step", &DRKernel::Step)
     .def("Proposals",&DRKernel::Proposals)
@@ -85,5 +87,10 @@ void PythonBindings::KernelWrapper(py::module &m) {
     .def_static("ExtractForwardModel", &DILIKernel::ExtractForwardModel)
     .def_static("CreateLikelihood", &DILIKernel::CreateLikelihood)
     .def("LISVecs", &DILIKernel::LISVecs)
-    .def("LISVals", &DILIKernel::LISVals);
+    .def("LISVals", &DILIKernel::LISVals)
+    .def("LISDim", &DILIKernel::LISDim)
+    .def("CreateLIS", &DILIKernel::CreateLIS)
+    .def("ToLIS", &DILIKernel::ToLIS)
+    .def("FromLIS", &DILIKernel::FromLIS)
+    .def("ToCS", &DILIKernel::ToCS);
 }

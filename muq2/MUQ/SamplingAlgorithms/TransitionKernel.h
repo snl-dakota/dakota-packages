@@ -23,8 +23,8 @@
 namespace muq {
   namespace SamplingAlgorithms {
 
-    /** @defgroup MCMCKernels
-        @ingroup MCMC
+    /** @defgroup MCMCKernels MCMC Kernels
+        @ingroup mcmc
         @brief Transition kernels used in MCMC algorithms.
     */
 
@@ -80,9 +80,16 @@ namespace muq {
       virtual inline void PrintStatus(std::string prefix) const {};
 
       // What block of the state does this kernel work on?
-      const int blockInd = 0;
+
+      virtual void SetBlockInd(int newBlockInd){blockInd = newBlockInd;};
+      virtual int GetBlockInd() const{return blockInd;};
+
+      /** Get access to the problem that this kernel is defined by. */
+      virtual std::shared_ptr<AbstractSamplingProblem>  const& Problem() const{return problem;};
 
     protected:
+
+      int blockInd = 0;
 
       /// The sampling problem that evaluates/samples the target distribution
       std::shared_ptr<AbstractSamplingProblem> problem;

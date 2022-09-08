@@ -14,35 +14,57 @@ set(MUQ_GROUPS "" CACHE INTERNAL "List of MUQ compile groups.")
 add_subdirectory(modules)
 
 function(ForciblyEnable group)
-  message(STATUS "Forcibly enabling ${group}")
-
-  set(MUQ_ENABLEGROUP_${group} ON CACHE INTERNAL "MUQ_ENABLEGROUP_${group}")
-
-
-  foreach(depend ${${group}_REQUIRES_GROUPS})
-    if(NOT MUQ_ENABLEGROUP_${depend})
-        message(STATUS "    The ${group} group depends on the ${depend} group, but the ${depend} group was not enabled.")
-        message(STATUS "    Turning the ${depend} group on.")
-        set(MUQ_ENABLEGROUP_${depend} ON CACHE INTERNAL "MUQ_ENABLEGROUP_${depend}")
-        ForciblyEnable(${depend})
+  
+    
+  set(CAN_ENABLE_${group} ON)
+  foreach(depend ${${group}_REQUIRES})
+    if(NOT MUQ_USE_${depend})
+      message(STATUS "    Cannot forcibly enable ${group} because of a disabled library dependency.")
+      set(CAN_ENABLE_${group} OFF)
     endif()
   endforeach()
+
+  if(CAN_ENABLE_${group})
+  message(STATUS "  Forcibly enabling ${group}")
+    set(MUQ_ENABLEGROUP_${group} ON CACHE INTERNAL "MUQ_ENABLEGROUP_${group}")
+
+    foreach(depend ${${group}_REQUIRES_GROUPS})
+        if(NOT MUQ_ENABLEGROUP_${depend})
+            message(STATUS "    The ${group} group depends on the ${depend} group, but the ${depend} group was not enabled.")
+            message(STATUS "    Turning the ${depend} group on.")
+            set(MUQ_ENABLEGROUP_${depend} ON CACHE INTERNAL "MUQ_ENABLEGROUP_${depend}")
+            ForciblyEnable(${depend})
+        endif()
+    endforeach()
+  endif()
+
 endfunction(ForciblyEnable)
 
 ## Figure out what dependencies we actually need
 set(MUQ_REQUIRES )
 set(MUQ_DESIRES )
 foreach(group ${MUQ_GROUPS})
-
-      # Make sure all upstream dependency groups are enabled
       message(STATUS "Configuring compile group ${group}")
-      foreach(depend ${${group}_REQUIRES_GROUPS})
-          if(MUQ_ENABLEGROUP_${group} AND NOT MUQ_ENABLEGROUP_${depend})
-              message(STATUS "    The ${group} group depends on the ${depend} group, but the ${depend} group was not enabled.")
-              message(STATUS "    Turning the ${depend} group on.")
-              ForciblyEnable(${depend})
-          endif()
+
+      set(CAN_ENABLE_${group} ON)
+      foreach(depend ${${group}_REQUIRES})
+        if(NOT MUQ_USE_${depend})
+          message(STATUS "    Cannot enable ${group} because MUQ_USE_${depend}=OFF.")
+          set(CAN_ENABLE_${group} OFF)
+        endif()
       endforeach()
+
+      if(CAN_ENABLE_${group})
+        # Make sure all upstream dependency groups are enabled
+        foreach(depend ${${group}_REQUIRES_GROUPS})
+            if(MUQ_ENABLEGROUP_${group} AND NOT MUQ_ENABLEGROUP_${depend})
+                message(STATUS "    The ${group} group depends on the ${depend} group, but the ${depend} group was not enabled.")
+                ForciblyEnable(${depend})
+            endif()
+        endforeach()
+      else()
+        set(MUQ_ENABLEGROUP_${group} OFF)
+      endif()
 
 endforeach()
 
@@ -51,6 +73,7 @@ foreach(group ${MUQ_GROUPS})
   if(MUQ_ENABLEGROUP_${group})
       # Add to the list of required external libraries
       foreach(depend ${${group}_REQUIRES})
+          message(STATUS "Adding ${depend} to MUQ_REQUIRES because ${group} asked for it.")
           list(APPEND MUQ_REQUIRES ${depend})
       endforeach()
 

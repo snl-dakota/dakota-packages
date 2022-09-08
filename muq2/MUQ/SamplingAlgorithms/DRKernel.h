@@ -70,6 +70,10 @@ namespace muq {
                std::shared_ptr<AbstractSamplingProblem>   problem,
                std::vector<std::shared_ptr<MCMCProposal>> proposalsIn,
                std::vector<double>                        scales);
+      
+      DRKernel(boost::property_tree::ptree         const& pt,
+               std::shared_ptr<AbstractSamplingProblem>   problem,
+               std::vector<std::shared_ptr<MCMCProposal>> proposalsIn);
 
       virtual ~DRKernel() = default;
 
@@ -117,6 +121,10 @@ namespace muq {
 
       /** Returns a vector with the scaling used for each proposal stage. */
       std::vector<double> GetScales() const{return propScales;};
+
+
+      virtual void SetBlockInd(int newBlockInd) override;
+
 
     protected:
 

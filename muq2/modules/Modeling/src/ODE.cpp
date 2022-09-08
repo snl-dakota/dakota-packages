@@ -22,14 +22,14 @@ using namespace muq::Modeling;
 
 
 ODE::ODE(std::shared_ptr<ModPiece>   const& rhsIn,
-                   Eigen::VectorXd             const& evalTimesIn,
-                   bool                               isAuto,
-                   boost::property_tree::ptree        opts) : ModPiece(GetInputSizes(rhsIn, isAuto),
-                                                                       GetOutputSizes(rhsIn, evalTimesIn)),
-                                                              isAutonomous(isAuto),
-                                                              startTime(GetStartTime(evalTimesIn, opts)),
-                                                              evalTimes(evalTimesIn),
-                                                              rhs(rhsIn)
+         Eigen::VectorXd             const& evalTimesIn,
+         bool                               isAuto,
+         boost::property_tree::ptree        opts) : ModPiece(GetInputSizes(rhsIn, isAuto),
+                                                             GetOutputSizes(rhsIn, evalTimesIn)),
+                                                    isAutonomous(isAuto),
+                                                    startTime(GetStartTime(evalTimesIn, opts)),
+                                                    evalTimes(evalTimesIn),
+                                                    rhs(rhsIn)
 {
   // Set the nonlinear solver options if possible
   if(opts.count("NonlinearSolver")>0)
@@ -46,7 +46,7 @@ ODE::ODE(std::shared_ptr<ModPiece>   const& rhsIn,
 }
 
 double ODE::GetStartTime(Eigen::VectorXd             const& evalTimesIn,
-                              boost::property_tree::ptree const& opts)
+                         boost::property_tree::ptree const& opts)
 {
   // Make sure the evalTimes are in ascending order
   for(int i=0; i<evalTimesIn.size()-1; ++i){
@@ -75,7 +75,7 @@ double ODE::GetStartTime(Eigen::VectorXd             const& evalTimesIn,
 }
 
 Eigen::VectorXi ODE::GetInputSizes(std::shared_ptr<ModPiece> const& rhsIn,
-                                        bool                             isAuto)
+                                   bool                             isAuto)
 {
   if(isAuto){
     return rhsIn->inputSizes;
@@ -85,7 +85,7 @@ Eigen::VectorXi ODE::GetInputSizes(std::shared_ptr<ModPiece> const& rhsIn,
 }
 
 Eigen::VectorXi ODE::GetOutputSizes(std::shared_ptr<ModPiece> const& rhsIn,
-                                         Eigen::VectorXd           const& evalTimes)
+                                    Eigen::VectorXd           const& evalTimes)
 {
   int numTimes = evalTimes.size();
   int stateDim = rhsIn->outputSizes(0);
@@ -116,6 +116,12 @@ void ODE::IntegratorOptions::SetOptions(boost::property_tree::ptree const& opts)
   method = opts.get("Method", "BDF");
   reltol = opts.get("RelativeTolerance", 1e-5);
   abstol = opts.get("AbsoluteTolerance", 1e-5);
+
+  sensRelTol = opts.get("SensRelTol", -1);
+  sensAbsTol = opts.get("SensAbsTol", -1);
+
+  adjRelTol = opts.get("SensRelTol", -1);
+  adjAbsTol = opts.get("SensAbsTol", -1);
 
   maxStepSize = opts.get("MaximumStepSize", -1);
   maxNumSteps = opts.get("MaximumSteps", -1);
@@ -303,7 +309,7 @@ void ODE::EvaluateImpl(ref_vector<Eigen::VectorXd> const& inputs)
   const unsigned int stateSize = x0.size();
 
   auto rhsData = std::make_shared<ODEData>(rhs,
-                                           ref_vector<Eigen::VectorXd>(inputs.begin(),  inputs.begin()+(isAutonomous ? rhs->numInputs : rhs->numInputs-1)),
+                                           inputs,
                                            isAutonomous,
                                            -1);
 
@@ -336,6 +342,9 @@ void ODE::EvaluateImpl(ref_vector<Eigen::VectorXd> const& inputs)
 
   flag = CVodeSetUserData(cvode_mem, rhsData.get());
   CheckFlag(&flag, "CVodeSetUserData", 1);
+
+  flag = CVodeSetStopTime(cvode_mem, evalTimes(evalTimes.size()-1));
+  CheckFlag(&flag, "CVodeSetStopTime", 1);
 
   /* -------- Linear Solver and Jacobian ----------- */
   SUNMatrix rhsJac = NULL;
@@ -400,7 +409,7 @@ void ODE::GradientImpl(unsigned int outWrt,
   const unsigned int stateSize = x0.size();
 
   auto rhsData = std::make_shared<ODEData>(rhs,
-                                           ref_vector<Eigen::VectorXd>(inputs.begin(),  inputs.begin()+(isAutonomous ? rhs->numInputs : rhs->numInputs-1)),
+                                           inputs,
                                            isAutonomous,
                                            inWrt);
 
@@ -433,6 +442,10 @@ void ODE::GradientImpl(unsigned int outWrt,
 
   flag = CVodeSetUserData(cvode_mem, rhsData.get());
   CheckFlag(&flag, "CVodeSetUserData", 1);
+
+  flag = CVodeSetStopTime(cvode_mem, evalTimes(evalTimes.size()-1));
+  CheckFlag(&flag, "CVodeSetStopTime", 1);
+
 
   /* -------- Linear Solver and Jacobian ----------- */
   SUNMatrix rhsJac = NULL;
@@ -623,8 +636,8 @@ void ODE::GradientImpl(unsigned int outWrt,
 
 
 void ODE::JacobianImpl(unsigned int outWrt,
-                            unsigned int inWrt,
-                            ref_vector<Eigen::VectorXd> const& inputs)
+                       unsigned int inWrt,
+                       ref_vector<Eigen::VectorXd> const& inputs)
 {
   // Used for monitoring the success of CVODE calls
   int flag;
@@ -634,7 +647,7 @@ void ODE::JacobianImpl(unsigned int outWrt,
   const unsigned int stateSize = x0.size();
 
   auto rhsData = std::make_shared<ODEData>(rhs,
-                                           ref_vector<Eigen::VectorXd>(inputs.begin(),  inputs.begin()+(isAutonomous ? rhs->numInputs : rhs->numInputs-1)),
+                                           inputs,
                                            isAutonomous,
                                            inWrt);
 
@@ -667,6 +680,9 @@ void ODE::JacobianImpl(unsigned int outWrt,
 
   flag = CVodeSetUserData(cvode_mem, rhsData.get());
   CheckFlag(&flag, "CVodeSetUserData", 1);
+
+  flag = CVodeSetStopTime(cvode_mem, evalTimes(evalTimes.size()-1));
+  CheckFlag(&flag, "CVodeSetStopTime", 1);
 
   /* Set max steps between outputs */
   if(intOpts.maxNumSteps>0){
@@ -714,8 +730,13 @@ void ODE::JacobianImpl(unsigned int outWrt,
   CheckFlag((void *)sensState, "CVodeSetNonlinearSolverSensSim", 0);
 
   // set sensitivity tolerances
-  flag = CVodeSensEEtolerances(cvode_mem);
-  CheckFlag(&flag, "CVodeSensEEtolerances", 1);
+  if((intOpts.sensRelTol<=0)||(intOpts.sensAbsTol<=0)){
+    flag = CVodeSensEEtolerances(cvode_mem);
+    CheckFlag(&flag, "CVodeSensEEtolerances", 1);
+  }else{
+    Eigen::VectorXd sensAbsTol = intOpts.sensAbsTol*Eigen::VectorXd::Ones(paramSize);
+    flag = CVodeSensSStolerances(cvode_mem, intOpts.sensRelTol, sensAbsTol.data());
+  }
 
   //Eigen::VectorXd absTolVec = Eigen::VectorXd::Constant(paramSize, intOpts.abstol);
   // flag = CVodeSensSStolerances(cvode_mem, intOpts.reltol, absTolVec.data());
@@ -799,9 +820,9 @@ void ODE::JacobianImpl(unsigned int outWrt,
 
 
 void ODE::ApplyJacobianImpl(unsigned int outWrt,
-                                  unsigned int inWrt,
-                                  ref_vector<Eigen::VectorXd> const& inputs,
-                                  Eigen::VectorXd const& vec)
+                            unsigned int inWrt,
+                            ref_vector<Eigen::VectorXd> const& inputs,
+                            Eigen::VectorXd const& vec)
 {
   // Used for monitoring the success of CVODE calls
   int flag;
@@ -811,7 +832,7 @@ void ODE::ApplyJacobianImpl(unsigned int outWrt,
   const unsigned int stateSize = x0.size();
 
   auto rhsData = std::make_shared<ODEData>(rhs,
-                                           ref_vector<Eigen::VectorXd>(inputs.begin(),  inputs.begin()+(isAutonomous ? rhs->numInputs : rhs->numInputs-1)),
+                                           inputs,
                                            isAutonomous,
                                            inWrt,
                                            vec);
@@ -845,6 +866,9 @@ void ODE::ApplyJacobianImpl(unsigned int outWrt,
 
   flag = CVodeSetUserData(cvode_mem, rhsData.get());
   CheckFlag(&flag, "CVodeSetUserData", 1);
+
+  flag = CVodeSetStopTime(cvode_mem, evalTimes(evalTimes.size()-1));
+  CheckFlag(&flag, "CVodeSetStopTime", 1);
 
   /* Set max steps between outputs */
   if(intOpts.maxNumSteps>0){
@@ -997,7 +1021,8 @@ int ODE::Interface::RHSJacobianAction(N_Vector v,  // The vector we want to appl
                                            N_Vector state, // The current state
                                            N_Vector timeDeriv, // The current time derivative
                                            void *userData,
-                                           N_Vector tmp) {
+                                           N_Vector tmp)
+{
 
   // get the data type
   ODEData* data = (ODEData*) userData;

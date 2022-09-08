@@ -1,6 +1,8 @@
 #ifndef REMOTEMIPROPOSAL_H_
 #define REMOTEMIPROPOSAL_H_
 
+#include "MUQ/config.h"
+
 #if MUQ_HAS_MPI
 
 #if !MUQ_HAS_PARCER

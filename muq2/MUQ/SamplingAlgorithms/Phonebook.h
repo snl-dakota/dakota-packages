@@ -1,6 +1,8 @@
 #ifndef PHONEBOOK_H_
 #define PHONEBOOK_H_
 
+#include "MUQ/config.h"
+
 #if MUQ_HAS_MPI
 
 

@@ -6,6 +6,7 @@
 #include "MUQ/SamplingAlgorithms/SamplingProblem.h"
 #include "MUQ/SamplingAlgorithms/ExpensiveSamplingProblem.h"
 #include "MUQ/SamplingAlgorithms/SamplingState.h"
+#include "MUQ/SamplingAlgorithms/InferenceProblem.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -34,6 +35,18 @@ void PythonBindings::ProblemWrapper(py::module &m) {
     .def("LogDensity", &SamplingProblem::LogDensity)
     .def("GradLogDensity", &SamplingProblem::GradLogDensity)
     .def("GetDistribution", &SamplingProblem::GetDistribution);
+  
+  py::class_<InferenceProblem, AbstractSamplingProblem, std::shared_ptr<InferenceProblem>>(m, "InferenceProblem")
+    .def(py::init<std::shared_ptr<muq::Modeling::ModPiece>,std::shared_ptr<muq::Modeling::ModPiece>, double>(),py::arg("logLikely"),py::arg("logPrior"), py::arg("inverseTemp")=1.0)
+    .def(py::init<std::shared_ptr<muq::Modeling::ModPiece>,std::shared_ptr<muq::Modeling::ModPiece>, std::shared_ptr<muq::Modeling::ModPiece>, double>(), py::arg("logLikely"),py::arg("logPrior"), py::arg("qoi"), py::arg("inverseTemp")=1.0)
+    .def("LogDensity", &InferenceProblem::LogDensity)
+    .def("GradLogDensity", &InferenceProblem::GradLogDensity)
+    .def("QOI", &InferenceProblem::QOI)
+    .def("Likelihood", &InferenceProblem::Likelihood)
+    .def("Prior", &InferenceProblem::Prior)
+    .def("SetInverseTemp", &InferenceProblem::SetInverseTemp)
+    .def("GetInverseTemp", &InferenceProblem::GetInverseTemp)
+    .def("Clone", &InferenceProblem::Clone);
 
     py::class_<ExpensiveSamplingProblem, SamplingProblem, std::shared_ptr<ExpensiveSamplingProblem>> expenProb(m, "ExpensiveSamplingProblem");
     expenProb

@@ -14,6 +14,7 @@ namespace muq{
     class MonotoneExpansion;
 
     /** @defgroup Polynomials
+        @ingroup polychaos
         @brief Tools for constructing multivariate (orthogonal) polynomial expansions
     */
 
@@ -27,7 +28,7 @@ namespace muq{
                  is a coefficient, \f$\alpha\f$ is a multindex in the set of
                  indices \f$A\f$, and \f$\Phi_\alpha(x)\f$ is a multivariate
                  basis function defined by the multiindex, which takes the form
-                 \f[ \Phi_\alpha(x) = \Prod_{i=1}^N \phi_{i}(x_i,\alpha_i). \f]
+                 \f[ \Phi_\alpha(x) = \prod_{i=1}^N \phi_{i}(x_i,\alpha_i). \f]
                  The univariate functions \f$\phi_{i}(x_i,\alpha_i)\f$ can be
                  polynomials, Hermite functions, or some ther IndexScalarBasis.
                  For example, we could use Hermite polynomials for \f$i=0\f$ and
@@ -124,6 +125,58 @@ Eigen::MatrixXd outputVec2 = boost::any_cast<Eigen::MatrixXd>(output1);
       void SetCoeffs(Eigen::MatrixXd const& allCoeffs);
 
       const std::shared_ptr<muq::Utilities::MultiIndexSet> Multis() const{return multis;};
+
+
+      /**
+       @brief Saves the expansion to group in an HDF5 file. 
+       @details This function will create three datasets in an HDF5 file to save the multiindices, coefficients, and 
+                type of scalar basis functions used to define this expansion.  The datasets will be named "multiindices",
+                "coefficients", and "basis_type" and put in a group given as an argument to this function.  The 
+                multiindices dataset will contain an \f$N\times D_{in}\f$ matrix of integers, the coefficients dataset
+                will contain a \f$D_{out}\times N\f$ matrix of doubles, and the basis_type dataset will contain a 
+                length \f$D_{in}\f$ list of strings.  The strings correspond to the name of the scalar basis functions, 
+                which can be passed to the IndexedScalarBasis::Construct function.
+
+       @param[in] filename A string to the HDF5 file that this multiindexset should be stored in.   If the file doesn't exist, it will be created.
+       @param[in] groupName The path to the group in the HDF5 file where expansion datasets should be created. Defaults to the root "/".
+       */
+      virtual void ToHDF5(std::string filename, std::string groupName="/") const;
+
+      /** @brief Saves the expansion to a group in an HDF5 file. 
+           @details This function will create three datasets in an HDF5 group to save the multiindices, coefficients, and 
+                type of scalar basis functions used to define this expansion.  The datasets will be named "multiindices",
+                "coefficients", and "basis_types" and put in a group given as an argument to this function.  The 
+                multiindices dataset will contain an \f$N\times D_{in}\f$ matrix of integers, the coefficients dataset
+                will contain a \f$D_{out}\times N\f$ matrix of doubles, and the basis_types dataset will contain a 
+                length \f$D_{in}\f$ list of strings.  The strings correspond to the name of the scalar basis functions, 
+                which can be passed to the IndexedScalarBasis::Construct function.
+
+          @param[in] group An HDF5 object for the group where the datasets will be created.
+      */
+      virtual void ToHDF5(muq::Utilities::H5Object &group) const;
+
+      /**
+       @brief Loads an expansion from an HDF5 file.  
+       @details This function works in tandem with the BasisExpansion::ToHDF5 function.   It will read the multiindices,
+       coefficients, and scalar basis type from the HDF5 file and construct a BasisExpansion.  See the BasisExpansion::ToHDF5
+       function for the details of these datasets.
+       
+       @param[in] filename A string to an HDF5 file.  If the file doesn't exist or the correct datasets don't exist, an exception will be thrown.
+       @param[in] dsetName The path to the HDF5 group containing expansion datasets.
+       @return std::shared_ptr<BasisExpansion> 
+
+       @see BasisExpansion::ToHDF5
+       */
+      static std::shared_ptr<BasisExpansion> FromHDF5(std::string filename, std::string groupName="/");
+
+      /** @brief Loads the expansion from an existing HDF5 group.   
+          @details This function will read the multiindices in an an HDF5 dataset and construct an instance of the MultiIndexSet class.
+          @param[in] group An HDF5 group containing the "multiindices", "coefficients", and "basis_types" datasets.
+          
+          @see BasisExpansion::ToHDF5
+      */
+      static std::shared_ptr<BasisExpansion> FromHDF5(muq::Utilities::H5Object &group);
+
 
     protected:
 

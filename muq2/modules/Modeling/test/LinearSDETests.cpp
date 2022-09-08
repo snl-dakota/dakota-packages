@@ -37,6 +37,32 @@ TEST(LinearSDE, MeanCovariance)
 }
 
 
+TEST(LinearSDE, MeanCovariance_NoL)
+{
+    // Uses the Ornstein-Uhlenback SDE as a test case
+
+    const int dim = 1;
+    
+    auto F = muq::Modeling::LinearOperator::Create((-Eigen::MatrixXd::Identity(dim,dim)).eval());
+    
+    boost::property_tree::ptree options;
+    options.put("SDE.dt", 1e-3);
+
+    LinearSDE sde(F,options);
+    
+    Eigen::VectorXd mu0 = Eigen::VectorXd::Ones(dim);
+    Eigen::MatrixXd cov0 = 0.5*Eigen::MatrixXd::Ones(dim,dim);
+
+    Eigen::VectorXd mu;
+    Eigen::MatrixXd cov;
+    
+    double endTime = 1.0;
+    std::tie(mu, cov) = sde.EvolveDistribution(mu0, cov0, endTime);
+    
+    EXPECT_NEAR(mu0(0)*exp(-1.0*endTime), mu(0), 1e-3);
+    EXPECT_NEAR(cov0(0,0)*exp(-2.0*endTime), cov(0,0), 1e-3);
+}
+
 TEST(LinearSDE, Concatenate)
 {
     // Uses the Ornstein-Uhlenback SDE as a test case

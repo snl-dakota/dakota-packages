@@ -53,6 +53,7 @@ void muq::Modeling::PythonBindings::WorkPieceWrapper(py::module &m)
     py::class_<WorkGraph> wg(m, "WorkGraph");
     wg
         .def(py::init())
+        .def("Clone", &WorkGraph::Clone)
         .def("NumNodes", &WorkGraph::NumNodes)
         .def("NumEdges", &WorkGraph::NumEdges)
         .def("AddNode", &WorkGraph::AddNode, py::keep_alive<1, 2>())

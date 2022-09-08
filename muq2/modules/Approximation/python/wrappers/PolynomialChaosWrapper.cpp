@@ -42,8 +42,10 @@ void muq::Approximation::PythonBindings::PolynomialChaosWrapper(py::module &m)
     .def("TotalSensitivity", (Eigen::MatrixXd (PolynomialChaosExpansion::*)() const) &PolynomialChaosExpansion::TotalSensitivity)
     .def("SobolSensitivity", (Eigen::VectorXd (PolynomialChaosExpansion::*)(unsigned int) const) &PolynomialChaosExpansion::SobolSensitivity)
     .def("SobolSensitivity", (Eigen::VectorXd (PolynomialChaosExpansion::*)(std::vector<unsigned int> const&) const) &PolynomialChaosExpansion::SobolSensitivity)
-    .def("MainSensitivity", &PolynomialChaosExpansion::MainSensitivity);
-
+    .def("MainSensitivity", &PolynomialChaosExpansion::MainSensitivity)
+    .def("ToHDF5", (void (PolynomialChaosExpansion::*)(std::string, std::string) const) &PolynomialChaosExpansion::ToHDF5, py::arg("filename"),py::arg("groupName")="/")
+    .def_static("FromHDF5", [](std::string filename, std::string dsetName){return PolynomialChaosExpansion::FromHDF5(filename, dsetName);})
+    .def_static("FromHDF5", [](std::string filename){return PolynomialChaosExpansion::FromHDF5(filename, "/");});
 
   py::class_<PCEFactory, std::shared_ptr<PCEFactory>> pceFactory(m, "PCEFactory");
   pceFactory

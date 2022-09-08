@@ -367,6 +367,44 @@ TEST(Modeling_ModGraphPiece, MultiSplit)
 // }
 //
 //
+
+TEST(Modeling_ModGraphPiece, SplitHessianTest)
+{
+  auto graph = make_shared<WorkGraph>();
+
+  // create a vector we want to split
+  Eigen::VectorXd vec = Eigen::VectorXd::Random(6);
+
+  Eigen::VectorXi ind = Eigen::Vector2i(0, 4);
+  Eigen::VectorXi size = Eigen::Vector2i(4, 2);
+  auto split = std::make_shared<SplitVector>(ind, size, vec.size());
+  
+  graph->AddNode(split, "params");
+  graph->AddNode(std::make_shared<IdentityOperator>(size(0)), "x");
+  graph->AddNode(std::make_shared<IdentityOperator>(size(1)), "y");
+  graph->AddEdge("params",0,"x",0);
+  graph->AddEdge("params",1,"y",0);
+  auto dens1 = std::make_shared<Gaussian>(size(0));
+  auto dens2 = std::make_shared<Gaussian>(size(1));
+  
+  graph->AddNode(dens1->AsDensity(), "p(x)");
+  graph->AddNode(dens2->AsDensity(), "p(y)");
+  graph->AddNode(std::make_shared<DensityProduct>(2), "p(x,y)");
+  graph->AddEdge("x",0,"p(x)",0);
+  graph->AddEdge("y",0,"p(y)",0);
+  graph->AddEdge("p(x)",0,"p(x,y)",0);
+  graph->AddEdge("p(y)",0,"p(x,y)",1);
+  
+  auto piece = graph->CreateModPiece("p(x,y)");
+
+  Eigen::VectorXd hessAct;
+  std::vector<Eigen::VectorXd> inputs(1);
+  inputs.at(0) = vec;
+  Eigen::VectorXd sens = Eigen::VectorXd::Ones(1);
+  hessAct = piece->ApplyHessian(0,0,0, inputs, sens, vec);
+  
+}
+
 TEST(Modeling_ModGraphPiece, DiamondTest)
 {
   auto myGraph = make_shared<WorkGraph>();

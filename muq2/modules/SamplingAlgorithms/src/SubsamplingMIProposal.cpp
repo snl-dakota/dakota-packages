@@ -2,9 +2,10 @@
 namespace muq {
   namespace SamplingAlgorithms {
 
-    SubsamplingMIProposal::SubsamplingMIProposal (pt::ptree const& pt, std::shared_ptr<AbstractSamplingProblem> prob, std::shared_ptr<SingleChainMCMC> coarseChain)
-     : MCMCProposal(pt,prob), coarseChain(coarseChain),
-       subsampling(pt.get<int>("Subsampling"))
+    SubsamplingMIProposal::SubsamplingMIProposal (pt::ptree const& pt, std::shared_ptr<AbstractSamplingProblem> prob, std::shared_ptr<muq::Utilities::MultiIndex> coarseIndex, std::shared_ptr<SingleChainMCMC> coarseChain)
+     : MCMCProposal(pt,prob),
+       coarseChain(coarseChain),
+       subsampling(pt.get<int>("MLMCMC.Subsampling" + multiindexToConfigString(coarseIndex)))
     {}
 
     std::shared_ptr<SamplingState> SubsamplingMIProposal::Sample(std::shared_ptr<SamplingState> const& currentState) {
@@ -23,6 +24,13 @@ namespace muq {
       return 0;
     }
 
+    std::string SubsamplingMIProposal::multiindexToConfigString (std::shared_ptr<muq::Utilities::MultiIndex> index) {
+      std::stringstream strs;
+      for (int i = 0; i < index->GetLength(); i++) {
+        strs << "_" << index->GetValue(i);
+      }
+      return strs.str();
+    }
 
   }
 }

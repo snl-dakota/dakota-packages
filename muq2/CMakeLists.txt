@@ -1,5 +1,33 @@
 cmake_minimum_required (VERSION 3.10)
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.24.0") 
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
+
+# Check for the M1 chip and set the value of CMAKE_OSX_ARCHITECTURES accordingly
+# Uses ideas outlined in the discussion at https://gitlab.kitware.com/cmake/cmake/-/issues/20989
+IF(APPLE)
+
+	# Only run these checks is the OSX Architecture isn't already specified
+  if(NOT CMAKE_OSX_ARCHITECTURES)
+
+		# Use sysctl to detect for arm64 instructions in the hardware
+		set(ARM_TEST 0)
+	  execute_process(COMMAND sysctl hw.optional.arm64 OUTPUT_VARIABLE ARM_TEST OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+		# If arm64 is supported, set the CMAKE_OSX_ARCHITECTURES variable
+	  if(${ARM_TEST} STREQUAL "hw.optional.arm64: 1")
+	    message(STATUS "FOUND APPLE M1.  Setting architecture to ARM64")
+			set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Architecture" FORCE)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch arm64 -arch x86_64")
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -arch arm64 -arch x86_64")
+			set(BUILD_SHARED_LIBS ON)
+	  endif()
+
+	endif()
+ENDIF(APPLE)
+
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/)
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/finds)
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/checks)
@@ -9,11 +37,12 @@ INCLUDE(CheckCXXSourceCompiles)
 INCLUDE(CheckCXXSourceRuns)
 INCLUDE(CheckFunctionExists)
 
+
 # define the project name
 project(MUQ)
 set(${CMAKE_PROJECT_NAME}_MAJOR_VERSION 0)
-set(${CMAKE_PROJECT_NAME}_MINOR_VERSION 3)
-set(${CMAKE_PROJECT_NAME}_PATCH_VERSION 0)
+set(${CMAKE_PROJECT_NAME}_MINOR_VERSION 4)
+set(${CMAKE_PROJECT_NAME}_PATCH_VERSION 3)
 set(${CMAKE_PROJECT_NAME}_VERSION ${${CMAKE_PROJECT_NAME}_MAJOR_VERSION}.${${CMAKE_PROJECT_NAME}_MINOR_VERSION}.${${CMAKE_PROJECT_NAME}_PATCH_VERSION})
 
 message(STATUS "\n\nThis is MUQ, the MIT UQ Library!\n\n")
@@ -90,7 +119,7 @@ configure_file(cmake/MUQConfig.cmake.in "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRE
 
 # Install the MUQConfig.cmake file
 install(FILES "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${CMAKE_PROJECT_NAME}Config.cmake"
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/CMake/${CMAKE_PROJECT_NAME}"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/${CMAKE_PROJECT_NAME}"
 	    COMPONENT dev)
 
 # Install the pymuq libraries
@@ -103,7 +132,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/modules/PythonPackage/"
 
 # Install the export set for use with the install-tree
 install(EXPORT ${CMAKE_PROJECT_NAME}Depends
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/CMake/${CMAKE_PROJECT_NAME}"
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/${CMAKE_PROJECT_NAME}"
 	    COMPONENT dev)
 
 # install all the MUQ headers -- may be better off installing for each package individually
@@ -137,28 +166,39 @@ MESSAGE("${MUQ_LOG_SUMMARY}")
 ###############################################
 # Add a target to build documentation
 ###############################################
-option(MUQ_ENABLE_DOCS "MUQ: Whether to build Doxygen docs" OFF)
-if(MUQ_ENABLE_DOCS)
 # add a target to generate API documentation with Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-	message(STATUS "To build documentation, run 'make doc'")
 
-	option(MUQDOC_INCLUDE_ANALYTICS OFF)
-	if(MUQDOC_INCLUDE_ANALYTICS)
-		message(STATUS "Will include google analytics header information in doxygen output.")
-		set(ANALYTICS_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/documentation/doxFiles/analytics_header.html)
+	if(PYTHON_EXECUTABLE)
+		set(Python3_EXECUTABLE ${PYTHON_EXECUTABLE})
+		set(Python3_Interpreter_FOUND ON)
+	else()
+		find_package(Python3 COMPONENTS Interpreter)
 	endif()
 
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/documentation/muq.doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/muq.doxyfile @ONLY)
-    add_custom_target(doc
-        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/muq.doxyfile
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen" VERBATIM
-    )
+	if(Python3_Interpreter_FOUND)
 
+		message(STATUS "PYTHON3 EXE: ${Python3_EXECUTABLE}")
+		message(STATUS "To build documentation, run 'make doc'")
 
+		option(MUQDOC_INCLUDE_ANALYTICS OFF)
+		if(MUQDOC_INCLUDE_ANALYTICS)
+			message(STATUS "Will include google analytics header information in doxygen output.")
+			set(ANALYTICS_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/documentation/doxFiles/analytics_header.html)
+		else()
+			set(ANALYTICS_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/documentation/doxFiles/noanalytics_header.html)
+		endif()
+
+	    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/documentation/muq.doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/muq.doxyfile @ONLY)
+	    add_custom_target(doc
+	        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/documentation/scripts/doxygen_preprocessing.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+	        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/muq.doxyfile
+	        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+	        COMMENT "Generating API documentation with Doxygen" VERBATIM
+	    )
+
+	endif(Python3_Interpreter_FOUND)
 endif(DOXYGEN_FOUND)
-endif()
 
-#add_subdirectory(examples EXCLUDE_FROM_ALL)
+add_subdirectory(examples EXCLUDE_FROM_ALL)

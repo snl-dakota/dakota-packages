@@ -48,16 +48,16 @@ TEST(Utilities_MultiIndices, RowConstructor)
 
 TEST(Utilities_MultiIndices, InitializerListConstructor)
 {
-  MultiIndex multi{1,5,3,0};
+  MultiIndex multi{1,0,5,0};
 
   EXPECT_EQ(4,multi.GetLength());
   EXPECT_EQ(1,multi.GetValue(0));
-  EXPECT_EQ(5,multi.GetValue(1));
-  EXPECT_EQ(3,multi.GetValue(2));
+  EXPECT_EQ(0,multi.GetValue(1));
+  EXPECT_EQ(5,multi.GetValue(2));
   EXPECT_EQ(0,multi.GetValue(3));
 
   EXPECT_EQ(5,multi.Max());
-  EXPECT_EQ(9,multi.Sum());
+  EXPECT_EQ(6,multi.Sum());
 }
 
 TEST(Utilities_MultiIndices, Comparison)

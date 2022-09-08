@@ -3,6 +3,7 @@
 
 #include "MUQ/Modeling/Distributions/Gaussian.h"
 #include "MUQ/Modeling/Distributions/InverseGamma.h"
+#include "MUQ/Modeling/ModPiece.h"
 
 #include "MUQ/SamplingAlgorithms/MCMCProposal.h"
 
@@ -42,7 +43,7 @@ namespace muq {
     class InverseGammaProposal : public MCMCProposal {
     public:
 
-      InverseGammaProposal(boost::property_tree::ptree       const& pt,
+      InverseGammaProposal(boost::property_tree::ptree              pt,
                            std::shared_ptr<AbstractSamplingProblem> prob);
 
       virtual ~InverseGammaProposal() = default;
@@ -56,7 +57,10 @@ namespace muq {
       const Eigen::VectorXd beta;
 
       /// The index of the Gaussian block
-      const unsigned int gaussBlock;
+      std::tuple<std::shared_ptr<muq::Modeling::ModPiece>, std::vector<int>, int> gaussInfo;
+
+      /// A ModPiece containing an orthogonal matrix mapping the parameters to Gaussian variance.
+      std::shared_ptr<muq::Modeling::ModPiece> varModel;
 
       /// The mean of the Gaussian distribution
       const Eigen::VectorXd gaussMean;
@@ -66,13 +70,27 @@ namespace muq {
       virtual double LogDensity(std::shared_ptr<SamplingState> const& currState,
                                 std::shared_ptr<SamplingState> const& propState) override;
 
+      /** Computes the current input to the Gaussian distribution.
+
+        NOTE: If one-step caching is not enabled, this function may end up
+              duplicating calls to expensive ModPieces.
+      */
+      virtual Eigen::VectorXd GetGaussianInput(std::shared_ptr<SamplingState> const& currentState) const;
 
       static Eigen::VectorXd ExtractMean(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& gaussNode);
+
+      /** Looks through the graph and constructs a ModPiece that maps the variance parameter to the Gaussian variance.
+          This model allows us to account for cases where the diagonal
+          covariance of the Gaussian is defined piecewise or through some
+          orthogonal matrix.  For example, diag_variance = V x, where x is the
+          parameter we're sampling with MCMC.
+      */
+      static std::shared_ptr<muq::Modeling::ModPiece> ExtractVarianceModel(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& gaussNode, std::string const& igNode);
 
       static std::shared_ptr<muq::Modeling::InverseGamma> ExtractInverseGamma(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& igNode);
       static Eigen::VectorXd ExtractAlpha(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& igNode);
       static Eigen::VectorXd ExtractBeta(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& igNode);
-      static unsigned int ExtractGaussInd(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& gaussNode);
+      static std::tuple<std::shared_ptr<muq::Modeling::ModPiece>, std::vector<int>, int> ExtractGaussInfo(std::shared_ptr<AbstractSamplingProblem> prob, std::string const& gaussNode);
     };
 
   } // namespace SamplingAlgoirthms

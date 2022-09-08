@@ -39,8 +39,8 @@ CreateCompileGroup(
 	Polynomials/Laguerre.cpp
 	Polynomials/Jacobi.cpp
 	Polynomials/HermiteFunction.cpp
-  Polynomials/BasisExpansion.cpp
-  Polynomials/MonotoneExpansion.cpp
+    Polynomials/BasisExpansion.cpp
+    Polynomials/MonotoneExpansion.cpp
 )
 
 CreateCompileGroup(
@@ -51,7 +51,7 @@ CreateCompileGroup(
 	""
 	""
 	Quadrature/Quadrature.cpp
-  Quadrature/GaussQuadrature.cpp
+    Quadrature/GaussQuadrature.cpp
 	Quadrature/FullTensorQuadrature.cpp
 	Quadrature/SmolyakQuadrature.cpp
 	Quadrature/ClenshawCurtisQuadrature.cpp
@@ -83,9 +83,10 @@ CreateCompileGroup(
     GaussianProcesses/KernelBase.cpp
     GaussianProcesses/MaternKernel.cpp
     GaussianProcesses/ConcatenateKernel.cpp
-		GaussianProcesses/ProductKernel.cpp
+	GaussianProcesses/ProductKernel.cpp
     GaussianProcesses/SumKernel.cpp
     GaussianProcesses/PeriodicKernel.cpp
+	GaussianProcesses/ConstantKernel.cpp
     GaussianProcesses/KarhunenLoeveExpansion.cpp
     #GaussianProcesses/SeparableKarhunenLoeve.cpp
     GaussianProcesses/ObservationInformation.cpp

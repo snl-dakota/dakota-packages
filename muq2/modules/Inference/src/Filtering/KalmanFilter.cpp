@@ -21,7 +21,7 @@ Eigen::MatrixXd KalmanFilter::ComputeGain(Eigen::MatrixXd                       
         S += obsCov;
     }
 
-    Eigen::LLT<Eigen::MatrixXd> solver(S); // <- In place Cholesky decomposition
+    Eigen::LDLT<Eigen::MatrixXd> solver(S); // <- In place Cholesky decomposition
     Eigen::MatrixXd K = solver.solve( HP ).transpose();
 
     return K;

@@ -17,11 +17,20 @@ CreateCompileGroup(
     "The basic building blocks to define and solve optimization problems."
     muqOptimization
     "MODELING_CORE"
-    "NLOPT"
+    ""
     ""
     CostFunction.cpp
     ModPieceCostFunction.cpp
     Optimizer.cpp
-    Optimization.cpp
+    NewtonTrust.cpp
+)
+
+CreateCompileGroup(
+    OPTIMIZATION_NLOPT
+    "Wrapper around the NLOPT optimization library."
+    muqOptimization
+    "OPTIMIZATION_CORE;MODELING_CORE"
+    "NLOPT"
+    ""
     NLoptOptimizer.cpp
 )

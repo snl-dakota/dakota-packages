@@ -26,6 +26,18 @@ DRKernel::DRKernel(pt::ptree const& pt,
 
 }
 
+
+void DRKernel::SetBlockInd(int newBlockInd)
+{
+  blockInd = newBlockInd;
+  for(auto& proposal : proposals)
+    proposal->SetBlockInd(newBlockInd);
+};
+
+DRKernel::DRKernel(boost::property_tree::ptree         const& pt,
+                   std::shared_ptr<AbstractSamplingProblem>   problem,
+                   std::vector<std::shared_ptr<MCMCProposal>> proposalsIn) : DRKernel(pt, problem, proposalsIn, std::vector<double>(proposalsIn.size(),1.0)){}
+
 DRKernel::DRKernel(pt::ptree                           const& pt,
                    std::shared_ptr<AbstractSamplingProblem>   problem,
                    std::vector<std::shared_ptr<MCMCProposal>> proposalsIn,

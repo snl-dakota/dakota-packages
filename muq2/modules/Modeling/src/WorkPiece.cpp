@@ -1,6 +1,7 @@
 #include "MUQ/Modeling/WorkPiece.h"
 
 #include "MUQ/Utilities/Exceptions.h"
+#include "MUQ/Utilities/Demangler.h"
 
 // define the muq namespace
 using namespace muq::Modeling;
@@ -546,8 +547,26 @@ std::string WorkPiece::CreateName() const {
   int status;
   std::stringstream ss;
 
-  // the unique name is the name of the (child) class + "_{ID number}"
-  ss << abi::__cxa_demangle(typeid(*this).name(), 0, 0, &status) << "_" << id;
+  std::string className = muq::Utilities::demangle(typeid(*this).name());
+
+  // Check to see if the class name starts with muq::Modeling.  If it does, remove it.
+  if(className.rfind("muq::Modeling", 0) == 0)
+    className.erase(0,15);
+
+  // Remote templates
+  std::string simpleName = "";
+  int openCnt = 0;
+  for(int i=0; i<className.size(); ++i){
+    if(className[i]=='<'){
+      openCnt++;
+    }else if(className[i]=='>'){
+      openCnt--;
+    }else if(openCnt==0){
+      simpleName += className[i];
+    }
+  }
+
+  ss << simpleName << "_" << id;
 
   return ss.str();
 }

@@ -1,4 +1,5 @@
 #include "MUQ/Utilities/MultiIndices/MultiIndexSet.h"
+#include "MUQ/Utilities/HDF5/H5Object.h"
 
 #include <algorithm>
 
@@ -497,4 +498,50 @@ MultiIndexSet& MultiIndexSet::operator+=(std::shared_ptr<MultiIndex> const& rhs)
 {
   AddActive(rhs);
   return *this;
+}
+
+
+void MultiIndexSet::ToHDF5(std::string filename, std::string dsetName) const
+{
+  muq::Utilities::H5Object fout = muq::Utilities::OpenFile(filename);
+  ToHDF5(fout, dsetName);
+}
+
+
+void MultiIndexSet::ToHDF5(muq::Utilities::H5Object &group, std::string dsetName) const
+{
+
+  unsigned int numTerms = Size();
+  unsigned int dim = GetMultiLength();
+
+  // Create a dataset 
+  auto dset = group.CreateDataset<int>(dsetName, numTerms, dim);
+
+  // Store each multiindex as a row in the dataset
+  for(unsigned int i=0; i<numTerms; ++i)
+    dset.row(i) = this->IndexToMulti(i)->GetVector();
+}
+
+
+std::shared_ptr<MultiIndexSet> MultiIndexSet::FromHDF5(std::string filename, std::string dsetName)
+{
+  muq::Utilities::H5Object fin= muq::Utilities::OpenFile(filename);
+  return MultiIndexSet::FromHDF5(fin[dsetName]);
+}
+
+std::shared_ptr<MultiIndexSet> MultiIndexSet::FromHDF5(muq::Utilities::H5Object &dset)
+{
+  unsigned int numTerms = dset.rows();
+  unsigned int dim = dset.cols();
+
+  // Create an empty set
+  auto output = std::make_shared<MultiIndexSet>(dim);
+
+  // Add all the terms from the HDF5 file
+  for(unsigned int i=0; i<numTerms; ++i){
+   auto multi = std::make_shared<MultiIndex>(dset.row(i));
+   output->AddActive(multi);
+  }
+
+  return output;
 }

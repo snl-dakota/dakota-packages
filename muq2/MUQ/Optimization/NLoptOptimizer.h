@@ -14,17 +14,15 @@ namespace muq {
     class NLoptOptimizer : public Optimizer {
     public:
 
-      NLoptOptimizer(std::shared_ptr<CostFunction> cost,
-                     boost::property_tree::ptree const& pt);
+      NLoptOptimizer(std::shared_ptr<muq::Modeling::ModPiece> const& cost,
+                     boost::property_tree::ptree              const& pt);
 
-      virtual ~NLoptOptimizer();
+      virtual ~NLoptOptimizer() = default;
 
-      virtual std::pair<Eigen::VectorXd, double>
-        Solve(std::vector<Eigen::VectorXd> const& inputs) override;
+      virtual std::pair<Eigen::VectorXd, double> Solve(std::vector<Eigen::VectorXd> const& inputs) override;
 
     private:
-
-
+      
       /// Evaluate either the cost function or a constraint
       /**
          @param[in] n The size of the input
@@ -49,15 +47,14 @@ namespace muq {
 
       /// Override the evaluate impl method (solve the optimization problem)
       /**
-	 @param[in] args The first input is the variable we are optimizing over
+	      @param[in] args The first input is the variable we are optimizing over
        */
-      virtual void
-      EvaluateImpl(muq::Modeling::ref_vector<boost::any> const& inputs) override;
+      virtual void EvaluateImpl(muq::Modeling::ref_vector<boost::any> const& inputs) override;
 
       /// Get the NLOPT algorithm we are using
       /**
-	 @param[in] alg User-input algorithm
-	 \return The NLOPT algorithm
+	      @param[in] alg User-input algorithm
+	      \return The NLOPT algorithm
        */
       nlopt_algorithm NLOptAlgorithm(std::string const& alg) const;
 

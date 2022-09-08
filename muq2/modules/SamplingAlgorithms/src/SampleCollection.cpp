@@ -2,6 +2,9 @@
 
 #include "MUQ/Utilities/AnyHelpers.h"
 
+#include "MUQ/SamplingAlgorithms/Diagnostics.h"
+
+
 using namespace muq::SamplingAlgorithms;
 using namespace muq::Utilities;
 
@@ -103,8 +106,8 @@ Eigen::VectorXd const& SamplingStatePartialMoment::operator()(SamplingState cons
 
 void SampleCollection::Add(std::shared_ptr<SamplingState> newSamp)
 {
-  // copy the sample
-  samples.push_back(std::make_shared<SamplingState>(*newSamp));
+  // copy the sample pointer
+  samples.push_back(newSamp);//std::make_shared<SamplingState>(*newSamp));
 }
 
 std::shared_ptr<SamplingState> SampleCollection::at(unsigned i)
@@ -116,6 +119,23 @@ const std::shared_ptr<SamplingState> SampleCollection::at(unsigned i) const
   return samples.at(i);
 }
 
+std::shared_ptr<SampleCollection> SampleCollection::segment(unsigned int startInd, unsigned int length, unsigned int skipBy) const
+{
+  assert(startInd<size());
+  assert(startInd+length<=size());
+
+  std::shared_ptr<SampleCollection> output = std::make_shared<SampleCollection>();
+  for(unsigned int i=startInd; i<startInd+length; i+=skipBy)
+    output->Add(at(i));
+
+  return output;
+}
+
+const std::shared_ptr<SamplingState> SampleCollection::back() const {
+  return samples.back();
+}
+
+
 Eigen::VectorXd SampleCollection::CentralMoment(unsigned order, Eigen::VectorXd const& mean, int blockNum) const {
   SamplingStatePartialMoment op(blockNum, order, mean);
 
@@ -124,14 +144,6 @@ Eigen::VectorXd SampleCollection::CentralMoment(unsigned order, Eigen::VectorXd 
 
   std::tie(weightSum, stateSum) = RecursiveSum(samples.begin(), samples.end(), op);
   return (stateSum / weightSum).eval();
-}
-
-//  Computes the componentwise central moments (e.g., variance, skewness, kurtosis, etc..) of a specific order
-Eigen::VectorXd SampleCollection::CentralMoment(unsigned order, int blockNum) const
-{
-  const Eigen::VectorXd& mu = Mean(blockNum);
-
-  return CentralMoment(order, mu, blockNum);
 }
 
 Eigen::VectorXd SampleCollection::Mean(int blockNum) const
@@ -145,10 +157,6 @@ Eigen::VectorXd SampleCollection::Mean(int blockNum) const
     return (stateSum / weightSum).eval();
 }
 
-Eigen::MatrixXd SampleCollection::Covariance(int blockInd) const
-{
-  return Covariance(Mean(blockInd), blockInd);
-}
 
 Eigen::MatrixXd SampleCollection::Covariance(Eigen::VectorXd const& mean, int blockInd) const {
   const int numSamps = samples.size();
@@ -277,23 +285,154 @@ std::pair<double,double> SampleCollection::RecursiveWeightSum(std::vector<std::s
 }
 
 
-Eigen::VectorXd SampleCollection::ESS(int blockDim) const
-{
-  if(samples.size()==0)
-    return Eigen::VectorXd();
-
-  double weightSum = 0.0;
-  double squaredSum = 0.0;
-  std::tie(weightSum, squaredSum) = RecursiveWeightSum(samples.begin(), samples.end());
-
-  int blockSize;
-  if(blockDim<0){
-    blockSize = samples.at(0)->TotalDim();
+Eigen::VectorXd SampleCollection::ESS(int blockInd, std::string const& method) const
+{ 
+  if(method=="Batch"){
+    return BatchESS(blockInd);
+  }else if(method=="MultiBatch"){
+    return MultiBatchESS(blockInd)*Eigen::VectorXd::Ones(1);
   }else{
-    blockSize = samples.at(0)->state.at(blockDim).size();
+    std::stringstream msg;
+    msg << "Invalid method (" << method << ") passed to SampleCollection::ESS.  Valid options are \"Batch\" and \"MultiBatch\".";
+    throw std::runtime_error(msg.str());
+    return Eigen::VectorXd();
+  }
+}
+
+
+double SampleCollection::MultiBatchESS(int blockInd, int batchSize, int overlap) const
+{
+  double numSamps = size();
+
+  // If the blocksize wasn't given explicitly, use n^{1/3}
+  if(batchSize<1)
+    batchSize = std::min( std::floor(numSamps/(BlockSize(blockInd)+1)), std::round(std::pow(numSamps, 1.0/2.0)));
+
+  // If the overlap wasn't given explicitly, use 10% of the batchSize
+  if(overlap<1)
+    overlap = std::floor(0.75*batchSize);
+
+  // The total number of overlapping batches in the chain
+  unsigned int numBatches = std::floor( (numSamps-batchSize)/(batchSize-overlap) );
+
+  // The number of non-overlapping batches that we could fit in this chain 
+  unsigned int numNonOverlapBatches = std::floor( (numSamps / batchSize) - 1 ); 
+
+  // If the batch size and overlap do not result in enough batches, throw an error
+  if(numNonOverlapBatches < BlockSize(blockInd)){
+
+      std::stringstream msg;
+      msg << "ERROR in SampleCollection::MultiBatchError.  Batch size of " << batchSize;
+      msg << " results in " << numNonOverlapBatches << " non-overlapping batches, which";
+      msg << " is less than the parameter dimension " << BlockSize(blockInd);
+      msg << " and will result in a singular estimator covariance matrix.";
+      throw std::runtime_error(msg.str());
   }
 
-  return (weightSum*weightSum / squaredSum) * Eigen::VectorXd::Ones(blockSize);
+  // Number of non-overlapping variance estimators
+  unsigned int numEstimators = std::floor( (numSamps - numNonOverlapBatches*batchSize)/double(batchSize-overlap) ); 
+
+  // Sample mean
+  Eigen::VectorXd mean = Mean(blockInd);
+
+  // The covariance of batch estimators
+  Eigen::MatrixXd estCov = Eigen::MatrixXd::Zero(BlockSize(blockInd), BlockSize(blockInd));
+
+  // Compute the estimator covariance
+  for(unsigned int estInd=0; estInd<numEstimators; ++estInd){
+    for(unsigned int batchInd=0; batchInd<numNonOverlapBatches; ++batchInd){
+      Eigen::VectorXd diff = segment(estInd*(batchSize-overlap) + batchInd*batchSize, batchSize)->Mean(blockInd) - mean;
+      estCov += diff * diff.transpose();
+    }
+  }
+  estCov /= (numNonOverlapBatches-1.0)*numEstimators; // <- Estimate of the size b_n estimator variance
+  estCov *= double(batchSize); // <-Estimate of the size n estimator variance 
+
+  double covDet = Covariance(mean).determinant();
+
+  return std::min(numSamps, numSamps*std::pow(covDet / estCov.determinant(), 1.0/BlockSize(blockInd)) );
+}
+
+Eigen::VectorXd SampleCollection::BatchESS(int blockInd, int batchSize, int overlap) const
+{ 
+  double numSamps = size();
+
+  Eigen::VectorXd avgEstVar = BatchError(blockInd, batchSize, overlap).array().square();
+
+  Eigen::VectorXd ess = Variance(blockInd).array() / avgEstVar.array();
+  for(int i=0; i<ess.size(); ++i)
+    ess(i) = std::min(ess(i), numSamps);
+
+  return ess;
+}
+
+Eigen::VectorXd SampleCollection::StandardError(int                blockInd, 
+                                                std::string const& method) const
+{
+  if(method=="Batch"){
+    return BatchError(blockInd);
+  }else if(method=="MultiBatch"){
+    return MultiBatchError(blockInd);
+  }else{
+    std::stringstream msg;
+    msg << "Invalid method (" << method << ") passed to SampleCollection::StandardError.  Valid options are \"Batch\" and \"MultiBatch\".";
+    throw std::runtime_error(msg.str());
+    return Eigen::VectorXd();
+  }
+}
+
+Eigen::VectorXd SampleCollection::BatchError(int blockInd, int batchSize, int overlap) const
+{
+  double numSamps = size();
+
+  // If the blocksize wasn't given explicitly, use n^{1/2}
+  if(batchSize<1)
+    batchSize = std::round(std::pow(numSamps, 1.0/2.0));
+
+  // If the overlap wasn't given explicitly, use 10% of the batchSize
+  if(overlap<1)
+    overlap = std::floor(0.75*batchSize);
+
+  // The total number of overlapping batches in the chain
+  unsigned int numBatches = std::floor( (numSamps-batchSize)/(batchSize-overlap) );
+
+  // The number of non-overlapping batches that we could fit in this chain 
+  unsigned int numNonOverlapBatches = std::floor( (numSamps / batchSize) - 1 ); 
+
+  // Number of non-overlapping variance estimators
+  unsigned int numEstimators = std::floor( (numSamps - numNonOverlapBatches*batchSize)/double(batchSize-overlap) ); 
+
+  Eigen::VectorXd mean = Mean(blockInd);
+
+  // Vector to hold the mean (over non-overlapping estimators) estimator variance.
+  Eigen::VectorXd avgEstVar = Eigen::VectorXd::Zero(BlockSize(blockInd));
+  for(unsigned int estInd=0; estInd<numEstimators; ++estInd){
+    for(unsigned int batchInd=0; batchInd<numNonOverlapBatches; ++batchInd){
+      avgEstVar += (1.0/(numNonOverlapBatches-1.0)) * (segment(estInd*(batchSize-overlap) + batchInd*batchSize, batchSize)->Mean(blockInd) - mean).array().square().matrix();
+    }
+  }
+  avgEstVar /= numEstimators; // <- Estimate of the size b_n estimator variance
+  avgEstVar *= (double(batchSize)/double(size())); // <-Estimate of the size n estimator variance 
+
+  return avgEstVar.cwiseSqrt();
+}
+
+Eigen::VectorXd SampleCollection::MultiBatchError(int blockInd, int batchSize, int overlap) const
+{
+  double ess = MultiBatchESS(blockInd, batchSize, overlap);
+  return (Variance() / ess).array().sqrt();
+}
+
+
+std::shared_ptr<SampleCollection> SampleCollection::FromMatrix(Eigen::MatrixXd const& samps)
+{
+  const unsigned int numSamps = samps.cols();
+  
+  std::shared_ptr<SampleCollection> output = std::make_shared<SampleCollection>();
+  for(unsigned int col=0; col<numSamps; ++col)
+    output->Add( std::make_shared<SamplingState>(samps.col(col)));
+  
+  return output;
 }
 
 Eigen::MatrixXd SampleCollection::AsMatrix(int blockDim) const
@@ -361,8 +500,6 @@ void SampleCollection::WriteToFile(std::string const& filename, std::string cons
 }
 
 unsigned SampleCollection::size() const { return samples.size(); }
-
-Eigen::VectorXd SampleCollection::Variance(int blockDim) const { return CentralMoment(2,blockDim); }
 
 
 std::set<std::string> SampleCollection::ListMeta(bool requireAll) const{
@@ -526,4 +663,30 @@ std::vector<Eigen::VectorXd> SampleCollection::RunningExpectedValue(std::shared_
   }
 
   return runningExpected;
+}
+
+
+unsigned int SampleCollection::BlockSize(int blockInd) const
+{
+  if(blockInd<0){
+    return samples.at(0)->TotalDim();
+  }else{
+    return samples.at(0)->state.at(blockInd).size();
+  }
+}
+
+unsigned int SampleCollection::NumBlocks() const
+{
+  return samples.at(0)->state.size();
+}
+
+
+Eigen::VectorXd SampleCollection::Rhat(int                        blockDim, 
+                                      unsigned int                numSegments, 
+                                      boost::property_tree::ptree options) const
+{   
+    std::vector<std::shared_ptr<const SampleCollection>> chains;
+    chains.push_back( shared_from_this());
+
+    return Diagnostics::Rhat(Diagnostics::SplitChains(chains, numSegments), options);
 }

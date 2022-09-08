@@ -22,6 +22,17 @@
 namespace muq {
   namespace SamplingAlgorithms {
 
+    /** @addtogroup MCMCProposals
+    @{
+
+
+    @}
+    */
+
+    /**
+    @class MCMCProposal
+    @ingroup MCMCProposals
+    */
     class MCMCProposal : public std::enable_shared_from_this<MCMCProposal> {
     public:
 
@@ -60,9 +71,12 @@ namespace muq {
       void SetCommunicator(std::shared_ptr<parcer::Communicator> newcomm);
 #endif
 
-      const int blockInd = 0;
+
+      virtual void SetBlockInd(int newBlockInd){blockInd = newBlockInd;};
+      virtual int GetBlockInd() const{return blockInd;};
 
     protected:
+      int blockInd = 0;
 
       std::shared_ptr<AbstractSamplingProblem> prob;
 

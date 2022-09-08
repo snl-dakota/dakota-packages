@@ -5,6 +5,8 @@
 #include "MUQ/Approximation/Polynomials/ProbabilistHermite.h"
 #include "MUQ/Utilities/MultiIndices/MultiIndexFactory.h"
 #include "MUQ/Utilities/RandomGenerator.h"
+#include "MUQ/Utilities/HDF5/H5Object.h"
+
 
 using namespace muq::Utilities;
 using namespace muq::Modeling;
@@ -130,4 +132,64 @@ TEST(PolynomialChaos, PCE_WeightedSum)
   sumExpansion = PolynomialChaosExpansion::ComputeWeightedSum(expansions,weights);
   trueEval = weights(0)*expansions.at(0)->Evaluate(testPt).at(0) + weights(1)*expansions.at(1)->Evaluate(testPt).at(0) + weights(2)*expansions.at(2)->Evaluate(testPt).at(0);
   EXPECT_NEAR(trueEval(0),sumExpansion->Evaluate(testPt).at(0)(0),1e-13);
+}
+
+
+TEST(PolynomialChaos, ToFromHDF5){
+
+  const int outDim = 2;
+  const int inputDim = 2;
+  const int order = 3;
+
+  auto multis = MultiIndexFactory::CreateTotalOrder(inputDim, order);
+  auto poly = std::make_shared<Legendre>();
+
+  // Set up a PCE with specific coefficients
+  Eigen::MatrixXd coeffs = Eigen::MatrixXd::Zero(outDim, multis->Size());
+  Eigen::RowVectorXi multiVec(inputDim);
+  multiVec << 1, 2;
+  unsigned int ind = multis->MultiToIndex(std::make_shared<MultiIndex>(multiVec));
+  coeffs(0,0) = 0.45;
+  coeffs(0,ind) = 1.0;
+  coeffs(1,ind) = 0.5;
+
+  multiVec << 1, 1;
+  ind = multis->MultiToIndex(std::make_shared<MultiIndex>(multiVec));
+  coeffs(1,0) = -0.1;
+  coeffs(1,ind) = 1.0;
+
+  auto pce = std::make_shared<PolynomialChaosExpansion>(poly, multis, coeffs);
+  std::shared_ptr<BasisExpansion> pce2;
+
+  std::string filename = "PCETest.h5";
+  {
+    muq::Utilities::H5Object fout = muq::Utilities::OpenFile(filename);
+    //auto g = fout.CreateGroup("/expansion");
+    pce->ToHDF5(fout["expansion"]);
+  }
+
+  {
+    muq::Utilities::H5Object fin = muq::Utilities::OpenFile(filename);
+    pce2 = PolynomialChaosExpansion::FromHDF5(fin["/expansion"]);
+  }
+
+  // Make sure the two expansions are the same
+  Eigen::MatrixXd coeffs1 = pce->GetCoeffs();
+  Eigen::MatrixXd coeffs2 = pce2->GetCoeffs();
+  ASSERT_EQ(coeffs1.rows(), coeffs2.rows());
+  ASSERT_EQ(coeffs1.cols(), coeffs2.cols());
+  
+  for(unsigned int j=0; j<coeffs1.cols(); ++j){
+    for(unsigned int i=0; i<coeffs1.rows(); ++i){
+      EXPECT_DOUBLE_EQ(coeffs1(i,j), coeffs2(i,j));
+    }
+  }  
+
+  Eigen::VectorXd evalPt = Eigen::VectorXd::Random(inputDim);
+  Eigen::VectorXd output1 = pce->Evaluate(evalPt)[0];
+  Eigen::VectorXd output2 = pce2->Evaluate(evalPt)[0];
+  for(unsigned int i=0; i<outDim; ++i)
+    EXPECT_DOUBLE_EQ(output1(i), output2(i));
+
+  //std::remove(filename.c_str());
 }

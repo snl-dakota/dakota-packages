@@ -21,5 +21,6 @@ ExternalProject_Add(
 
 set_property( TARGET EIGEN3 PROPERTY FOLDER "Externals")
 
-set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INSTALL_DIR}/include/eigen3)
-message(STATUS "Adding ${EIGEN3_INSTALL_DIR}/include/eigen3 for an Eigen include directory.")
+set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INSTALL_DIR}/include/)
+include_directories(${EIGEN3_INCLUDE_DIRS})
+message(STATUS "Adding ${EIGEN3_INSTALL_DIR}/include/ for an Eigen include directory.")

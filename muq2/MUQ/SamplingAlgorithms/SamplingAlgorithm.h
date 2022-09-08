@@ -12,14 +12,11 @@
 #include "MUQ/SamplingAlgorithms/AbstractSamplingProblem.h"
 #include "MUQ/SamplingAlgorithms/SampleCollection.h"
 
-/**
-@defgroup SamplingAlgorithms
-
-*/
 
 namespace muq {
   namespace SamplingAlgorithms {
 
+    
     class SamplingAlgorithm {//} : public muq::Modeling::WorkPiece {
     public:
 

@@ -32,8 +32,11 @@ HessianOperator::HessianOperator(std::shared_ptr<ModPiece>    const& pieceIn,
 Eigen::MatrixXd HessianOperator::Apply(Eigen::Ref<const Eigen::MatrixXd> const& x)
 {
   Eigen::MatrixXd output(basePiece->inputSizes(inWrt2),x.cols());
-  for(unsigned int i=0; i<x.cols(); ++i)
-    output.col(i) = nugget*x.col(i) + scale*basePiece->ApplyHessian(outWrt,inWrt1,inWrt2, inputs, sens, x.col(i));
+  Eigen::VectorXd col;
+  for(unsigned int i=0; i<x.cols(); ++i){
+    col = x.col(i);
+    output.col(i) = nugget*x.col(i) + scale*basePiece->ApplyHessian(outWrt,inWrt1,inWrt2, inputs, sens, col);
+  }
   return output;
 }
 

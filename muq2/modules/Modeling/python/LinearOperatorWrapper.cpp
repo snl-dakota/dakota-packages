@@ -5,6 +5,9 @@
 #include "MUQ/Modeling/LinearAlgebra/LinearOperator.h"
 #include "MUQ/Modeling/LinearAlgebra/AffineOperator.h"
 #include "MUQ/Modeling/LinearAlgebra/EigenLinearOperator.h"
+#include "MUQ/Modeling/LinearAlgebra/HessianOperator.h"
+#include "MUQ/Modeling/LinearAlgebra/GaussNewtonOperator.h"
+#include "MUQ/Modeling/LinearAlgebra/StochasticEigenSolver.h"
 //#include "MUQ/Modeling/LinearAlgebra/SparseLinearOperator.h"
 #include "MUQ/Modeling/LinearAlgebra/IdentityOperator.h"
 #include "MUQ/Modeling/LinearAlgebra/BlockDiagonalOperator.h"
@@ -19,10 +22,12 @@
 #include "MUQ/Modeling/LinearAlgebra/ZeroOperator.h"
 #include "MUQ/Modeling/LinearAlgebra/SliceOperator.h"
 
+#include "MUQ/Utilities/PyDictConversion.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/eigen.h>
+#include <pybind11/iostream.h>
 
 #include <string>
 
@@ -31,6 +36,8 @@
 
 using namespace muq::Modeling::PythonBindings;
 using namespace muq::Modeling;
+using namespace muq::Utilities;
+
 namespace py = pybind11;
 
 
@@ -146,5 +153,46 @@ void muq::Modeling::PythonBindings::LinearOperatorWrapper(py::module &m)
     .def(py::init<int, int,int,int>())
     .def("Apply", &SliceOperator::Apply)
     .def("ApplyTranspose", &SliceOperator::ApplyTranspose);
+
+  py::class_<HessianOperator, LinearOperator, std::shared_ptr<HessianOperator>>(m, "HessianOperator")
+    .def(py::init<std::shared_ptr<ModPiece>const&, std::vector<Eigen::VectorXd>const&, unsigned int, unsigned int, unsigned int, Eigen::VectorXd const&, double, double>(),
+         py::arg("pieceIn"),
+         py::arg("inputsIn"),
+         py::arg("outWrtIn"),
+         py::arg("inWrt1In"),
+         py::arg("inWrt2In"),
+         py::arg("sensIn"),
+         py::arg("scaleIn")=1.0,
+         py::arg("nuggetIn")=0.0)
+    .def("Apply", &HessianOperator::Apply)
+    .def("ApplyTranspose", &HessianOperator::ApplyTranspose);
+
+  py::class_<GaussNewtonOperator, LinearOperator, std::shared_ptr<GaussNewtonOperator>>(m, "GaussNewtonOperator")
+    .def(py::init<std::shared_ptr<ModPiece>const&, std::shared_ptr<ModPiece>const&, std::vector<Eigen::VectorXd>const&, unsigned int, double, double>(),
+         py::arg("forwardModelIn"),
+         py::arg("noiseModelIn"),
+         py::arg("inputsIn"),
+         py::arg("inWrt"),
+         py::arg("scaleIn")=1.0,
+         py::arg("nuggetIn")=0.0)
+    .def("Apply", &GaussNewtonOperator::Apply)
+    .def("ApplyTranspose", &GaussNewtonOperator::ApplyTranspose);
+
+  py::class_<GeneralizedEigenSolver, std::shared_ptr<GeneralizedEigenSolver>>(m,"GeneralizedEigenSolver")
+    .def("eigenvalues", &GeneralizedEigenSolver::eigenvalues)
+    .def("eigenvectors", &GeneralizedEigenSolver::eigenvectors);
+    
+  py::class_<StochasticEigenSolver, GeneralizedEigenSolver, std::shared_ptr<StochasticEigenSolver>>(m,"StochasticEigenSolver")
+    .def(py::init<int,double,double,int,int,int,int>(), 
+         py::arg("numEigsIn"),
+         py::arg("eigRelTolIn")=0.0,
+         py::arg("eigAbsTolIn")=0.0,
+         py::arg("expectedRankIn")=-1,
+         py::arg("samplingFactorIn")=-1,
+         py::arg("blockSize=10"),
+         py::arg("verbosityIn")=0)
+    .def(py::init( [](py::dict d) {return new StochasticEigenSolver(ConvertDictToPtree(d));}))
+    .def("compute", &StochasticEigenSolver::compute, py::arg("A"), py::arg("B")=nullptr, py::arg("Binv")=nullptr, py::call_guard<py::scoped_ostream_redirect,
+                     py::scoped_estream_redirect>());
 
 };

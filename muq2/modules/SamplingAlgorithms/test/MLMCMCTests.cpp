@@ -10,6 +10,7 @@
 #include "MUQ/SamplingAlgorithms/CrankNicolsonProposal.h"
 #include "MUQ/SamplingAlgorithms/SamplingProblem.h"
 #include "MUQ/SamplingAlgorithms/SubsamplingMIProposal.h"
+#include "MUQ/SamplingAlgorithms/MultiIndexEstimator.h"
 
 #include "MUQ/SamplingAlgorithms/MIComponentFactory.h"
 
@@ -21,10 +22,6 @@ namespace pt = boost::property_tree;
 using namespace muq::Modeling;
 using namespace muq::SamplingAlgorithms;
 using namespace muq::Utilities;
-
-
-
-
 
 
 class MySamplingProblem : public AbstractSamplingProblem {
@@ -63,6 +60,9 @@ public:
 
 class MyMLComponentFactory : public MIComponentFactory {
 public:
+  MyMLComponentFactory(pt::ptree pt)
+   : pt(pt) {}
+
   virtual std::shared_ptr<MCMCProposal> Proposal (std::shared_ptr<MultiIndex> const& index, std::shared_ptr<AbstractSamplingProblem> const& samplingProblem) override {
     pt::ptree pt;
     pt.put("BlockIndex",0);
@@ -85,14 +85,13 @@ public:
     return index;
   }
 
-  virtual std::shared_ptr<MCMCProposal> CoarseProposal (std::shared_ptr<MultiIndex> const& index,
+  virtual std::shared_ptr<MCMCProposal> CoarseProposal (std::shared_ptr<MultiIndex> const& fineIndex,
+                                                        std::shared_ptr<MultiIndex> const& coarseIndex,
                                                         std::shared_ptr<AbstractSamplingProblem> const& coarseProblem,
-                                                           std::shared_ptr<SingleChainMCMC> const& coarseChain) override {
-    pt::ptree ptProposal;
+                                                        std::shared_ptr<SingleChainMCMC> const& coarseChain) override {
+    pt::ptree ptProposal = pt;
     ptProposal.put("BlockIndex",0);
-    int subsampling = 5;
-    ptProposal.put("Subsampling", subsampling);
-    return std::make_shared<SubsamplingMIProposal>(ptProposal, coarseProblem, coarseChain);
+    return std::make_shared<SubsamplingMIProposal>(ptProposal, coarseProblem, coarseIndex, coarseChain);
   }
 
   virtual std::shared_ptr<AbstractSamplingProblem> SamplingProblem (std::shared_ptr<MultiIndex> const& index) override {
@@ -132,27 +131,65 @@ public:
     mu << 1.0, 2.0;
     return mu;
   }
-
+  pt::ptree pt;
 };
 
 TEST(MLMCMCTest, GreedyMLMCMC)
 {
-
-  auto componentFactory = std::make_shared<MyMLComponentFactory>();
 
   pt::ptree pt;
 
   pt.put("NumSamples", 1e4); // number of samples for single level
   pt.put("NumInitialSamples", 1e3); // number of initial samples for greedy MLMCMC
   pt.put("GreedyTargetVariance", 0.05); // estimator variance to be achieved by greedy algorithm
+  pt.put("MLMCMC.Subsampling_0", 5); // estimator variance to be achieved by greedy algorithm
+  pt.put("MLMCMC.Subsampling_1", 3); // estimator variance to be achieved by greedy algorithm
+  pt.put("MLMCMC.Subsampling_2", 1); // estimator variance to be achieved by greedy algorithm
+  pt.put("MLMCMC.Subsampling_3", 0); // estimator variance to be achieved by greedy algorithm
+
+  auto componentFactory = std::make_shared<MyMLComponentFactory>(pt);
 
   GreedyMLMCMC greedymlmcmc (pt, componentFactory);
   greedymlmcmc.Run();
   greedymlmcmc.Draw(false);
 
-  auto mean = greedymlmcmc.MeanQOI();
+  Eigen::VectorXd trueMu(2);
+  trueMu << 1.0, 2.0;
+  Eigen::MatrixXd trueCov(2,2);
+  trueCov << 0.7, 0.6,
+             0.6, 1.0;
 
-  EXPECT_NEAR(mean[0], 1.0, 0.15);
-  EXPECT_NEAR(mean[1], 2.0, 0.15);
+  auto params = greedymlmcmc.GetSamples();
+  Eigen::VectorXd mean = params->Mean();
+  Eigen::VectorXd mcse = params->StandardError();
+  EXPECT_NEAR(trueMu(0), mean(0), 3.*mcse(0));
+  EXPECT_NEAR(trueMu(1), mean(1), 3.0*mcse(1));
 
+  Eigen::VectorXd variance = params->Variance();
+  EXPECT_NEAR(trueCov(0,0), variance(0), 5.0*mcse(0));
+  EXPECT_NEAR(trueCov(1,1), variance(1), 5.0*mcse(1));
+
+  Eigen::VectorXd skewness = params->Skewness();
+  EXPECT_NEAR(0.0, skewness(0), 0.5);
+  EXPECT_NEAR(0.0, skewness(0), 0.5);
+
+  Eigen::MatrixXd covariance = params->Covariance();
+  EXPECT_NEAR(trueCov(0,0), covariance(0,0), 0.2);
+  EXPECT_NEAR(trueCov(1,1), covariance(1,1), 0.2);
+  EXPECT_NEAR(trueCov(0,1), covariance(0,1), 0.2);
+  EXPECT_NEAR(trueCov(1,0), covariance(1,0), 0.2);
+
+
+  auto qois = greedymlmcmc.GetQOIs();
+  mean = qois->Mean();
+  EXPECT_NEAR(trueMu(0), mean(0), 0.3);
+  EXPECT_NEAR(trueMu(1), mean(1), 0.3);
+
+  variance = qois->Variance();
+  EXPECT_NEAR(trueCov(0,0), variance(0), 0.3);
+  EXPECT_NEAR(trueCov(1,1), variance(1), 0.3);
+
+  skewness = qois->Skewness();
+  EXPECT_NEAR(0.0, skewness(0), 0.5);
+  EXPECT_NEAR(0.0, skewness(0), 0.5);
 }

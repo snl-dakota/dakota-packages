@@ -14,7 +14,7 @@ namespace Approximation {
 
   /**
    @class PolynomialChaosExpansion
-   @ingroup PolynomialChaos
+   @ingroup polychaos
    @brief A class for representing and using expansions of orthogonal multivariate polynomials
    @details
    * A particular polynomial chaos expansion for a function from R^n->R^m. This class uses
@@ -84,6 +84,36 @@ namespace Approximation {
         Rows are outputs, each column is an input.
     */
     Eigen::MatrixXd MainSensitivity() const;
+
+    /**
+     * @brief Write PCE to HDF5 file.  
+       @details This is the same as BasisExpansion::ToHDF5, but adds additional attribute specifiying that this is a PCE.
+     */
+    virtual void ToHDF5(muq::Utilities::H5Object &group) const override;
+
+    /**
+      @brief Loads an expansion from an HDF5 file.  
+      @details This function works in tandem with the BasisExpansion::ToHDF5 function.   It will read the multiindices,
+      coefficients, and scalar basis type from the HDF5 file and construct a BasisExpansion.  See the BasisExpansion::ToHDF5
+      function for the details of these datasets.
+      
+      @param[in] filename A string to an HDF5 file.  If the file doesn't exist or the correct datasets don't exist, an exception will be thrown.
+      @param[in] dsetName The path to the HDF5 group containing expansion datasets.
+      @return std::shared_ptr<BasisExpansion> 
+
+      @see BasisExpansion::ToHDF5
+      */
+    static std::shared_ptr<PolynomialChaosExpansion> FromHDF5(std::string filename, std::string groupName="/");
+
+    /** @brief Loads the expansion from an existing HDF5 group.   
+        @details This function will read the multiindices in an an HDF5 dataset and construct an instance of the MultiIndexSet class.
+        @param[in] group An HDF5 group containing the "multiindices", "coefficients", and "basis_types" datasets.
+        
+        @see BasisExpansion::ToHDF5
+    */
+    static std::shared_ptr<PolynomialChaosExpansion> FromHDF5(muq::Utilities::H5Object &group);
+
+
 
   private:
 

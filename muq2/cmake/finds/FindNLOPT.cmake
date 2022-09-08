@@ -24,17 +24,17 @@ else()
 	             HINTS ${MUQ_NLOPT_DIR}/lib NO_DEFAULT_PATH)
 
 	find_library(NLOPT_LIBRARY_STATIC NAMES ${library_prefix}nlopt.${static_library_suffix} ${library_prefix}nlopt_cxx.${static_library_suffix}
-	             HINTS ${MUQ_NLOPT_DIR}/lib NO_DEFAULT_PATH)	 
+	             HINTS ${MUQ_NLOPT_DIR}/lib NO_DEFAULT_PATH)
 endif()
 
-set(NLOPT_LIBRARIES_STATIC ${NLOPT_LIBRARY_STATIC} )	
-			 
+set(NLOPT_LIBRARIES_STATIC ${NLOPT_LIBRARY_STATIC} )
+
 set(NLOPT_LIBRARIES ${NLOPT_LIBRARY} )
 set(NLOPT_INCLUDE_DIRS ${NLOPT_INCLUDE_DIR} )
 
 include(FindPackageHandleStandardArgs)
 
-find_package_handle_standard_args(Nlopt  DEFAULT_MSG
+find_package_handle_standard_args(NLOPT  DEFAULT_MSG
                                   NLOPT_LIBRARY NLOPT_INCLUDE_DIR)
 
 mark_as_advanced(NLOPT_INCLUDE_DIR NLOPT_LIBRARY )

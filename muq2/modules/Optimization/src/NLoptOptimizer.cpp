@@ -6,16 +6,29 @@ namespace pt = boost::property_tree;
 using namespace muq::Modeling;
 using namespace muq::Optimization;
 
+REGISTER_OPTIMIZER(DIRECT, NLoptOptimizer)
+REGISTER_OPTIMIZER(DIRECTL, NLoptOptimizer)
+REGISTER_OPTIMIZER(CRS, NLoptOptimizer)
+REGISTER_OPTIMIZER(MLSL, NLoptOptimizer)
+REGISTER_OPTIMIZER(ISRES, NLoptOptimizer)
+REGISTER_OPTIMIZER(COBYLA, NLoptOptimizer)
+REGISTER_OPTIMIZER(BOBYQA, NLoptOptimizer)
+REGISTER_OPTIMIZER(NEWUOA, NLoptOptimizer)
+REGISTER_OPTIMIZER(PRAXIS, NLoptOptimizer)
+REGISTER_OPTIMIZER(NM, NLoptOptimizer)
+REGISTER_OPTIMIZER(SBPLX, NLoptOptimizer)
+REGISTER_OPTIMIZER(MMA, NLoptOptimizer)
+REGISTER_OPTIMIZER(SLSQP, NLoptOptimizer)
+REGISTER_OPTIMIZER(LBFGS, NLoptOptimizer)
+REGISTER_OPTIMIZER(PreTN, NLoptOptimizer)
+REGISTER_OPTIMIZER(LMVM, NLoptOptimizer)
 
-NLoptOptimizer::NLoptOptimizer(std::shared_ptr<CostFunction> cost,
-                               pt::ptree const& pt) :
-  Optimizer(cost, pt),
-  algorithm(NLOptAlgorithm(pt.get<std::string>("Algorithm"))),
-  minimize(pt.get<bool>("Minimize", true)) {
-    opt = cost;
+NLoptOptimizer::NLoptOptimizer(std::shared_ptr<ModPiece> const& cost,
+                               pt::ptree                 const& pt) : Optimizer(cost, pt),
+                                                                      algorithm(NLOptAlgorithm(pt.get<std::string>("Algorithm"))),
+                                                                      minimize(pt.get<bool>("Minimize", true)) 
+{
 }
-
-NLoptOptimizer::~NLoptOptimizer() {}
 
 
 nlopt_algorithm NLoptOptimizer::NLOptAlgorithm(std::string const& alg) const {
@@ -35,6 +48,10 @@ nlopt_algorithm NLoptOptimizer::NLOptAlgorithm(std::string const& alg) const {
   if( alg.compare("LBFGS")==0 ) { return NLOPT_LD_LBFGS; }
   if( alg.compare("PreTN")==0 ) { return NLOPT_LD_TNEWTON_PRECOND_RESTART; }
   if( alg.compare("LMVM")==0 ) { return NLOPT_LD_VAR2; }
+
+  std::stringstream msg;
+  msg << "\nERROR: Invalid algorithm (" << alg << ") passed to NLOptAlgorithm.";
+  throw std::runtime_error(msg.str());
 
   return NLOPT_LN_COBYLA;
 }
@@ -126,20 +143,15 @@ double NLoptOptimizer::Cost(unsigned int n,
   // The constraint
   std::shared_ptr<CostFunction> opt = *((std::shared_ptr<CostFunction>*) f_data);
 
-  Eigen::Map<const Eigen::VectorXd> xmap(x, n);
-  const Eigen::VectorXd& xeig = xmap;
+  Eigen::VectorXd xeig = Eigen::Map<const Eigen::VectorXd>(x,n);
 
+  opt->SetPoint(xeig);
   if (grad) {
-
     Eigen::Map<Eigen::VectorXd> gradmap(grad, n);
-    const Eigen::VectorXd& gradeig =
-      opt->Gradient(0, xeig, (Eigen::VectorXd)Eigen::VectorXd::Ones(1));
-    gradmap = gradeig;
-
+    gradmap = opt->Gradient();
   }
 
-  return opt->Cost(xeig);
-
+  return opt->Cost();
 }
 
 
@@ -149,10 +161,8 @@ void NLoptOptimizer::Constraint(unsigned int m,
                                 const double* x,
                                 double* grad,
                                 void* f_data) {
-
   // The constraint
-  std::shared_ptr<ModPiece> opt =
-    *((std::shared_ptr<ModPiece>*) f_data);
+  std::shared_ptr<ModPiece> opt = *((std::shared_ptr<ModPiece>*) f_data);
 
   Eigen::Map<const Eigen::VectorXd> xmap(x, n);
   const Eigen::VectorXd& xeig = xmap;
@@ -170,5 +180,4 @@ void NLoptOptimizer::Constraint(unsigned int m,
   Eigen::Map<Eigen::VectorXd> resultmap(result, m);
   std::vector<Eigen::VectorXd> resulteig = opt->Evaluate(xeig);
   resultmap = resulteig.at(0);
-
 }

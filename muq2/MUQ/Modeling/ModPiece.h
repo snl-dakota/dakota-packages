@@ -149,6 +149,10 @@ namespace muq{
 
   public:
 
+    ModPiece(std::vector<int> const& inputSizes,
+             std::vector<int> const& outputSizes) : ModPiece(Eigen::Map<const Eigen::VectorXi>(&inputSizes[0],inputSizes.size()),
+                                                             Eigen::Map<const Eigen::VectorXi>(&outputSizes[0],outputSizes.size())){};
+
     ModPiece(Eigen::VectorXi const& inputSizes,
              Eigen::VectorXi const& outputSizes);
 
@@ -238,6 +242,26 @@ namespace muq{
       return GradientRecurse(wrtOut, wrtIn, vec, args...);
     }
 
+
+    inline Eigen::VectorXd const& ApplyHessian(unsigned int outWrt,
+                                           unsigned int inWrt1,
+                                           unsigned int inWrt2,
+                                           Eigen::VectorXd const& last,
+                                           Eigen::VectorXd const& sens,
+                                           Eigen::VectorXd const& vec) {
+      ref_vector<Eigen::VectorXd> invec;
+      invec.push_back(std::cref(last));
+      return ApplyHessian(outWrt, inWrt1, inWrt2, invec, sens, vec);
+    }
+
+    template<typename... Args>
+    inline Eigen::VectorXd  const& ApplyHessian(unsigned int wrtOut,
+                                            unsigned int wrtIn1,
+                                            unsigned int wrtIn2,
+                                            Args const&... args) {
+      ref_vector<Eigen::VectorXd> invec;
+      return ApplyHessianRecurse(wrtOut, wrtIn1, wrtIn2, invec, args...);
+    }
 
     /** @brief Compute the Jacobian of this ModPiece.
       @details This function computes the Jacobian matrix of some output \f$f_i(x_1, \ldots, x_{M_x})\f$
@@ -383,14 +407,14 @@ namespace muq{
 
     @seealso ApplyHessianByFD
     */
-    virtual Eigen::VectorXd ApplyHessian(unsigned int const outWrt,
+    virtual Eigen::VectorXd const& ApplyHessian(unsigned int const outWrt,
                                          unsigned int const inWrt1,
                                          unsigned int const inWrt2,
                                          std::vector<Eigen::VectorXd> const& input,
                                          Eigen::VectorXd              const& sens,
                                          Eigen::VectorXd              const& vec);
 
-    virtual Eigen::VectorXd ApplyHessian(unsigned int const outWrt,
+    virtual Eigen::VectorXd const& ApplyHessian(unsigned int const outWrt,
                                          unsigned int const inWrt1,
                                          unsigned int const inWrt2,
                                          ref_vector<Eigen::VectorXd> const& input,
@@ -437,6 +461,14 @@ namespace muq{
     void DisableCache(){cacheEnabled=false;};
     bool CacheStatus() const{return cacheEnabled;};
 
+
+    /** Set the warning level for finite difference defaults.
+        If newLevel==0, no warnings or errors are thrown.
+        If newLevel==1, a warning is printed to std::cout.
+        If newLevel==2, an exception is thrown.
+    */
+    virtual void SetWarnLevel(unsigned int newLevel){fdWarnLevel=newLevel;};
+
     const Eigen::VectorXi inputSizes;
     const Eigen::VectorXi outputSizes;
 
@@ -474,6 +506,15 @@ namespace muq{
     Eigen::VectorXd jacobianAction;
     Eigen::MatrixXd jacobian;
     Eigen::VectorXd hessAction;
+
+    /** Specifies is MUQ should warn users when derivative functions
+        (e.g, Jacobian, ApplyJacobian, Gradient, ApplyHessian) default to finite
+        differences.
+        If fdWarnLevel==0, no warnings or errors are thrown.
+        If fdWarnLevel==1, a warning is printed to std::cout.
+        If fdWarnLevel==2, an exception is thrown.
+    */
+    unsigned int fdWarnLevel = 0;
 
     void CheckInputs(ref_vector<Eigen::VectorXd> const& input, std::string const& funcName);
 
@@ -545,6 +586,37 @@ namespace muq{
         vec.push_back(std::cref((NextType&)last));
         return Gradient(outWrt, inWrt, vec, sens);
     }
+
+    template<typename NextType, typename... Args>
+    inline Eigen::VectorXd const& ApplyHessianRecurse(unsigned int outWrt,
+                                                      unsigned int inWrt1,
+                                                      unsigned int inWrt2,
+                                                      ref_vector<Eigen::VectorXd>& invec,
+                                                      NextType const& ith,
+                                                      Args const&... args) {
+
+      static_assert(std::is_same<Eigen::VectorXd,
+                  NextType>::value,
+                  "In ModPiece::ApplyHessian, cannot cast input to Eigen::VectorXd.");
+
+      invec.push_back(std::cref((NextType&)ith));
+      return ApplyHessianRecurse(outWrt, inWrt1, inWrt2, invec, args...);
+
+    }
+
+    template<typename NextType>
+    inline Eigen::VectorXd const& ApplyHessianRecurse(unsigned int outWrt,
+                                                  unsigned int inWrt1,
+                                                  unsigned int inWrt2,
+                                                  ref_vector<Eigen::VectorXd>& invec,
+                                                  NextType const& last,
+                                                  Eigen::VectorXd const& sens,
+                                                  Eigen::VectorXd const& vec) {
+        static_assert(std::is_same<Eigen::VectorXd, NextType>::value, "In ModPiece::ApplyHessian, cannot cast input to Eigen::VectorXd.");
+        invec.push_back(std::cref((NextType&)last));
+        return ApplyHessian(outWrt, inWrt1, inWrt2, invec, sens, vec);
+    }
+
 
     template<typename... Args>
     inline Eigen::MatrixXd const& Jacobian(unsigned int outWrt, unsigned int inWrt, ref_vector<Eigen::VectorXd>& vec, Eigen::VectorXd const& ith, Args const&... args) {     \

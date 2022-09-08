@@ -28,52 +28,23 @@ public:
 
     ConstantKernel(unsigned              dim,
 	                 const double          sigma2In,
-                   const Eigen::Vector2d sigmaBounds = {0.0, std::numeric_limits<double>::infinity()}) : ConstantKernel(dim, sigma2In*Eigen::MatrixXd::Ones(1,1), sigmaBounds){};
-
+                   const Eigen::Vector2d sigmaBounds = {0.0, std::numeric_limits<double>::infinity()});
+                   
     ConstantKernel(unsigned              dim,
 		               std::vector<unsigned> dimInds,
 	                 const double          sigma2In,
-                   const Eigen::Vector2d sigmaBounds = {0.0, std::numeric_limits<double>::infinity()}) : ConstantKernel(dim, dimInds, sigma2In*Eigen::MatrixXd::Ones(1,1), sigmaBounds){};
-
+                   const Eigen::Vector2d sigmaBounds = {0.0, std::numeric_limits<double>::infinity()});
 
     ConstantKernel(unsigned               dim,
 	                 Eigen::MatrixXd const& sigma2In,
-                   const Eigen::Vector2d  sigmaBounds = {0.0, std::numeric_limits<double>::infinity()}) : KernelImpl<ConstantKernel>(dim, sigma2In.rows(), GetNumParams(sigma2In))
-    {
-    	paramBounds.resize(2,1);
-    	paramBounds(0,0) = sigmaBounds(0);
-    	paramBounds(1,0) = sigmaBounds(1);
-
-      cachedParams.resize(numParams);
-      int ind = 0;
-      for(int i=0; i<sigma2In.rows(); ++i){
-        for(int j=0; j<=i; ++j){
-          cachedParams(ind) = sigma2In(i,j);
-          ind++;
-        }
-      }
-    };
+                   const Eigen::Vector2d  sigmaBounds = {0.0, std::numeric_limits<double>::infinity()});
 
     ConstantKernel(unsigned               dim,
 		               std::vector<unsigned>  dimInds,
 	                 Eigen::MatrixXd const& sigma2In,
-                   const Eigen::Vector2d  sigmaBounds = {0.0, std::numeric_limits<double>::infinity()}) : KernelImpl<ConstantKernel>(dim, dimInds, sigma2In.rows(), GetNumParams(sigma2In))
-    {
-    	paramBounds.resize(2,1);
-    	paramBounds(0,0) = sigmaBounds(0);
-    	paramBounds(1,0) = sigmaBounds(1);
+                   const Eigen::Vector2d  sigmaBounds = {0.0, std::numeric_limits<double>::infinity()});
 
-      cachedParams.resize(numParams);
-      int ind = 0;
-      for(int i=0; i<sigma2In.rows(); ++i){
-        for(int j=0; j<=i; ++j){
-          cachedParams(ind) = sigma2In(i,j);
-          ind++;
-        }
-      }
-    };
-
-    virtual ~ConstantKernel(){};
+    virtual ~ConstantKernel() = default;
 
     template<typename ScalarType1, typename ScalarType2, typename ScalarType3>
     void FillBlockImpl(Eigen::Ref<const Eigen::Matrix<ScalarType1, Eigen::Dynamic, 1>> const& x1,
@@ -91,6 +62,9 @@ public:
       }
     }
 
+
+    virtual std::tuple<std::shared_ptr<muq::Modeling::LinearSDE>, std::shared_ptr<muq::Modeling::LinearOperator>, Eigen::MatrixXd> GetStateSpace(boost::property_tree::ptree sdeOptions=boost::property_tree::ptree()) const override;
+    
 private:
 
     static unsigned GetNumParams(Eigen::MatrixXd const& cov)

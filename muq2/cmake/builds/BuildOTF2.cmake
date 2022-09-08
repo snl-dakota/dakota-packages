@@ -5,13 +5,19 @@ endif()
 
 set(OTF2_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/muq_external)
 
+set(OTF2_CFLAGS "")
+if(CMAKE_OSX_ARCHITECTURES)
+  set(OTF2_CFLAGS "${OTF2_CFLAGS}-arch arm64 -arch x86_64")
+endif()
+
+
 ExternalProject_Add(
 	OTF2
                 PREFIX ${CMAKE_CURRENT_BINARY_DIR}/external/otf2
                 URL ${OTF2_EXTERNAL_SOURCE}
                 BUILD_IN_SOURCE TRUE
-                CONFIGURE_COMMAND ./configure --prefix=${OTF2_INSTALL_DIR} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
-                BUILD_COMMAND make
+                CONFIGURE_COMMAND ./configure --prefix=${OTF2_INSTALL_DIR} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=${OTF2_CFLAGS} CXXFLAGS=${OTF2_CFLAGS}
+                BUILD_COMMAND $(MAKE)
                 INSTALL_COMMAND make install
 )
 

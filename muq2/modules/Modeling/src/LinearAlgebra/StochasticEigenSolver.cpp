@@ -20,11 +20,10 @@ StochasticEigenSolver::StochasticEigenSolver(int    numEigsIn,
                                                                    blockSize(blockSizeIn),
                                                                    verbosity(verbosityIn)
 {
-  assert(numEigs>0);
   assert(eigRelTol>=0.0);
 }
 
-StochasticEigenSolver::StochasticEigenSolver(boost::property_tree::ptree const& opts) : StochasticEigenSolver(opts.get<int>("NumEigs"),
+StochasticEigenSolver::StochasticEigenSolver(boost::property_tree::ptree const& opts) : StochasticEigenSolver(opts.get("NumEigs",-1),
                                                                                                               opts.get("RelativeTolerance",0.0),
                                                                                                               opts.get("AbsoluteTolerance",0.0),
                                                                                                               opts.get("ExpectedRank", -1),
@@ -37,7 +36,15 @@ StochasticEigenSolver::StochasticEigenSolver(boost::property_tree::ptree const& 
 StochasticEigenSolver& StochasticEigenSolver::compute(std::shared_ptr<LinearOperator> const& A,
                                                       std::shared_ptr<LinearOperator>        B,
                                                       std::shared_ptr<LinearOperator>        Binv)
-{
+{ 
+    if(numEigs<0){
+      numEigs = A->cols();
+      if(expectedRank<0)
+        expectedRank = numEigs;
+      if(samplingFactor<0)
+        samplingFactor = std::ceil(0.1*expectedRank);
+    }
+
     assert((B!=nullptr)==(Binv!=nullptr));
 
     const int dim = A->cols();
@@ -104,7 +111,7 @@ StochasticEigenSolver& StochasticEigenSolver::compute(std::shared_ptr<LinearOper
         hasConverged = true;
       }
 
-      if(verbosity>1){
+      if((verbosity>1)&&(!hasConverged)){
         std::cout << "After iteration " << it << ", " << eigVals.size() << " eigenvalues in [" << smallestVal << "," << largestVal << "]" << std::endl;
         std::cout << "  Y.shape = " << Y.rows() << " x " << Y.cols() << std::endl;
       }
@@ -131,6 +138,20 @@ StochasticEigenSolver& StochasticEigenSolver::compute(std::shared_ptr<LinearOper
       }
 
     }
+
+    // Make sure we're only keeping eigenvalues that satisfy tolerances
+    double largestVal = eigVals(0);
+    unsigned int numKeep = 0;
+    for(int i=0; i<std::min<int>(eigVals.size(), numEigs); ++i){
+      if((eigVals(i)>eigRelTol*largestVal)&&(eigVals(i)>eigAbsTol)){
+        numKeep++;
+      }else{
+        break;
+      }
+    }
+
+    eigVals = eigVals.head(numKeep).eval();
+    eigVecs = eigVecs.leftCols(numKeep).eval();
 
     return *this;
 }

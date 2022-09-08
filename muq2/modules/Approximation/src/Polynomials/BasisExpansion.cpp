@@ -1,7 +1,12 @@
 #include "MUQ/Approximation/Polynomials/BasisExpansion.h"
 
-#include "MUQ/Utilities/MultiIndices/MultiIndexFactory.h"
+#include "MUQ/Approximation/PolynomialChaos/PolynomialChaosExpansion.h"
 
+#include "MUQ/Utilities/MultiIndices/MultiIndexFactory.h"
+#include "MUQ/Utilities/HDF5/H5Object.h"
+
+#include "MUQ/Utilities/StringUtilities.h"
+#include "MUQ/Utilities/Demangler.h"
 using namespace muq::Approximation;
 using namespace muq::Utilities;
 
@@ -287,4 +292,68 @@ Eigen::MatrixXd BasisExpansion::BuildDerivMatrix(Eigen::MatrixXd const& evalPts,
     output.row(i) = GetAllDerivs(evalPts.col(i)).col(wrtDim).transpose();
 
   return output;
+}
+
+
+void BasisExpansion::ToHDF5(std::string filename, std::string groupName) const
+{
+  muq::Utilities::H5Object fout = muq::Utilities::OpenFile(filename);
+  ToHDF5(fout[groupName]);
+}
+
+void BasisExpansion::ToHDF5(muq::Utilities::H5Object &group) const
+{
+  multis->ToHDF5(group, "/multiindices");
+  auto dset = group.CreateDataset<double>("/coefficients", coeffs.rows(), coeffs.cols());
+  dset = coeffs;
+
+  // Create a vector of scalar basis names
+  std::vector<std::string> type_strs;
+  auto nameMap = *muq::Approximation::IndexedScalarBasis::GetScalarBasisMap();
+  for(auto& basis : basisComps){
+    bool matchFound = false;
+
+    // Find the corresponding entry in the constructor map to get the name
+    for(auto const& pair : nameMap){
+      std::shared_ptr<IndexedScalarBasis> testBasis = pair.second();
+
+      if(GetTypeName(testBasis)==GetTypeName(basis)){
+        matchFound = true;
+        type_strs.push_back(pair.first);
+      }
+    }
+    assert(matchFound);
+  }
+
+  group.attrs["basis_types"] = muq::Utilities::StringUtilities::Combine(type_strs);
+  group.attrs["inputSizes"] = inputSizes;
+  group.attrs["expansion_type"] = "Generic";
+}
+
+std::shared_ptr<BasisExpansion> BasisExpansion::FromHDF5(std::string filename, std::string groupName)
+{
+  muq::Utilities::H5Object fin = muq::Utilities::OpenFile(filename);
+  return BasisExpansion::FromHDF5(fin[groupName]);
+}
+
+std::shared_ptr<BasisExpansion> BasisExpansion::FromHDF5(muq::Utilities::H5Object &group)
+{
+
+  Eigen::VectorXi inputSizes = group.attrs["inputSizes"];
+  bool coeffInput = (inputSizes.size() > 1);
+
+  std::vector<std::string> scalarBasisNames = muq::Utilities::StringUtilities::Split(std::string(group.attrs["basis_types"]));
+  std::vector<std::shared_ptr<IndexedScalarBasis>> scalarBases;
+  for(auto& name : scalarBasisNames)
+    scalarBases.push_back( IndexedScalarBasis::Construct(name));
+
+  auto mset = MultiIndexSet::FromHDF5(group["/multiindices"]);
+  Eigen::MatrixXd coeffs = group["/coefficients"];
+
+  std::string expansionType = group.attrs["expansion_type"];
+  if(expansionType=="PCE"){
+    return std::make_shared<PolynomialChaosExpansion>(scalarBases, mset, coeffs);
+  }else{
+    return std::make_shared<BasisExpansion>(scalarBases, mset, coeffs, coeffInput);
+  }
 }

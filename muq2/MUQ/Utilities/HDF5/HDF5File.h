@@ -67,14 +67,19 @@ namespace Utilities
 	   @param[in] singleProc True if only a single processor (asumed to be the write parameter) is calling this function (defaults to false, does not matter if MPI is not enabled)
 	*/
 	template<typename scalarType, int fixedRows, int fixedCols>
-	void WriteMatrix(std::string const& name,
-			 Eigen::Matrix<scalarType, fixedRows, fixedCols> const& dataset) {
+	void WriteMatrix(std::string name, Eigen::Matrix<scalarType, fixedRows, fixedCols> const& dataset) {
 
-	    // data set name must begin with '/'
-	    if( name.at(0)!='/' ) {
-		std::cerr << std::endl << "ERROR: Paths in the HDF5 file must start with a forward slash (/)" << std::endl << "\tHDF5File::WriteMatrix(std::string const&, Eigen::Matrix<scalarType, fixedRows, fixedCols> const&)" << std::endl << std::endl;
-		assert(name.at(0) == '/');
+      // data set name must begin with '/'
+      if( name.at(0)!='/' ) {
+        std::cerr << std::endl << "ERROR: Paths in the HDF5 file must start with a forward slash (/)" << std::endl << "\tHDF5File::WriteMatrix(std::string const&, Eigen::Matrix<scalarType, fixedRows, fixedCols> const&)" << std::endl << std::endl;
+        assert(name.at(0) == '/');
 	    }
+
+      if((name.at(0)=='/')&&(name.size()>0)){
+        if(name.at(1)=='/'){
+          name.erase(name.begin());
+        }
+      }
 
 	    // make sure the file is open
 	    assert(fileID>0);
@@ -92,50 +97,55 @@ namespace Utilities
 	    hid_t dataID;
 	    if( DoesDataSetExist(name) ) {
 
-		// open the data
-		dataID = H5Dopen(fileID, name.c_str(), H5P_DEFAULT);
+			// open the data
+			dataID = H5Dopen(fileID, name.c_str(), H5P_DEFAULT);
 
-		// get the dataspace dimension size
-		hsize_t* dims = (hsize_t*)malloc(2*sizeof(hsize_t));
-		H5Sget_simple_extent_dims(H5Dget_space(dataID), dims, nullptr);
+			// get the dataspace dimension size
+			hsize_t dims[2];
+			H5Sget_simple_extent_dims(H5Dget_space(dataID), dims, nullptr);
 
-		if( (dimsf[0]!=dims[0]) || (dimsf[1]!=dims[1]) ) { // if the data size changes ...
-		    // Extend the dataset
-		    H5Dset_extent(dataID, dimsf);
-		}
+			if( (dimsf[0]!=dims[0]) || (dimsf[1]!=dims[1]) ) { // if the data size changes ...
+				// Extend the dataset
+				H5Dset_extent(dataID, dimsf);
+			}
 
-	    } else {
+		} else {
 
-		// get the parent path
-		std::string parentPath = GetParentPath(name);
+			// get the parent path
+			std::string parentPath = GetParentPath(name);
 
-		// make sure the parent exists (and create it if it does not)
-		CreateGroup(parentPath);
+			// make sure the parent exists (and create it if it does not)
+			CreateGroup(parentPath);
 
-		// modify data set creation properties --- enable chunking
-		const hid_t prop = H5Pcreate(H5P_DATASET_CREATE);
+			// modify data set creation properties --- enable chunking
+			const hid_t prop = H5Pcreate(H5P_DATASET_CREATE);
 
-		// set chunk size to be (1,1) -- may be a bad idea of the data set is extremely large
-		hsize_t chunk[2] = {100,100};
-		if(fixedRows>0)
-		{
-		    chunk[0] = std::min<hsize_t>(chunk[0],fixedRows);
-		}
-		if(fixedCols>0)
-		{
-		    chunk[1] = std::min<hsize_t>(chunk[1],fixedRows);
-		}
-		H5Pset_chunk(prop, 2, chunk);
+			// set chunk size to be (1,1) -- may be a bad idea of the data set is extremely large
+			hsize_t chunk[2] = {100,100};
+			if(fixedRows>0){
+			chunk[0] = std::min<hsize_t>(chunk[0],fixedRows);
+			}
 
-		// create a dataset for each process
-		dataID = H5Dcreate(fileID, name.c_str(), HDF5_Type<scalarType>::GetFlag(), filespace, H5P_DEFAULT, prop, H5P_DEFAULT);
+			if(fixedCols>0){
+			chunk[1] = std::min<hsize_t>(chunk[1],fixedRows);
+			}
+			H5Pset_chunk(prop, 2, chunk);
 
-		// close the creation properties
-		H5Pclose(prop);
+			// create a dataset for each process
+			dataID = H5Dcreate(fileID,  // Location identifier
+							name.c_str(), // Dataset name
+							HDF5_Type<scalarType>::GetFlag(), // Datatype identifier
+							filespace,  // Dataspace identifier
+							H5P_DEFAULT,  // Link creation property list
+							prop,  // Dataset creation property list
+							H5P_DEFAULT); // Dataset access property list
+
+			// close the creation properties
+			H5Pclose(prop);
 	    }
 
 	    // constant reference (avoid copying) to the data transpose because of column versus row major conventions
-	    const Eigen::Matrix<scalarType, fixedRows, fixedCols>& dataset_ = dataset.transpose();
+	    Eigen::Matrix<scalarType, fixedRows, fixedCols> dataset_ = dataset.transpose();
 
 	    // write the data to file
 	    H5Dwrite(dataID, HDF5_Type<scalarType>::GetFlag(), H5S_ALL, H5S_ALL, H5P_DEFAULT, dataset_.data());
@@ -237,7 +247,7 @@ namespace Utilities
 	    }
 
 	    // get the dataset ID
-	    const hid_t dataset = H5Dopen2(fileID, name.c_str(), H5P_DEFAULT);
+	    const hid_t dataset = H5Dopen2(hid_t(fileID), name.c_str(), H5P_DEFAULT);
 
 	    // get the space associated with this data set
 	    const hid_t filespace = H5Dget_space(dataset);
@@ -269,8 +279,7 @@ namespace Utilities
 	    const hid_t memspace = H5Screate_simple(ndims, dimsr.data(), nullptr);
 
 	    // read the data
-      //std::cout << "Using type " << HDF5_Type<scalarType>::GetFlag() << " vs " << HDF5_Type<double>::GetFlag() << " vs " << H5T_NATIVE_DOUBLE << std::endl;
-	    H5Dread(dataset, HDF5_Type<scalarType>::GetFlag(), memspace, filespace, H5P_DEFAULT, pt.data());
+      H5Dread(dataset, HDF5_Type<scalarType>::GetFlag(), memspace, filespace, H5P_DEFAULT, pt.data());
 
 	    // close the creation properties
 	    H5Pclose(prop);
@@ -407,68 +416,68 @@ namespace Utilities
 	   @param[in] singleProc True if only a single processor (asumed to be the write parameter) is calling this function (defaults to false, does not matter if MPI is not enabled)
 	*/
 	template<typename scalarType>
-        void CreateDataset(std::string const& name, int rows, int cols)
-	{
+  void CreateDataset(std::string const& name, int rows, int cols)
+  {
 
-            // make sure the file is open
-            assert(fileID>0);
+    // make sure the file is open
+    assert(fileID>0);
 
-            // set the maximum size of the data set to be unlimited
-            const hsize_t maxdim[2] = {H5S_UNLIMITED, H5S_UNLIMITED};
+    // set the maximum size of the data set to be unlimited
+    const hsize_t maxdim[2] = {H5S_UNLIMITED, H5S_UNLIMITED};
 
-            // the sizes of the data set
-            const hsize_t dimsf[2] = {(hsize_t)rows, (hsize_t)cols};
+    // the sizes of the data set
+    const hsize_t dimsf[2] = {(hsize_t)rows, (hsize_t)cols};
 
-            // create the dataspace for the dataset.
-            const hid_t filespace = H5Screate_simple(2, dimsf, maxdim);
-            assert(filespace>0);
+    // create the dataspace for the dataset.
+    const hid_t filespace = H5Screate_simple(2, dimsf, maxdim);
+    assert(filespace>0);
 
-            // the dataset we are writing to
-            hid_t dataID;
+    // the dataset we are writing to
+    hid_t dataID;
 
-            if( DoesDataSetExist(name) ) {
+    if( DoesDataSetExist(name) ) {
 
-                // open the data
-                dataID = H5Dopen(fileID, name.c_str(), H5P_DEFAULT);
+        // open the data
+        dataID = H5Dopen(fileID, name.c_str(), H5P_DEFAULT);
 
-                // get the dataspace dimension size
-                hsize_t dims[2];
-                H5Sget_simple_extent_dims(H5Dget_space(dataID), dims, nullptr);
+        // get the dataspace dimension size
+        hsize_t dims[2];
+        H5Sget_simple_extent_dims(H5Dget_space(dataID), dims, nullptr);
 
-                if( (dimsf[0]!=dims[0]) || (dimsf[1]!=dims[1]) ) { // if the data size changes ...
-                    // Extend the dataset
-                    H5Dset_extent(dataID, dimsf);
-                }
-
-            } else {
-
-                // get the parent path
-		std::string parentPath = GetParentPath(name);
-
-                // make sure the parent exists (and create it if it does not)
-                CreateGroup(parentPath);
-
-                // modify data set creation properties --- enable chunking
-                const hid_t prop = H5Pcreate(H5P_DATASET_CREATE);
-
-                // set chunk size to be (1,1) -- may be a bad idea of the data set is extremely large
-                hsize_t chunk[2] = {std::min<hsize_t>(100,rows), std::min<hsize_t>(100,cols)};
-                H5Pset_chunk(prop, 2, chunk);
-
-                // create a dataset for each process
-                dataID = H5Dcreate(fileID, name.c_str(), HDF5_Type<scalarType>::GetFlag(), filespace, H5P_DEFAULT, prop, H5P_DEFAULT);
-                assert(dataID>0);
-                
-                // close the creation properties
-                H5Pclose(prop);
-            }
-
-            // close the filespace
-            H5Sclose(filespace);
-
-            // close the dataset
-            H5Dclose(dataID);
+        if( (dimsf[0]!=dims[0]) || (dimsf[1]!=dims[1]) ) { // if the data size changes ...
+            // Extend the dataset
+            H5Dset_extent(dataID, dimsf);
         }
+
+    } else {
+
+        // get the parent path
+        std::string parentPath = GetParentPath(name);
+
+        // make sure the parent exists (and create it if it does not)
+        CreateGroup(parentPath);
+
+        // modify data set creation properties --- enable chunking
+        const hid_t prop = H5Pcreate(H5P_DATASET_CREATE);
+
+        // set chunk size to be (1,1) -- may be a bad idea of the data set is extremely large
+        hsize_t chunk[2] = {std::min<hsize_t>(100,rows), std::min<hsize_t>(100,cols)};
+        H5Pset_chunk(prop, 2, chunk);
+
+        // create a dataset for each process
+        dataID = H5Dcreate(fileID, name.c_str(), HDF5_Type<scalarType>::GetFlag(), filespace, H5P_DEFAULT, prop, H5P_DEFAULT);
+        assert(dataID>0);
+
+        // close the creation properties
+        H5Pclose(prop);
+    }
+
+    // close the filespace
+    H5Sclose(filespace);
+
+    // close the dataset
+    H5Dclose(dataID);
+  }
 
 	/// Add a vector attricute to a dataset or group
 	/**
@@ -612,21 +621,21 @@ namespace Utilities
 	*/
 	void MergeFile(std::shared_ptr<HDF5File> const& otherFile);
 
-	/// The HDF5 file ID
-	/**
-	   The default value -1 indicates the file is not open.
-	*/
-	hid_t fileID = -1;
+    /// The HDF5 file ID
+    /**
+     The default value -1 indicates the file is not open.
+    */
+    hid_t fileID = -1;
 
-	/// The name of the file
-	/**
-	   Defaults to an empty file
-	*/
-	std::string filename = "";
+    /// The name of the file
+    /**
+    Defaults to an empty string
+    */
+    std::string filename = "";
 
     private:
 
-	bool DoesFileExist(const std::string& name) const;
+      bool DoesFileExist(const std::string& name) const;
 
     };
 

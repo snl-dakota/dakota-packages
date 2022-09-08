@@ -2,6 +2,7 @@
 #include "MUQ/Approximation/Polynomials/Legendre.h"
 #include "MUQ/Approximation/Polynomials/Monomial.h"
 #include "MUQ/Utilities/MultiIndices/MultiIndexFactory.h"
+#include "MUQ/Utilities/HDF5/H5Object.h"
 
 #include "gtest/gtest.h"
 
@@ -145,4 +146,51 @@ TEST_F(Approximation_BasisExpansion, Quadratic){
   EXPECT_EQ(1, hess.rows());
   EXPECT_EQ(1, hess.cols());
   EXPECT_DOUBLE_EQ(2.0*coeffs(0,2), hess(0,0));
+}
+
+
+TEST_F(Approximation_BasisExpansion, ToFromHDF5){
+
+  auto monomial = std::make_shared<Monomial>();
+  bases = std::vector<std::shared_ptr<IndexedScalarBasis>>(1, monomial);
+
+  std::shared_ptr<MultiIndexSet> multis = MultiIndexFactory::CreateTotalOrder(1, 2);
+  EXPECT_EQ(3,multis->Size());
+
+  Eigen::MatrixXd coeffs(1,3);
+  coeffs << 1.0, 2.0, 0.5; // intercept, slope
+
+  BasisExpansion expansion(bases, multis, coeffs);
+  std::shared_ptr<BasisExpansion> expansion2;
+
+  std::string filename = "BasisExpansionTest.h5";
+  {
+    muq::Utilities::H5Object fout = muq::Utilities::OpenFile(filename);
+    //auto g = fout.CreateGroup("/expansion");
+    expansion.ToHDF5(fout["expansion"]);
+  }
+
+  {
+    muq::Utilities::H5Object fin = muq::Utilities::OpenFile(filename);
+    expansion2 = BasisExpansion::FromHDF5(fin["/expansion"]);
+  }
+
+  // Make sure the two expansions are the same
+  Eigen::MatrixXd coeffs1 = expansion.GetCoeffs();
+  Eigen::MatrixXd coeffs2 = expansion2->GetCoeffs();
+  ASSERT_EQ(coeffs1.rows(), coeffs2.rows());
+  ASSERT_EQ(coeffs1.cols(), coeffs2.cols());
+  
+  for(unsigned int j=0; j<coeffs1.cols(); ++j){
+    for(unsigned int i=0; i<coeffs1.rows(); ++i){
+      EXPECT_DOUBLE_EQ(coeffs1(i,j), coeffs2(i,j));
+    }
+  }  
+
+  Eigen::VectorXd evalPt = Eigen::VectorXd::Random(1);
+  Eigen::VectorXd output1 = expansion.Evaluate(evalPt)[0];
+  Eigen::VectorXd output2 = expansion2->Evaluate(evalPt)[0];
+  EXPECT_DOUBLE_EQ(output1(0), output2(0));
+
+  //std::remove(filename.c_str());
 }

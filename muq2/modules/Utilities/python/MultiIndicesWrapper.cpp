@@ -82,6 +82,7 @@ void muq::Utilities::PythonBindings::MultiIndicesWrapper(py::module &m)
     .def_static("CreateTriHyperbolic", &MultiIndexFactory::CreateTriHyperbolic, py::arg("length"), py::arg("maxOrder"), py::arg("q")=0, py::arg("limiter")=std::make_shared<NoLimiter>())
     .def_static("CreateFullTensor",  (std::shared_ptr<MultiIndexSet>(*)(unsigned int const, unsigned int const,std::shared_ptr<MultiIndexLimiter>)) &MultiIndexFactory::CreateFullTensor, py::arg("length"), py::arg("order"), py::arg("limiter")=std::make_shared<NoLimiter>())
     .def_static("CreateFullTensor",  (std::shared_ptr<MultiIndexSet>(*)(const Eigen::RowVectorXi&, std::shared_ptr<MultiIndexLimiter>)) &MultiIndexFactory::CreateFullTensor, py::arg("orders"), py::arg("limiter")=std::make_shared<NoLimiter>())
+    .def_static("CreateAnisotropic", (std::shared_ptr<MultiIndexSet>(*)(const Eigen::RowVectorXf&, const double)) &MultiIndexFactory::CreateAnisotropic, py::arg("weights"), py::arg("epsilon"))
     //.def("CentralMoment", &SampleCollection::CentralMoment, py::arg("order"), py::arg("blockDim") = -1)
     .def_static("CreateTriHyperbolic", &MultiIndexFactory::CreateTriHyperbolic);
 
@@ -94,6 +95,7 @@ void muq::Utilities::PythonBindings::MultiIndicesWrapper(py::module &m)
     .def("IndexToMulti", &MultiIndexSet::IndexToMulti)
     .def("MultiToIndex", &MultiIndexSet::MultiToIndex)
     .def("GetMultiLength", &MultiIndexSet::GetMultiLength)
+    .def("GetAllMultiIndices", &MultiIndexSet::GetAllMultiIndices)
     .def("GetMaxOrders", &MultiIndexSet::GetMaxOrders)
     .def("at", &MultiIndexSet::at)
     .def("Size", &MultiIndexSet::Size)
@@ -106,6 +108,12 @@ void muq::Utilities::PythonBindings::MultiIndicesWrapper(py::module &m)
     .def("GetAdmissibleForwardNeighbors", &MultiIndexSet::GetAdmissibleForwardNeighbors)
     .def("IsAdmissible", (bool (MultiIndexSet::*)(std::shared_ptr<MultiIndex> const&) const) &MultiIndexSet::IsAdmissible)
     .def("IsExpandable", &MultiIndexSet::IsExpandable)
-    .def("IsActive", (bool (MultiIndexSet::*)(std::shared_ptr<MultiIndex> const&) const) &MultiIndexSet::IsActive);
+    .def("IsActive", (bool (MultiIndexSet::*)(std::shared_ptr<MultiIndex> const&) const) &MultiIndexSet::IsActive)
+    .def("ToHDF5", (void (MultiIndexSet::*)(std::string, std::string) const) &MultiIndexSet::ToHDF5, py::arg("filename"),py::arg("dsetName")="/multiindices")
+    .def_static("FromHDF5", [](std::string filename, std::string dsetName){return MultiIndexSet::FromHDF5(filename, dsetName);})
+    .def_static("FromHDF5", [](std::string filename){return MultiIndexSet::FromHDF5(filename, "/multiindices");});
+
+//    .def_static("FromHDF5", (std::shared_ptr<MultiIndexSet> (MultiIndexSet::*)(std::string, std::string)) &MultiIndexSet::FromHDF5, py::arg("filename"), py::arg("dsetName")=std::string("/multiindices"));
+
 
 }

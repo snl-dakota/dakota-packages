@@ -9,7 +9,7 @@ namespace Modeling{
 
 /** @class StochasticEigenSolver
     @brief Two-pass stochastic algorithm for computing generalized eigenvalues from matrix products.
-    @details This class implements the two-pass stochastic algorithm outline in
+    @details This class implements the two-pass stochastic algorithm outlined in
      [Saibaba et al., 2010] and [Villa et al., 2019].  While the standard two-pass
      algorithm computes a fixed number of eigenvalues and eigenvectors $r$, this
      implementation will continue to add new samples and recompute the decomposition
@@ -18,8 +18,8 @@ namespace Modeling{
      2. The smallest eigenvalue is smaller than some fraction 'RelativeTolerance' of the maximum eigenvalue.
      3. The smallesst eigenvalues is smaller than some absolute tolerance 'AbsoluteTolerance'.
 
-     The values of these stopping criteria are passed to the constructor of this
-     class in a boost property_tree.
+     The values of these stopping criteria can be passed to the constructor of this
+     class in a boost property_tree or directly set as arguments.
 
      REFERENCES:
      - Saibaba, Kitanidis, Lee, (2010) "Randomized algorithms for Generalized Hermitian Eigenvalue Problems with application to computing Karhunen-Loeve expansion." NUMERICAL LINEAR ALGEBRA WITH APPLICATIONS

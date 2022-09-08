@@ -13,18 +13,30 @@ using namespace muq::SamplingAlgorithms;
 
 SingleChainMCMC::SingleChainMCMC(pt::ptree pt,
                                  std::shared_ptr<AbstractSamplingProblem> const& problem) :
-                 SamplingAlgorithm(std::make_shared<MarkovChain>(), std::make_shared<MarkovChain>()),
+                 samples(std::make_shared<MarkovChain>()),
+                 QOIs(std::make_shared<MarkovChain>()),
                  printLevel(pt.get("PrintLevel",3))
 {
   Setup(pt, problem);
+}
+
+SingleChainMCMC::SingleChainMCMC(boost::property_tree::ptree pt,
+                                 std::vector<std::shared_ptr<TransitionKernel> > const& kernelsIn) :
+                 samples(std::make_shared<MarkovChain>()),
+                 QOIs(std::make_shared<MarkovChain>()),
+                 printLevel(pt.get("PrintLevel",3))
+{
+  Setup(pt,kernelsIn);
 }
 
 #if MUQ_HAS_PARCER
 SingleChainMCMC::SingleChainMCMC(pt::ptree pt,
                                  std::shared_ptr<AbstractSamplingProblem> const& problem,
                                  std::shared_ptr<parcer::Communicator> const& comm) :
-                 SamplingAlgorithm(std::make_shared<MarkovChain>(), comm),
-                 printLevel(pt.get("PrintLevel",3))
+                 samples(std::make_shared<MarkovChain>()),
+                 QOIs(std::make_shared<MarkovChain>()),
+                 printLevel(pt.get("PrintLevel",3)),
+                 comm(comm)
 {
   Setup(pt, problem);
 }
@@ -32,21 +44,17 @@ SingleChainMCMC::SingleChainMCMC(pt::ptree pt,
 SingleChainMCMC::SingleChainMCMC(pt::ptree pt,
                                  std::shared_ptr<parcer::Communicator> const& comm,
                                  std::vector<std::shared_ptr<TransitionKernel> > const& kernelsIn) :
-                 SamplingAlgorithm(std::make_shared<MarkovChain>(), comm),
-                 printLevel(pt.get("PrintLevel",3))
+                 samples(std::make_shared<MarkovChain>()),
+                 QOIs(std::make_shared<MarkovChain>()),
+                 printLevel(pt.get("PrintLevel",3)),
+                 comm(comm)
 {
   Setup(pt, kernelsIn);
 }
 
 #endif
 
-SingleChainMCMC::SingleChainMCMC(boost::property_tree::ptree pt,
-                                 std::vector<std::shared_ptr<TransitionKernel> > const& kernelsIn) :
-                SamplingAlgorithm(std::make_shared<MarkovChain>(), std::make_shared<MarkovChain>()),
-                printLevel(pt.get("PrintLevel",3))
-{
-  Setup(pt,kernelsIn);
-}
+
 
 void SingleChainMCMC::Setup(pt::ptree pt,
                             std::vector<std::shared_ptr<TransitionKernel>> const& kernelsIn) {
@@ -109,7 +117,7 @@ void SingleChainMCMC::PrintStatus(std::string prefix, unsigned int currInd) cons
   }
 }
 
-std::shared_ptr<SampleCollection> SingleChainMCMC::RunImpl(std::vector<Eigen::VectorXd> const& x0) {
+std::shared_ptr<MarkovChain> SingleChainMCMC::Run(std::vector<Eigen::VectorXd> const& x0) {
   if( !x0.empty() ) { SetState(x0); }
 
   // What is the next iteration that we want to print at
@@ -143,6 +151,12 @@ std::shared_ptr<SampleCollection> SingleChainMCMC::RunImpl(std::vector<Eigen::Ve
 }
 
 void SingleChainMCMC::Sample() {
+  if(prevState==nullptr){
+    std::stringstream msg;
+    msg << "\nERROR in SingleChainMCMC::Sample!  Trying to sample chain but previous (or initial) state has not been set.\n";
+    throw std::runtime_error(msg.str());
+  }
+
   auto startTime = std::chrono::high_resolution_clock::now();
 
   std::vector<std::shared_ptr<SamplingState> > newStates;
@@ -208,3 +222,8 @@ void SingleChainMCMC::SetState(std::shared_ptr<SamplingState> const& x0) {
   if(ShouldSave(0))
     samples->Add(prevState);
 }
+
+
+std::shared_ptr<MarkovChain> SingleChainMCMC::GetSamples() const { return samples; }
+
+std::shared_ptr<MarkovChain> SingleChainMCMC::GetQOIs() const { return QOIs; }

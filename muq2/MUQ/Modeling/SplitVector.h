@@ -47,6 +47,13 @@ namespace muq {
         @param[in] size The size of each segment
         @param[in] insize The size of the input vector
       */
+      SplitVector(std::vector<int> const& ind,std::vector<int> const& size, unsigned int const insize);
+
+      /**
+        @param[in] ind The first index of the segment for each output
+        @param[in] size The size of each segment
+        @param[in] insize The size of the input vector
+      */
       SplitVector(Eigen::VectorXi const& ind, Eigen::VectorXi const& size, unsigned int const insize);
 
       virtual ~SplitVector() = default;
@@ -65,6 +72,8 @@ namespace muq {
       virtual void GradientImpl(unsigned int const outwrt, unsigned int const inwrt, ref_vector<Eigen::VectorXd> const& inputs, Eigen::VectorXd const& sens) override;
 
       virtual void ApplyJacobianImpl(unsigned int const outwrt, unsigned int const inwrt, ref_vector<Eigen::VectorXd> const& inputs, Eigen::VectorXd const& targ) override;
+
+      virtual void ApplyHessianImpl(unsigned int const outwrt, unsigned int const inwrt1,unsigned int const inwrt2, ref_vector<Eigen::VectorXd> const& inputs, Eigen::VectorXd const& sens, Eigen::VectorXd const& targ) override;
 
       const Eigen::VectorXi ind;
 

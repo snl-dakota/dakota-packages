@@ -28,14 +28,6 @@
 namespace muq {
   namespace Modeling {
 
-    /**
-      @defgroup Modeling
-      @brief Tools for constructing coupled physical and statistical models.
-      @details
-
-    */
-
-
     // Forward declaration of WorkGraphPiece
     class WorkGraphPiece;
     class WorkGraph;
@@ -590,10 +582,10 @@ namespace muq {
       /// A unique name for this WorkPiece.  Defaults to <ClassName>_<id>
       std::string name;
 
-    private:
 
       virtual std::string CreateName() const;
 
+    private:
 
       /// User-implemented function that determines the behavior of this muq::Modeling::WorkPiece
       /**

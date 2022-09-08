@@ -297,3 +297,46 @@ TEST(Approximation_GP, HessianCondition)
     EXPECT_NEAR( derivVal(0), fdDeriv, 1e-5);
 
 }
+
+
+TEST(Approximation_GP, NoisyCondition)
+{
+
+    const unsigned dim = 1;
+    const double priorVar = 2.0;
+    auto kernel = SquaredExpKernel(dim, priorVar, 0.35);
+
+    const double delta =1e-4;
+    Eigen::MatrixXd evalLocs(dim, 2);
+    evalLocs << 0, delta;
+
+    // Create the GP
+    ZeroMean mean(dim, 1);
+    auto gp = ConstructGP(mean, kernel);
+
+    Eigen::VectorXd loc(1);
+    loc << 0.0;
+
+    Eigen::VectorXd val(1);
+    val << 1.0;
+
+    Eigen::MatrixXd valCov(1,1);
+    valCov(0,0) = 1.0;
+
+    auto H = std::make_shared<IdentityOperator>(dim);
+
+    auto obs = std::make_shared<ObservationInformation>(H, loc, val, valCov);
+
+    gp.Condition(obs);
+
+    Eigen::MatrixXd field;
+    Eigen::MatrixXd var;
+    std::tie(field,var) = gp.Predict(evalLocs, GaussianProcess::DiagonalCov);
+
+    double trueMean = 2.0/30.;
+    double trueVal = val(0) * priorVar / (priorVar + valCov(0,0));
+
+    double trueVar = priorVar - priorVar*priorVar/ (priorVar + valCov(0,0));
+    EXPECT_NEAR(trueVal, field(0,0), 1e-8);
+    EXPECT_NEAR(trueVar, var(0), 1e-8);
+}

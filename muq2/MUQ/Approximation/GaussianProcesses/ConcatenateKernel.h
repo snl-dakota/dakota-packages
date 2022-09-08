@@ -42,31 +42,9 @@ k(x,x^\prime) = \left[\begin{array}{cc}k_1(x,x^\prime) & 0\\ 0 & k_2(x,x^\prime)
                                        Eigen::Ref<const Eigen::VectorXd> const& params,
                                        std::vector<int>                  const& wrts,
                                        Eigen::Ref<Eigen::MatrixXd>              block) const override;
-
-        // template<typename VecType1, typename VecType2, typename MatType>
-        //     inline void GetDerivative(VecType1 const& x1, VecType2 const& x2, int wrt, MatType & derivs) const
-        // {
-        //     assert(wrt < this->numParams);
-        //
-        //     // Initialize the derivative matrix to 0
-        //     for(int j=0; j<derivs.cols(); ++j)
-        //     {
-        //         for(int i=0; i<derivs.rows(); ++i)
-        //             derivs(i,j) = 0.0;
-        //     }
-        //
-        //     if(wrt < kernel1.numParams )
-        //     {
-        //         auto block = GetBlock(derivs, 0, 0, kernel1.coDim, kernel1.coDim);
-        //         return kernel1.GetDerivative(x1, x2, wrt, block);
-        //     }
-        //     else
-        //     {
-        //         auto block = GetBlock(derivs, kernel1.coDim, kernel1.coDim, kernel2.coDim, kernel2.coDim);
-        //         return kernel2.GetDerivative(x1, x2, wrt-kernel1.numParams, block);
-        //     }
-        // }
-
+    
+        virtual std::tuple<std::shared_ptr<muq::Modeling::LinearSDE>, std::shared_ptr<muq::Modeling::LinearOperator>, Eigen::MatrixXd> GetStateSpace(boost::property_tree::ptree sdeOptions=boost::property_tree::ptree()) const override;
+    
     private:
 
         static unsigned int CountCoDims(std::vector<std::shared_ptr<KernelBase>> kernels);

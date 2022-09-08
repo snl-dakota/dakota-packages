@@ -1,5 +1,7 @@
 #include "MUQ/Approximation/GaussianProcesses/ProductKernel.h"
 
+#include "MUQ/Utilities/Demangler.h"
+
 using namespace muq::Approximation;
 
 ProductKernel::ProductKernel(std::shared_ptr<KernelBase> kernel1In,
@@ -98,10 +100,9 @@ std::tuple<std::shared_ptr<muq::Modeling::LinearSDE>, std::shared_ptr<muq::Model
 		}else{
       int status = 0;
 
-      std::unique_ptr<char, void(*)(void*)> res1 {abi::__cxa_demangle(typeid(*kernel1).name(), NULL, NULL, &status), std::free};
-      std::string type1 = res1.get();
-      std::unique_ptr<char, void(*)(void*)> res2 {abi::__cxa_demangle(typeid(*kernel2).name(), NULL, NULL, &status), std::free};
-      std::string type2 = res2.get();
+	
+      std::string type1 = muq::Utilities::GetTypeName(kernel1);
+      std::string type2 = muq::Utilities::GetTypeName(kernel2);
 
       throw muq::NotImplementedError("ERROR in ProductKernel::GetStateSpace().  The GetStateSpace() function has not been implemented for these types: \"" + type1 + "\" and \"" + type2 + "\"");
 		}

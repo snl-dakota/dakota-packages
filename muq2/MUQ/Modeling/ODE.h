@@ -123,6 +123,10 @@ namespace Modeling {
       | "MaximumStepSize"  | double | -1 | (Optional) Maximum stepsize.  Ignored if negative.  |
       | "MaximumSteps"  | int | -1 | (Optional) Maximum number of steps.  Ignored if negative.  |
       | "CheckPointSteps" | int | 100 | (Optional) Number of steps between checkpoints. |
+      | "SensRelTol" | double | -1 | (Optional) Relative tolerance for forward sensitivity solve.  If this or sensAbsTol are not specified, they will both be estimated by CVodes. |
+      | "SensAbsTol" | double | -1 | (Optional) Absolute tolerance for forward sensitivity solve.  If this or sensRelTol are not specified, they will both be estimated by CVodes. |
+      | "AdjRelTol" | double | -1 | (Optional) Relative tolerance for adjoint sensitivity solve.  If this or adjAbsTol are not specified, they will both be estimated by CVodes. |
+      | "AdjAbsTol" | double | -1 | (Optional) Absolute tolerance for adjoint sensitivity solve.  If this or adjRelTol are not specified, they will both be estimated by CVodes. |
       */
       struct IntegratorOptions{
         IntegratorOptions() = default;
@@ -136,6 +140,12 @@ namespace Modeling {
         double maxStepSize; // maximum allowed step inputSize
         int maxNumSteps; // maximum allowed steps
         int checkPtGap; // gap between check points
+
+        double sensRelTol; // relative tolerance for forward sensitivities
+        double sensAbsTol; // absolute tolerance for forward sensitivities.
+
+        double adjRelTol; // relative tolerance for adjoint sensitivities.
+        double adjAbsTol; // absolute tolerance for adjoint sensitivities.
       };
 
       /** Holds static functions needed for CVODES to interface with ModPiece RHS.

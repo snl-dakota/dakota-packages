@@ -65,10 +65,12 @@ namespace Utilities
     };
 #endif
 
+    std::string H5TypeToString(hid_t type);
+
     template<typename scalarType>
-      struct HDF5_Type{
-	static hid_t GetFlag() { return -1; }
-      };
+    struct HDF5_Type{
+	    static hid_t GetFlag() { return -1; }
+    };
 
     template<>
     struct HDF5_Type<double>{
@@ -91,7 +93,7 @@ namespace Utilities
       static hid_t GetFlag(){return H5T_NATIVE_ULONG;};
     };
     template<>
-    struct HDF5_Type<unsigned>{
+    struct HDF5_Type<unsigned int>{
       static hid_t GetFlag(){return H5T_NATIVE_UINT;};
     };
 

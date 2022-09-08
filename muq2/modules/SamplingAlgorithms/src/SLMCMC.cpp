@@ -4,8 +4,7 @@ namespace muq {
   namespace SamplingAlgorithms {
 
     SLMCMC::SLMCMC (pt::ptree pt, std::shared_ptr<MIComponentFactory> componentFactory, std::shared_ptr<MultiIndex> index)
-     : SamplingAlgorithm(std::shared_ptr<SampleCollection>(), std::shared_ptr<SampleCollection>()),
-       componentFactory(componentFactory)
+     : componentFactory(componentFactory)
     {
       auto finestIndex = componentFactory->FinestIndex(); 
       
@@ -30,24 +29,15 @@ namespace muq {
     SLMCMC::SLMCMC (pt::ptree pt, std::shared_ptr<MIComponentFactory> componentFactory)
      : SLMCMC(pt,componentFactory, componentFactory->FinestIndex()) { }
 
-    std::shared_ptr<SampleCollection> SLMCMC::GetSamples() const {
-      return nullptr;
+    std::shared_ptr<MarkovChain> SLMCMC::GetSamples() const {
+      return single_chain->GetSamples();
     }
-    std::shared_ptr<SampleCollection> SLMCMC::GetQOIs() const {
-      return nullptr;
+    std::shared_ptr<MarkovChain> SLMCMC::GetQOIs() const {
+      return single_chain->GetQOIs();
     }
 
-    std::shared_ptr<SampleCollection> SLMCMC::RunImpl(std::vector<Eigen::VectorXd> const& x0) {
+    std::shared_ptr<MarkovChain> SLMCMC::Run() {
       return single_chain->Run();
-    }
-
-    Eigen::VectorXd SLMCMC::MeanQOI() {
-        return single_chain->GetQOIs()->Mean();
-    }
-    
-    Eigen::VectorXd SLMCMC::MeanParameter() {
-        auto samps = single_chain->GetSamples();
-        return samps->Mean();
     }
     
     void SLMCMC::WriteToFile(std::string filename){

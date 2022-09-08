@@ -27,7 +27,7 @@ void H5Object::ExactCopy(H5Object const& otherObj)
 }
 
 H5Object& H5Object::CreatePlaceholder(std::string const& grpName)
-{
+{ 
     auto pathParts = SplitString(grpName);
 
     if(pathParts.second.length()==0)
@@ -72,6 +72,7 @@ H5Object& H5Object::CreateGroup(std::string const& grpName)
       }else{
         return children[pathParts.first];
       }
+
     }else{
       return children[pathParts.first].CreateGroup(pathParts.second);
     }
@@ -82,9 +83,10 @@ H5Object& H5Object::CreateGroup(std::string const& grpName)
 
 H5Object& H5Object::operator[](std::string const& targetPath)
 {
-  if(isDataset || (targetPath.length()==0)){
+  if(targetPath.length()==0){
     return *this;
-
+  }else if(isDataset){
+    throw std::runtime_error("Error in H5Object::operator[], can't return child \"" + targetPath + "\" because this object (\"" + path + "\" is a dataset not a group.");
   }else{
     auto pathParts = SplitString(targetPath);
 

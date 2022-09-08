@@ -11,13 +11,21 @@ if(NOT NLOPT_EXTERNAL_SOURCE)
 
 endif()
 
+set(NLOPT_CFLAGS "")
+if(CMAKE_OSX_ARCHITECTURES)
+  set(NLOPT_CFLAGS "${NLOPT_CFLAGS}-arch arm64 -arch x86_64")
+endif()
+
+#set(NLOPT_CFLAGS "\"${NLOPT_CFLAGS}\"")
+
+
 set(NLOPT_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/muq_external/)
 ExternalProject_Add(
   NLOPT
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/external/nlopt
     URL ${NLOPT_EXTERNAL_SOURCE}
-    CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}; ${CMAKE_CURRENT_BINARY_DIR}/external/nlopt/src/NLOPT/configure  CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ${HDF5_PARALLEL_FLAG} --prefix=${NLOPT_INSTALL_DIR} --enable-shared --without-octave --without-matlab
-    BUILD_COMMAND make install
+    CONFIGURE_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/external/nlopt/src/NLOPT/configure  CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ${HDF5_PARALLEL_FLAG} CFLAGS=${NLOPT_CFLAGS} --prefix=${NLOPT_INSTALL_DIR} --enable-shared --without-octave --without-matlab --without-python --without-guile
+    BUILD_COMMAND $(MAKE) install
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
 )

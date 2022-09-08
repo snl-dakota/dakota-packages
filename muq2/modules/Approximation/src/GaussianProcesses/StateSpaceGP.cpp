@@ -8,6 +8,7 @@
 #include "MUQ/Utilities/Exceptions.h"
 
 #include <Eigen/Dense>
+#include <Eigen/SparseCore>
 
 using namespace muq::Approximation;
 using namespace muq::Modeling;
@@ -128,7 +129,6 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXd> StateSpaceGP::Predict(Eigen::MatrixX
     int obsInd = 0;
     int evalInd = 0;
 
-
     // Is the first time an observation or an evaluation?
     if(observations.at(0)->loc(0) < times(0)){
         currTime = observations.at(0)->loc(0);
@@ -136,7 +136,7 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXd> StateSpaceGP::Predict(Eigen::MatrixX
         obsDists.at(0).second = L.triangularView<Eigen::Lower>()*L.transpose();
         obsDists.at(0).first = Eigen::VectorXd::Zero(stateDim);
 
-        auto H = std::make_shared<ProductOperator>(observations.at(0)->H, obsOp);
+        std::shared_ptr<LinearOperator> H = std::make_shared<ProductOperator>(observations.at(0)->H, obsOp);
         obsFilterDists.at(0) = KalmanFilter::Analyze(obsDists.at(0),
                                                      H,
                                                      observations.at(0)->obs - mean->Evaluate(observations.at(0)->loc),
@@ -147,12 +147,11 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXd> StateSpaceGP::Predict(Eigen::MatrixX
         obsInd++;
     }else{
         currTime = times(0);
-
+        
         evalDists.at(0).second = L.triangularView<Eigen::Lower>()*L.transpose();
         evalDists.at(0).first = Eigen::VectorXd::Zero(stateDim);
-
+        
         currDist = &evalDists.at(0);
-
         evalInd++;
     }
 
@@ -170,7 +169,6 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXd> StateSpaceGP::Predict(Eigen::MatrixX
 
         // Is this time an observation or an evaluation?
         if(hasObs){
-
             ComputeAQ(observations.at(obsInd)->loc(0) - currTime);
 
             obsDists.at(obsInd).first = sdeA * currDist->first;
@@ -178,12 +176,13 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXd> StateSpaceGP::Predict(Eigen::MatrixX
 
             currTime = observations.at(obsInd)->loc(0);
 
-            auto H = std::make_shared<ProductOperator>(observations.at(obsInd)->H, obsOp);
+            std::shared_ptr<LinearOperator> H = std::make_shared<ProductOperator>(observations.at(obsInd)->H, obsOp);
+            
             obsFilterDists.at(obsInd) = KalmanFilter::Analyze(obsDists.at(obsInd),
                                                               H,
-                                                              observations.at(obsInd)->obs - mean->Evaluate(observations.at(obsInd)->loc),
+                                                              observations.at(obsInd)->obs - observations.at(obsInd)->H->Apply(mean->Evaluate(observations.at(obsInd)->loc)),
                                                               observations.at(obsInd)->obsCov);
-
+            
             currDist = &obsFilterDists.at(obsInd);
 
             obsInd++;

@@ -60,6 +60,9 @@ public:
 
 class MyMIComponentFactory : public MIComponentFactory {
 public:
+
+  MyMIComponentFactory(pt::ptree pt) : pt(pt) {}
+
   virtual std::shared_ptr<MCMCProposal> Proposal (std::shared_ptr<MultiIndex> const& index, std::shared_ptr<AbstractSamplingProblem> const& samplingProblem) override {
     pt::ptree pt;
     pt.put("BlockIndex",0);
@@ -83,14 +86,13 @@ public:
     return index;
   }
 
-  virtual std::shared_ptr<MCMCProposal> CoarseProposal (std::shared_ptr<MultiIndex> const& index,
+  virtual std::shared_ptr<MCMCProposal> CoarseProposal (std::shared_ptr<MultiIndex> const& fineIndex,
+                                                        std::shared_ptr<MultiIndex> const& coarseIndex,
                                                         std::shared_ptr<AbstractSamplingProblem> const& coarseProblem,
-                                                           std::shared_ptr<SingleChainMCMC> const& coarseChain) override {
-    pt::ptree ptProposal;
+                                                        std::shared_ptr<SingleChainMCMC> const& coarseChain) override {
+    pt::ptree ptProposal = pt;
     ptProposal.put("BlockIndex",0);
-    int subsampling = 5;
-    ptProposal.put("Subsampling", subsampling);
-    return std::make_shared<SubsamplingMIProposal>(ptProposal, coarseProblem, coarseChain);
+    return std::make_shared<SubsamplingMIProposal>(ptProposal, coarseProblem, coarseIndex, coarseChain);
   }
 
   virtual std::shared_ptr<AbstractSamplingProblem> SamplingProblem (std::shared_ptr<MultiIndex> const& index) override {
@@ -145,10 +147,11 @@ public:
     return mu;
   }
 
+private:
+  pt::ptree pt;
 };
 
 TEST(MIMCMCTest, MIMCMC) {
-  auto componentFactory = std::make_shared<MyMIComponentFactory>();
 
   pt::ptree pt;
   pt.put("NumSamples_0_0", 1e3);
@@ -160,30 +163,53 @@ TEST(MIMCMCTest, MIMCMC) {
   pt.put("NumSamples_2_0", 1e3);
   pt.put("NumSamples_2_1", 1e3);
   pt.put("NumSamples_2_2", 1e3);
+  pt.put("MLMCMC.Subsampling_0_0", 5);
+  pt.put("MLMCMC.Subsampling_0_1", 5);
+  pt.put("MLMCMC.Subsampling_0_2", 5);
+  pt.put("MLMCMC.Subsampling_1_0", 5);
+  pt.put("MLMCMC.Subsampling_1_1", 5);
+  pt.put("MLMCMC.Subsampling_1_2", 5);
+  pt.put("MLMCMC.Subsampling_2_0", 5);
+  pt.put("MLMCMC.Subsampling_2_1", 5);
+  pt.put("MLMCMC.Subsampling_2_2", 5);
+
+  auto componentFactory = std::make_shared<MyMIComponentFactory>(pt);
 
   MIMCMC mimcmc (pt, componentFactory);
-  mimcmc.Run(Eigen::Vector2d(1.0, 2.0));
+  mimcmc.Run();
   mimcmc.Draw(false);
 
-  auto mean = mimcmc.MeanQOI();
+  auto samps = mimcmc.GetSamples();
+  auto mean = samps->Mean();
+  Eigen::VectorXd mcse = samps->StandardError();
 
-  EXPECT_NEAR(mean[0], 1.0, 0.25);
-  EXPECT_NEAR(mean[1], 2.0, 0.25);
+  std::cout << "MIMCMC MCSE: " << mcse.transpose() << std::endl;
+  EXPECT_NEAR(1.0, mean(0), 3.0*mcse(0));
+  EXPECT_NEAR(2.0, mean(1), 3.0*mcse(1));
+
+  auto qois = mimcmc.GetQOIs();
+  mean = qois->Mean();
+  mcse = qois->StandardError();
+
+  std::cout << "MIMCMC MCSE: " << mcse.transpose() << std::endl;
+  EXPECT_NEAR(1.0, mean(0), 3.0*mcse(0));
+  EXPECT_NEAR(2.0, mean(1), 3.0*mcse(1));
 
 }
 
 TEST(MIMCMCTest, SLMCMC)
 {
-  auto componentFactory = std::make_shared<MyMIComponentFactory>();
 
   pt::ptree pt;
 
   pt.put("NumSamples", 5e3); // number of samples for single level
 
-  SLMCMC slmcmc (pt, componentFactory);
-  slmcmc.Run(Eigen::Vector2d(1.0, 2.0));
+  auto componentFactory = std::make_shared<MyMIComponentFactory>(pt);
 
-  auto mean = slmcmc.MeanQOI();
+  SLMCMC slmcmc (pt, componentFactory);
+  slmcmc.Run();
+
+  auto mean = slmcmc.GetQOIs()->Mean();
 
   EXPECT_NEAR(mean[0], 1.0, 0.1);
   EXPECT_NEAR(mean[1], 2.0, 0.1);

@@ -12,6 +12,7 @@ CreateTestGroup(
     MultiIndices/MultiIndexTests.cpp
     MultiIndices/MultiIndexSetTests.cpp
     MultiIndices/MultiIndexLimiterTests.cpp
+    MultiIndices/MultiIndexFactoryTests.cpp
 )
 
 CreateTestGroup(
@@ -21,7 +22,7 @@ CreateTestGroup(
     AnyCastTest.cpp
     StringUtilitiesTest.cpp
     VectorSliceTest.cpp
-    
+
     Cereal/CerealizeEigenTests.cpp
     Cereal/BoostAnyTests.cpp
 )

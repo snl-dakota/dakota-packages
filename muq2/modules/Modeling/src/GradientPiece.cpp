@@ -29,8 +29,10 @@ void GradientPiece::ApplyJacobianImpl(unsigned int                const  outputD
                                       ref_vector<Eigen::VectorXd> const& input,
                                       Eigen::VectorXd             const& vec)
 {
+  assert(outputDimWrt==0);
+
   ref_vector<Eigen::VectorXd> baseInputs(input.begin(), input.end()-1);
-  jacobianAction = basePiece->ApplyHessian(outputDimWrt, inWrt, inputDimWrt, baseInputs, input.at(input.size()-1).get(), vec);
+  jacobianAction = basePiece->ApplyHessian(outWrt, inWrt, inputDimWrt, baseInputs, input.at(input.size()-1).get(), vec);
 }
 
 

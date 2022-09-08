@@ -9,7 +9,7 @@ namespace Inference
 {
 
     /** @class KalmanSmoother
-        Implements the Rauch–Tung–Striebel smoother.
+        @details Implements the Rauch–Tung–Striebel smoother.
     */
     class KalmanSmoother
     {
@@ -22,35 +22,29 @@ namespace Inference
             @param[in] F The linear operator acting on the state at time t, to produce the state at time t+1
             @returns A distribution (mean and covariance) at time t after accounting for all data.
         */
-        template<typename FType>
         static std::pair<Eigen::VectorXd, Eigen::MatrixXd> Analyze(std::pair<Eigen::VectorXd, Eigen::MatrixXd> const& currDist_t,
                                                                    std::pair<Eigen::VectorXd, Eigen::MatrixXd> const& nextDist_t,
                                                                    std::pair<Eigen::VectorXd, Eigen::MatrixXd> const& nextDist_n,
-                                                                   FType                                       const& F)
+                                                                   std::shared_ptr<muq::Modeling::LinearOperator>     F);
+
+        /**
+         * @tparam MatrixType A type that can be converted to a MUQ LinearOperator.  Examples include Eigen::MatrixXd and Eigen::SparseMatrix
+         */
+        template<typename MatrixType>
+        static std::pair<Eigen::VectorXd, Eigen::MatrixXd> Analyze(std::pair<Eigen::VectorXd, Eigen::MatrixXd> const& currDist_t,
+                                                                   std::pair<Eigen::VectorXd, Eigen::MatrixXd> const& nextDist_t,
+                                                                   std::pair<Eigen::VectorXd, Eigen::MatrixXd> const& nextDist_n,
+                                                                   MatrixType                                  const& F)
         {
-            std::pair<Eigen::VectorXd, Eigen::MatrixXd> output;
-            
-            Eigen::MatrixXd C = ComputeC(currDist_t.second, nextDist_t.second, F);
-            
-            output.first = currDist_t.first + C*(nextDist_n.first - nextDist_t.first);
-            output.second = currDist_t.second + C*(nextDist_n.second - nextDist_t.second).selfadjointView<Eigen::Lower>()*C.transpose();
-            
-            return output;
+            return Analyze(currDist_t, nextDist_t, nextDist_n, muq::Modeling::LinearOperator::Create(F));
+        };
 
-        }
-
-        
         
     private:                                                           
 
         static Eigen::MatrixXd ComputeC( Eigen::MatrixXd                          const& currDist_t_cov,
                                          Eigen::MatrixXd                          const& nextDist_t_cov,
-                                         std::shared_ptr<muq::Modeling::LinearOperator> F);
-
-        
-        static Eigen::MatrixXd ComputeC( Eigen::MatrixXd const& currDist_t_cov,
-                                         Eigen::MatrixXd const& nextDist_t_cov,
-                                         Eigen::MatrixXd const& F);
+                                         std::shared_ptr<muq::Modeling::LinearOperator> const& F);
         
 
     }; // class KalmanSmoother 
