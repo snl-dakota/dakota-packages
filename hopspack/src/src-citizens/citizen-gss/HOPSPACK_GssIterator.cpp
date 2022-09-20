@@ -488,7 +488,9 @@ void GssIterator::generateTrialPoints (const bool  bPrintDetails)
     if (_bUseRandomOrder == true)
     {
         // Randomize access order.
-        random_shuffle (dirIndices.begin(), dirIndices.end());
+        std::random_device rd;
+        std::mt19937 generator(rd());
+	std::shuffle (dirIndices.begin(), dirIndices.end(), generator);
     }
 
     for (int i = 0; i < (int) dirIndices.size(); i++)
