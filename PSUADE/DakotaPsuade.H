@@ -13,9 +13,9 @@
 #ifndef DAKOTA_PSUADE_H
 #define DAKOTA_PSUADE_H
 
-#define PSUADE_UNDEFINED -DBL_MAX
+#include <random>
 
-class DakotaPsuadeBaseRNG; // forward declaration
+#define PSUADE_UNDEFINED -DBL_MAX
 
 /// glue class providing RNG services to PSUADE
 class DakotaPsuade
@@ -54,8 +54,14 @@ protected:
 
   //-- Data
 
-  /// pointer to a random number generator engine (pImpl pattern)  
-  DakotaPsuadeBaseRNG *rngPtr;
+  /// seed for shared generator
+  unsigned int rngSeed;
+
+  /// shared Mersenne Twister generator
+  std::mt19937 rnumGenerator;
+
+  /// distribution of U[0,1) random numbers
+  std::uniform_real_distribution<> uniRealDist;
 
   /// matrix of samples to evaluate (name as given in client MOAT* files)
   double **sampleMatrix_;
