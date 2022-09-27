@@ -488,8 +488,15 @@ void GssIterator::generateTrialPoints (const bool  bPrintDetails)
     if (_bUseRandomOrder == true)
     {
         // Randomize access order.
-        std::random_device rd;
-        std::mt19937 generator(rd());
+
+        // RATIONALE: Historically this used deprecated random_shuffle and
+        // likely underlying rand(). It may have relied on rand() without
+        // srand() ==> srand(1), but we don't want to make the shuffle
+        // overly deterministic. To keep HOPSPACK self-contained, yet
+        // progress the seed from call to call, we use its static RNG to
+        // seed the generator for shuffle. This is more reproducible than
+        // using random_device.
+        std::mt19937 generator( genRandomNumber() * std::mt19937::max() );
 	std::shuffle (dirIndices.begin(), dirIndices.end(), generator);
     }
 
