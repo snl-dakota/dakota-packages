@@ -38,6 +38,7 @@
 
 #include <math.h>
 #include <algorithm>
+#include <random>
 
 #include "HOPSPACK_common.hpp"
 #include "HOPSPACK_float.hpp"
