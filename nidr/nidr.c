@@ -73,36 +73,6 @@ static KeyWord *toomany(const char *, KeyWord *, int);
 #endif /*}}*/
 #endif /*}*/
 
-/* cache parse-time squawks instead of printing them to stderr, so
-   they can be accessed by client code... */
-#define NIDR_CACHE_SQUAWKS 1
-/* Max number of squawks to cache */
-const size_t nidr_squawkmax = NIDR_SQUAWKMAX;
-/* Max length of any one squawk, when caching. Any longer probably
-   doesn't add value... */
-const size_t nidr_max_squawk_len = 1024;
-/* Array of cached parse errors for access by client code */
-char* nidr_squawks[NIDR_SQUAWKMAX];
-
-/* Call this before parsing if caching squawks */
-void nidr_alloc_squawks()
-{
-  unsigned int i;
-  for (i=0; i<nidr_squawkmax; ++i) {
-    nidr_squawks[i] = (char*) malloc(nidr_max_squawk_len * sizeof(char));
-    nidr_squawks[i][0] = '\0';
-  }
-}
-
-/* Call this after parsing if caching squawks */
-void nidr_free_squawks()
-{
-  unsigned int i;
-  for (i=0; i<nidr_squawkmax; ++i) {
-    free(nidr_squawks[i]);
-  }
-}
-
 
  extern KeyWord Dakota_Keyword_Top;
  extern int nidrLineNumber;
@@ -162,6 +132,85 @@ KWseen {
  static KWseen *KW_cur;
  NIDR_KWlib *NIDR_Libs;
 
+
+/* cache parse-time error instead of printing them to stderr, so
+   they can be accessed by client code... */
+#define NIDR_CACHE_ERRORS 1
+/* Max number of error lines to cache, including lists of valid KWs */
+const size_t nidr_max_errors = 1024;
+/* Array of at most nidr_max_errors cached parse errors for access by client code */
+char* nidr_parse_errors[1024];
+/* Max length of any one error, when caching. Any longer probably
+   doesn't add value... */
+const size_t nidr_max_error_len = 1024;
+/* number of errors cached */
+static int nidr_num_parse_errors;
+
+/* Call this before parsing if caching errors */
+void nidr_alloc_error_cache()
+{
+  nidr_num_parse_errors = 0;
+  unsigned int i;
+  for (i=0; i<nidr_max_errors; ++i) {
+    nidr_parse_errors[i] = (char*) malloc(nidr_max_error_len * sizeof(char));
+    nidr_parse_errors[i][0] = '\0';
+  }
+}
+
+/* Call this after parsing if caching errors */
+void nidr_free_error_cache()
+{
+  unsigned int i;
+  for (i=0; i<nidr_max_errors; ++i) {
+    free(nidr_parse_errors[i]);
+  }
+  nidr_num_parse_errors = 0;
+}
+
+static void nidr_cache_squawk(const char* fmt, va_list ap)
+{
+  if (nidr_max_errors <= nidr_num_parse_errors)
+    return;
+
+  /* These gymnastics are to keep the generated strings under
+     the buffer length and avoid an overflow. The "n"printf
+     variants taking a max bufsz require C99 */
+
+  /* TODO: could pass NULLs and then allocate the buffer... */
+
+  size_t max_marker = 64;
+  int marker_len =
+    snprintf(nidr_parse_errors[nidr_num_parse_errors], max_marker,
+	     "Input line %d: ", nidrLineNumber);
+  if (marker_len > max_marker - 1)
+    marker_len = max_marker - 1;
+  /* reserve two chars for the .\n and overwrite the line marker's \0 */
+  int squawk_len =
+    vsnprintf(nidr_parse_errors[nidr_num_parse_errors] + marker_len,
+	      nidr_max_error_len - marker_len - 2, fmt, ap);
+  if (squawk_len > nidr_max_error_len - marker_len - 3)
+    squawk_len = nidr_max_error_len - marker_len - 3;
+  sprintf(nidr_parse_errors[nidr_num_parse_errors] + marker_len + squawk_len, ".\n");
+
+  ++nidr_num_parse_errors;
+}
+
+
+static void nidr_cache_error(const char* fmt, ...)
+{
+  if (nidr_max_errors <= nidr_num_parse_errors)
+    return;
+
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(nidr_parse_errors[nidr_num_parse_errors], nidr_max_error_len,
+	    fmt, ap);
+  va_end(ap);
+
+  ++nidr_num_parse_errors;
+}
+
+
  void
 nidr_lib_cleanup(void)
 {
@@ -198,8 +247,13 @@ nidr_parse_error(void)
 {
 	int n;
 	if ((n = nsquawk - NIDR_SQUAWKMAX) > 0)
+#ifdef NIDR_CACHE_ERRORS
+	  nidr_cache_error("\n%d error message%s suppressed.\n",
+			    n, "s" + (n == 1));
+#else
 		fprintf(stderr, "\n%d error message%s suppressed.\n",
 			n, "s" + (n == 1));
+#endif
 	return nsquawk + nparse_errors;
 	}
 
@@ -232,23 +286,9 @@ squawk(const char *fmt, ...)
 {
 	va_list ap;
 	if (++nsquawk <= NIDR_SQUAWKMAX) {
-#ifdef NIDR_CACHE_SQUAWKS
-	  /* These gymnastic are to keep the generating strings under
-	     the buffer length and avoid an overflow. The "n"printf
-	     variants taking a max bufsz require C99 */
-	  size_t max_marker = 64;
-	  int marker_len = snprintf(nidr_squawks[nsquawk-1], max_marker,
-				    "Input line %d: ", nidrLineNumber);
-	  if (marker_len > max_marker - 1)
-	    marker_len = max_marker - 1;
+#ifdef NIDR_CACHE_ERRORS
 	  va_start(ap, fmt);
-	  /* reserve two chars for the .\n and overwrite the line marker's \0 */
-	  int squawk_len = vsnprintf(nidr_squawks[nsquawk-1] + marker_len,
-				     nidr_max_squawk_len - marker_len - 2,
-				     fmt, ap);
-	  if (squawk_len > nidr_max_squawk_len - marker_len - 3)
-	    squawk_len = nidr_max_squawk_len - marker_len - 3;
-	  sprintf(nidr_squawks[nsquawk-1] + marker_len + squawk_len, ".\n");
+	  nidr_cache_squawk(fmt, ap);
 	  va_end(ap);
 #else
 	  /* original implementation */
@@ -1473,7 +1513,11 @@ toomany(const char *name, KeyWord *kw, int nmatch)
 	squawk("\"%s\" is ambiguous; possible matches..", name);
 	if (nsquawk <=  NIDR_SQUAWKMAX)
 		for(i = 0; i < nmatch; i++, kw++)
+#ifdef NIDR_CACHE_ERRORS
+		  nidr_cache_error("\t%s\n", kw->name);
+#else
 			fprintf(stderr, "\t%s\n", kw->name);
+#endif
 	return 0;
 	}
 
@@ -1684,7 +1728,11 @@ oneof(KeyWord *kw, int alt, int n)
 	for(kw1 = kw->kw; !kw1->name; kw1 = kw1->kwnext);
 	for(; kw1; kw1 = kw1->kwnext)
 		if (kw1->alt == alt && kw1->kind & KWKind_primary)
+#ifdef NIDR_CACHE_ERRORS
+		  nidr_cache_error("\t%s\n", kw1->name);
+#else
 			fprintf(stderr, "\t%s\n", kw1->name);
+#endif
 	}
 
  static void
