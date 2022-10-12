@@ -73,6 +73,37 @@ static KeyWord *toomany(const char *, KeyWord *, int);
 #endif /*}}*/
 #endif /*}*/
 
+/* cache parse-time squawks instead of printing them to stderr, so
+   they can be accessed by client code... */
+#define NIDR_CACHE_SQUAWKS 1
+/* Max number of squawks to cache */
+const size_t nidr_squawkmax = NIDR_SQUAWKMAX;
+/* Max length of any one squawk, when caching. Any longer probably
+   doesn't add value... */
+const size_t nidr_max_squawk_len = 1024;
+/* Array of cached parse errors for access by client code */
+char* nidr_squawks[NIDR_SQUAWKMAX];
+
+/* Call this before parsing if caching squawks */
+void nidr_alloc_squawks()
+{
+  unsigned int i;
+  for (i=0; i<nidr_squawkmax; ++i) {
+    nidr_squawks[i] = (char*) malloc(nidr_max_squawk_len * sizeof(char));
+    nidr_squawks[i][0] = '\0';
+  }
+}
+
+/* Call this after parsing if caching squawks */
+void nidr_free_squawks()
+{
+  unsigned int i;
+  for (i=0; i<nidr_squawkmax; ++i) {
+    free(nidr_squawks[i]);
+  }
+}
+
+
  extern KeyWord Dakota_Keyword_Top;
  extern int nidrLineNumber;
  static KeyWord* Keyword_Top = &Dakota_Keyword_Top;
@@ -195,16 +226,38 @@ botch(const char *fmt, ...)
 	exit(1);
 	}
 
+
  static void
 squawk(const char *fmt, ...)
 {
 	va_list ap;
 	if (++nsquawk <= NIDR_SQUAWKMAX) {
+#ifdef NIDR_CACHE_SQUAWKS
+	  /* These gymnastic are to keep the generating strings under
+	     the buffer length and avoid an overflow. The "n"printf
+	     variants taking a max bufsz require C99 */
+	  size_t max_marker = 64;
+	  int marker_len = snprintf(nidr_squawks[nsquawk-1], max_marker,
+				    "Input line %d: ", nidrLineNumber);
+	  if (marker_len > max_marker - 1)
+	    marker_len = max_marker - 1;
+	  va_start(ap, fmt);
+	  /* reserve two chars for the .\n and overwrite the line marker's \0 */
+	  int squawk_len = vsnprintf(nidr_squawks[nsquawk-1] + marker_len,
+				     nidr_max_squawk_len - marker_len - 2,
+				     fmt, ap);
+	  if (squawk_len > nidr_max_squawk_len - marker_len - 3)
+	    squawk_len = nidr_max_squawk_len - marker_len - 3;
+	  sprintf(nidr_squawks[nsquawk-1] + marker_len + squawk_len, ".\n");
+	  va_end(ap);
+#else
+	  /* original implementation */
 		fprintf(stderr, "Input line %d: ", nidrLineNumber);
 		va_start(ap, fmt);
 		vfprintf(stderr, fmt, ap);
 		fputs(".\n", stderr);
 		va_end(ap);
+#endif
 		}
 	}
 
