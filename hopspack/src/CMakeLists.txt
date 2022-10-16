@@ -83,6 +83,10 @@ add_library(${local_library} ${lib${local_library}_sources})
 
 target_link_libraries(${local_library} ${OPSYS_LIBRARIES})
 
+IF (HOPSPACK_USE_BOOST)
+    TARGET_COMPILE_DEFINITIONS(${local_library} PRIVATE HOPSPACK_USE_BOOST)
+    TARGET_LINK_LIBRARIES(${local_library} Boost::boost)
+ENDIF ()
 
 #---- Installation instructions.
 IF (INSTALL_LIB)

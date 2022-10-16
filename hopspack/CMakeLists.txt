@@ -66,6 +66,15 @@ ELSE (HAVE_CDDLIB)
     MESSAGE (STATUS "HOPSPACK: Excluding CDDLIB for degenerate constraints.")
 ENDIF (HAVE_CDDLIB)
 
+#---- Option to enable/disable Boost-based RNG and shuffle
+OPTION (HOPSPACK_USE_BOOST
+        "Enable HOPSPACK use of Boost RNG / shuffle for more stable cross-platform behavior" TRUE)
+IF (HOPSPACK_USE_BOOST)
+    MESSAGE (STATUS "HOPSPACK: Using Boost for RNG / shuffle.")
+    FIND_PACKAGE(Boost REQUIRED)
+ELSE ()
+    MESSAGE (STATUS "HOPSPACK: Using std for RNG / shuffle.")
+ENDIF ()
 
 #---- List subdirectories in the order they are to be processed.
 ADD_SUBDIRECTORY (src)
