@@ -44,6 +44,6 @@ void DakotaPsuade::generateRandomIvector(int num_inputs, int *permute)
   // copying
   std::vector<int> p;
   for (int i=0; i<num_inputs; i++) p.push_back(i);
-  std::shuffle(p.begin(), p.end(), rnumGenerator);
+  rand_shuffle(p.begin(), p.end(), rnumGenerator);
   for (int i=0; i<num_inputs; i++) permute[i] = p[i];
 }
