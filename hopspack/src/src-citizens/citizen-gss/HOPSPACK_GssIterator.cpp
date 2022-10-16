@@ -546,7 +546,7 @@ void GssIterator::generateTrialPoints (const bool  bPrintDetails)
         // using random_device.
       
 #ifdef HOPSPACK_USE_BOOST
-        boost::mt19937 generator(genRandomNumber() * std::mt19937::max());
+        boost::mt19937 generator(genRandomNumber() * boost::mt19937::max());
         HOPSPACK::rand_shuffle(dirIndices.begin(), dirIndices.end(), generator);
 #else
         std::mt19937 generator(genRandomNumber() * std::mt19937::max());
