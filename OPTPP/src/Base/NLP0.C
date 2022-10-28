@@ -519,7 +519,7 @@ SerialDenseMatrix<int,double> NLP0::CONBDGrad(const SerialDenseVector<int,double
   double mcheps = DBL_EPSILON;
   SerialDenseVector<int,double> fcn_accrcy(getFcnAccrcy().length());
   fcn_accrcy = getFcnAccrcy();
-  int i, n;
+  int i, j, n;
   double xtmp, hi, hieps;
   SerialDenseVector<int,double> fminus(ncnln), fx(ncnln);
   
@@ -535,17 +535,16 @@ SerialDenseMatrix<int,double> NLP0::CONBDGrad(const SerialDenseVector<int,double
     xtmp = mem_xc(i);
     mem_xc(i) = xtmp - hi;
     fminus = evalCF(mem_xc);
-    for(int j = 0; j<ncnln; j++)
+    for(j=0; j<ncnln; j++)
       { gtmp(j,i) = fx(j);
 	gtmp(j,i) -= fminus(j);
 	gtmp(j,i) *= 1/hi;
       }
     mem_xc(i) = xtmp;
+    // grad = gtmp.trans();
+    for(j=0;j<ncnln;j++)
+      grad(i,j) = gtmp(j,i);
   }
-  // grad = gtmp.trans();
-  for(i=0; i<ncnln; i++)
-    for(int j=0;j<n;j++)
-      grad(i,j) = gtmp(i,j);
   return grad;
 }
 
@@ -555,7 +554,7 @@ SerialDenseMatrix<int,double> NLP0::CONFDGrad(const SerialDenseVector<int,double
   double mcheps = DBL_EPSILON;
   SerialDenseVector<int,double>  fcn_accrcy(getFcnAccrcy().length());
   fcn_accrcy = getFcnAccrcy();
-  int i, n;
+  int i, j, n;
   double xtmp, hi, hieps;
   SerialDenseVector<int,double> fx(ncnln), fplus(ncnln);
   
@@ -573,17 +572,16 @@ SerialDenseMatrix<int,double> NLP0::CONFDGrad(const SerialDenseVector<int,double
     xtmp = xcurrent(i);
     xcurrent(i) = xtmp + hi;
     fplus = evalCF(xcurrent);
-    for(int j = 0; j<ncnln; j++)
+    for(j = 0; j<ncnln; j++)
       { gtmp(j,i) = fplus(j);
 	gtmp(j,i) -= fx(j);
 	gtmp(j,i) *= 1/hi;
       }
     xcurrent(i) = xtmp;
-  }
-  // grad = gtmp.t();
-  for(i=0; i<ncnln; i++)
-    for(int j=0;j<n;j++)
+    // grad = gtmp.trans();
+    for(j=0;j<ncnln;j++)
       grad(i,j) = gtmp(j,i);
+  }
   return grad;
 }
 
@@ -593,7 +591,7 @@ SerialDenseMatrix<int,double> NLP0::CONCDGrad(const SerialDenseVector<int,double
   double mcheps = DBL_EPSILON;
   SerialDenseVector<int,double> fcn_accrcy(getFcnAccrcy().length());
   fcn_accrcy = getFcnAccrcy();
-  int i, n;
+  int i, j, n;
   double xtmp, hi, hieps; 
   SerialDenseVector<int,double> fplus(ncnln), fminus(ncnln);
   
@@ -615,17 +613,16 @@ SerialDenseMatrix<int,double> NLP0::CONCDGrad(const SerialDenseVector<int,double
     mem_xc(i)  = xtmp - hi;
     fminus = evalCF(mem_xc);
 
-        for(int j = 0; j<ncnln; j++)
-	  { gtmp(j,i) = fplus(j);
-	    gtmp(j,i) -= fminus(j);
-	    gtmp(j,i) *= 1/(2*hi);
+    for(j = 0; j<ncnln; j++)
+      { gtmp(j,i) = fplus(j);
+	gtmp(j,i) -= fminus(j);
+	gtmp(j,i) *= 1/(2*hi);
       }
     mem_xc(i) = xtmp;
-  }
-  // grad = gtmp.t();
-  for(i=0; i<ncnln; i++)
-    for(int j=0;j<n;j++)
+    // grad = gtmp.trans();
+    for(j=0; j<ncnln; j++)
       grad(i,j) = gtmp(j,i);
+  }
   return grad;
 }
 
