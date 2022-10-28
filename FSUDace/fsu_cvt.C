@@ -279,10 +279,24 @@ void cvt_iterate ( int ndim, int n, int batch, int sample, bool reset,
 //  by the sampling.
 //
   *energy = 0.0;
-  r2 = new double[ndim*n];
-  count = new int[n];
-  nearest = new int[batch];
-  s = new double[ndim*batch];
+
+  // Value initialize all these zero with () to work around conditional jump
+  // on uninitialized value until RNG is restored (HAVE_RAND).
+
+  // DETAILS: Entries in s should get initialized by cvt_sample(),
+  // however since the CMake migration, HAVE_RAND isn't defined, so
+  // they never get initialized. Most compilers were initializing the
+  // new-ed memory to zero, so we enforce that for now.
+
+  // TODO: Next step will be to replace srand()/rand() with
+  // std::mt19937 and restore the random behavior for both initial and
+  // candidate samples. At same time, will need to review any other
+  // conditional compilation that's not working.
+
+  r2 = new double[ndim*n]();
+  count = new int[n]();
+  nearest = new int[batch]();
+  s = new double[ndim*batch]();
 
   for ( j = 0; j < n; j++ )
   {
