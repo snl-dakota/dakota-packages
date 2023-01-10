@@ -46,8 +46,8 @@
 
 #include <algorithm>
 #include <cstdlib>
-#include <initializer_list>
 #include <numeric>
+#include <initializer_list>
 #include "ROL_Vector.hpp"
 
 /** \class ROL::StdVector

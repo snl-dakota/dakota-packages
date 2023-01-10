@@ -1,12 +1,14 @@
 .. Common references to other documents
 
-.. _Package Dependencies and Enable/Disable Logic: https://tribits.org/doc/TribitsDevelopersGuide.html l#package-dependencies-and-enable-disable-logic
+.. _TriBITS Users Guide and Reference: TribitsUsersGuide.html
 
-.. _TriBITS Dependency Handling Behaviors: https://tribits.org/doc/TribitsDevelopersGuide.html#tribits-dependency-handling-behaviors
+.. _Package Dependencies and Enable/Disable Logic: TribitsUsersGuide.html#package-dependencies-and-enable-disable-logic
 
-.. _TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES(): https://tribits.org/doc/TribitsDevelopersGuide.html#tribits-tpl-find-include-dirs-and-libraries
+.. _TriBITS Dependency Handling Behaviors: TribitsUsersGuide.html#tribits-dependency-handling-behaviors
 
-.. _TRIBITS_CTEST_DRIVER(): https://tribits.org/doc/TribitsDevelopersGuide.html#tribits-ctest-driver
+.. _tribits_tpl_find_include_dirs_and_libraries(): TribitsUsersGuide.html#tribits-tpl-find-include-dirs-and-libraries
+
+.. _tribits_ctest_driver(): TribitsUsersGuide.html#tribits-ctest-driver
 
 .. _Ninja: https://ninja-build.org
 
@@ -161,18 +163,15 @@ as shown above.
 Basic configuration
 -------------------
 
-A few different approaches for configuring are given below but likely the most
-recommended one for complex environments is to use ``*.cmake`` fragment files
-passed in through the `<Project>_CONFIGURE_OPTIONS_FILE`_ option.
+A few different approaches for configuring are given below.
 
 a) Create a 'do-configure' script such as [Recommended]::
 
-    EXTRA_ARGS=$@
-    
+    #!/bin/bash
     cmake \
       -D CMAKE_BUILD_TYPE=DEBUG \
       -D <Project>_ENABLE_TESTS=ON \
-      $EXTRA_ARGS \
+      "$@" \
       ${SOURCE_BASE}
 
   and then run it with::
@@ -194,24 +193,23 @@ a) Create a 'do-configure' script such as [Recommended]::
 
 .. _<Project>_CONFIGURE_OPTIONS_FILE:
 
-b) Create a CMake file fragment and point to it [Recommended].
+b) Create a ``*.cmake`` file and point to it [Most Recommended].
 
   Create a do-configure script like::
 
-    EXTRA_ARGS=$@
-    
+    #!/bin/bash
     cmake \
       -D <Project>_CONFIGURE_OPTIONS_FILE=MyConfigureOptions.cmake \
       -D <Project>_ENABLE_TESTS=ON \
-      $EXTRA_ARGS \
+      "$@" \
       ${SOURCE_BASE}
      
   where MyConfigureOptions.cmake (in the current working directory) might look
   like::
 
-    SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "Set in MyConfigureOptions.cmake")
-    SET(<Project>_ENABLE_CHECKED_STL ON CACHE BOOL "Set in MyConfigureOptions.cmake")
-    SET(BUILD_SHARED_LIBS ON CACHE BOOL "Set in MyConfigureOptions.cmake")
+    set(CMAKE_BUILD_TYPE DEBUG CACHE STRING "Set in MyConfigureOptions.cmake")
+    set(<Project>_ENABLE_CHECKED_STL ON CACHE BOOL "Set in MyConfigureOptions.cmake")
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Set in MyConfigureOptions.cmake")
     ...
 
   Using a configuration fragment ``*.cmake`` file allows for better reuse of
@@ -223,7 +221,7 @@ b) Create a CMake file fragment and point to it [Recommended].
   reconfgure during a make (because it knows about the file and will check its
   time stamp, unlike when using ``-C <file-name>.cmake``, see below).
 
-  One can use the ``FORCE`` option in the ``SET()`` commands shown above and
+  One can use the ``FORCE`` option in the ``set()`` commands shown above and
   that will override any value of the options that might already be set.
   However, that will not allow the user to override the options on the CMake
   command-line using ``-D<VAR>=<value>`` so it is generally **not** desired to
@@ -281,25 +279,34 @@ b) Create a CMake file fragment and point to it [Recommended].
 
   3) One can create and use parametrized ``*.cmake`` files that can be used
   with multiple TriBITS projects.  For example, one can have set statements
-  like ``SET(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME``
+  like ``set(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME``
   is known before the file is included.  One can't do that with ``cmake -C``
   and instead would have to the full variables names specific for a given
   project.
 
-  4) However, the ``*.cmake`` files specified by
+  4) Non-cache project-level variables can be set in a ``*.cmake`` file that
+  will impact the configuration.  When using the ``-C`` option, only variables
+  set with ``set(<varName> CACHE <TYPE> ...)`` will impact the configuration.
+
+  5) However, the ``*.cmake`` files specified by
   ``<Project>_CONFIGURE_OPTIONS_FILE`` will only get read in **after** the
-  project's ``ProjectName.cmake`` and other ``SET()`` statements are called at
-  the top of the project's top-level ``CMakeLists.txt.` file.  So any CMake
+  project's ``ProjectName.cmake`` and other ``set()`` statements are called at
+  the top of the project's top-level ``CMakeLists.txt`` file.  So any CMake
   cache variables that are set in this early CMake code will override cache
   defaults set in the included ``*.cmake`` file.  (This is why TriBITS
   projects must be careful **not** to set default values for cache variables
   directly like this but instead should set indirect
   ``<Project>_<VarName>_DEFAULT`` non-cache variables.)  But when a
-  ``*.cmake`` file is read in using ``-C``, then the ``SET()`` statements in
+  ``*.cmake`` file is read in using ``-C``, then the ``set()`` statements in
   those files will get processed before any in the project's
   ``CMakeLists.txt`` file.  So be careful about this difference in behavior
   and carefully watch cache variable values actually set in the generated
   ``CMakeCache.txt`` file.
+
+  In other words, the context and impact of what get be set from a ``*.cmake``
+  file read in through the ``-C`` argument is more limited while the code
+  listed in the ``*.cmake`` file behaves just like regular CMake statements
+  executed in the project's top-level ``CMakeLists.txt`` file.
 
 c) Using the QT CMake configuration GUI:
 
@@ -307,7 +314,13 @@ c) Using the QT CMake configuration GUI:
   can be a nice way to configure <Project> (or just explore options) if you
   are a user.  To make your configuration easily repeatable, you might want to
   create a fragment file and just load it by setting
-  `<Project>_CONFIGURE_OPTIONS_FILE`_ (see above) in the GUI.
+  `<Project>_CONFIGURE_OPTIONS_FILE`_ in the GUI.
+
+Likely the most recommended approach to manage complex configurations is to
+use ``*.cmake`` fragment files passed in through the
+`<Project>_CONFIGURE_OPTIONS_FILE`_ option.  This offers the greatest
+flexibility and the ability to version-control the configuration settings.
+
 
 Selecting the list of packages to enable
 ----------------------------------------
@@ -352,10 +365,11 @@ for ``<Project>_SE_PACKAGES`` using, for example::
 
   ./do-configure 2>&1 | grep "<Project>_SE_PACKAGES: "
 
-.. _<Project>_DUMP_PACKAGE_DEPENDENCIES:
 
 Print package dependencies
 ++++++++++++++++++++++++++
+
+.. _<Project>_DUMP_PACKAGE_DEPENDENCIES:
 
 The set of package dependencies can be printed in the ``cmake`` STDOUT by
 setting the configure option::
@@ -429,7 +443,7 @@ take on the string enum values of ``"ON"``, ``"OFF"``, end empty ``""``.  An
 empty enable means that the TriBITS dependency system is allowed to decide if
 an enable should be turned on or off based on various logic.  The CMake GUI
 will enforce the values of ``"ON"``, ``"OFF"``, and empty ``""`` but it will
-not enforce this if you set the value on the command line or in a SET()
+not enforce this if you set the value on the command line or in a set()
 statement in an input ```*.cmake`` options files.  However, setting
 ``-DXXX_ENABLE_YYY=TRUE`` and ``-DXXX_ENABLE_YYY=FALSE`` is allowed and will
 be interpreted correctly..
@@ -444,7 +458,7 @@ The enable tests for explicitly enabled packages, configure with::
   -D <Project>_ENABLE_<TRIBITS_PACKAGE_2>=ON \
   -D <Project>_ENABLE_TESTS=ON \
 
-This wil result in the enable of the test suites for any package that
+This will result in the enable of the test suites for any package that
 explicitly enabled with ``-D <Project>_ENABLE_<TRIBITS_PACKAGE>=ON``.  Note
 that his will **not** result in the enable of the test suites for any packages
 that may only be implicitly enabled in order to build the explicitly enabled
@@ -570,6 +584,7 @@ expensive configure time checks and to preserve other cache variables that you
 have set and don't want to loose.  For example, one would want to do this to
 avoid compiler and TPL checks.
 
+
 Selecting compiler and linker options
 -------------------------------------
 
@@ -628,9 +643,9 @@ However, on Linux systems, the observed algorithm appears to be:
 3. Search for the Fortran compiler with names like ``f90``, ``gfortran``,
    etc., but restrict the search to the same directory specified by base path
    to the C compiler given in the variable ``CMAKE_C_COMPILER``.  The first
-   compiler that is found is set to ``CMAKE_CXX_COMPILER``.
+   compiler that is found is set to ``CMAKE_Fortran_COMPILER``.
 
-**WARNING:** While this build-in CMake compiler search algorithm may seems
+**WARNING:** While this built-in CMake compiler search algorithm may seems
 reasonable, it fails to find the correct compilers in many cases for a non-MPI
 serial build.  For example, if a newer version of GCC is installed and is put
 first in ``PATH``, then CMake will fail to find the updated ``gcc`` compiler
@@ -668,35 +683,39 @@ typically ``"-g -O0"`` while ``CMAKE_CXX_FLAGS_RELEASE`` is typically
 ``-DCMAKE_CXX_FLAGS="-04"``, then this level gets overridden by the flags
 specified in ``CMAKE_<LANG>_FLAGS_BUILD`` or ``CMAKE_<LANG>_FLAGS_RELEASE``.
 
-Note that TriBITS will set defaults for ``CMAKE_<LANG>_FLAGS`` and
+TriBITS will set defaults for ``CMAKE_<LANG>_FLAGS`` and
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>``, which may be different that what
 raw CMake would set.  TriBITS provides a means for project and package
 developers and users to set and override these compiler flag variables
 globally and on a package-by-package basis.  Below, the facilities for
 manipulating compiler flags is described.
 
-Also, to see that the full set of compiler flags one has to actually build a
-target with, for example ``make VERBOSE=1`` (see `Building with verbose output
-without reconfiguring`_).  One can not just look at the cache variables for
+To see that the full set of compiler flags one has to actually build a target
+by running, for example, ``make VERBOSE=1 <target_name>`` (see `Building with
+verbose output without reconfiguring`_).  (NOTE: One can also see the exact
+set of flags used for each target in the generated ``build.ninja`` file when
+using the Ninja generator.) One cannot just look at the cache variables for
 ``CMAKE_<LANG>_FLAGS`` and ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` in the
-file ``CMakeCache.txt``.  These get overwritten and redefined by TriBITS in
-development as described below (see `Overriding CMAKE_BUILD_TYPE debug/release
-compiler options`_).
+file ``CMakeCache.txt`` and see the full set of flags are actually being used.
+These variables can override the cache variables by TriBITS as project-level
+local non-cache variables as described below (see `Overriding CMAKE_BUILD_TYPE
+debug/release compiler options`_).
 
 The <Project> TriBITS CMake build system will set up default compile flags for
 GCC ('GNU') in development mode
 (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=ON``) on order to help produce
 portable code.  These flags set up strong warning options and enforce language
-standards.  In release mode (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=ON``),
+standards.  In release mode (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=OFF``),
 these flags are not set.  These flags get set internally into the variables
 ``CMAKE_<LANG>_FLAGS`` (when processing packages, not at the global cache
 variable level) but the user can append flags that override these as described
 below.
 
-.. _CMAKE_BUILD_TYPE:
 
 Configuring to build with default debug or release compiler flags
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+.. _CMAKE_BUILD_TYPE:
 
 To build a debug version, pass into 'cmake'::
 
@@ -715,6 +734,7 @@ to what is in ``CMAKE_<LANG>_FLAGS_RELEASE``.
 The default build type is typically ``CMAKE_BUILD_TYPE=RELEASE`` unless ``-D
 USE_XSDK_DEFAULTS=TRUE`` is set in which case the default build type is
 ``CMAKE_BUILD_TYPE=DEBUG`` as per the xSDK configure standard.
+
 
 Adding arbitrary compiler flags but keeping default build-type flags
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -749,19 +769,38 @@ then they must be the same or a configure error will occur.
 
 Options can also be targeted to a specific TriBITS package using::
 
-  -D <TRIBITS_PACKAGE>_<LANG>_FLAGS="<EXTRA_COMPILER_OPTIONS>"
+  -D <TRIBITS_PACKAGE>_<LANG>_FLAGS="<PACKAGE_EXTRA_COMPILER_OPTIONS>"
 
-The package-specific options get appended to those already in
+The package-specific options get appended **after** those already in
 ``CMAKE_<LANG>_FLAGS`` and therefore override (but not replace) those set
-globally in ``CMAKE_<LANG>_FLAGS`` (either internally or by the user in the
-cache).
+globally in ``CMAKE_<LANG>_FLAGS`` (either internally in the CMakeLists.txt
+files or by the user in the cache).
+
+In addition, flags can be targeted to a specific TriBITS subpackage using the
+same syntax::
+
+  -D <TRIBITS_SUBPACKAGE>_<LANG>_FLAGS="<SUBPACKAGE_EXTRA_COMPILER_OPTIONS>"
+
+If top-level package-specific flags and subpackage-specific flags are both set
+for the same parent package such as with::
+
+  -D SomePackage_<LANG>_FLAGS="<Package-flags>" \
+  -D SomePackageSpkgA_<LANG>_FLAGS="<Subpackage-flags>" \
+
+then the flags for the subpackage ``SomePackageSpkgA`` will be listed after
+those for its parent package ``SomePackage`` on the compiler command-line as::
+
+  <Package-flags> <SubPackage-flags>
+
+That way, compiler options for a subpackage override flags set for the parent
+package.
 
 NOTES:
 
-1) Setting ``CMAKE_<LANG>_FLAGS`` will override but will not replace any
-other internally set flags in ``CMAKE_<LANG>_FLAGS`` defined by the
-<Project> CMake system because these flags will come after those set
-internally.  To get rid of these project/TriBITS default flags, see below.
+1) Setting ``CMAKE_<LANG>_FLAGS`` as a cache varible by the user on input be
+listed after and therefore override, but will not replace, any internally set
+flags in ``CMAKE_<LANG>_FLAGS`` defined by the <Project> CMake system.  To get
+rid of these project/TriBITS set compiler flags/options, see the below items.
 
 2) Given that CMake passes in flags in
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` after those in
@@ -781,6 +820,7 @@ WARNING: Any options that you set through the cache variable
 manually set ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` directly!  To
 override those options, see
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>_OVERRIDE`` below.
+
 
 Overriding CMAKE_BUILD_TYPE debug/release compiler options
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -805,36 +845,14 @@ and to override default release options use::
 NOTES: The TriBITS CMake cache variable
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>_OVERRIDE`` is used and not
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` because is given a default
-internally by CMake and the new varaible is needed to make the override
+internally by CMake and the new variable is needed to make the override
 explicit.
 
-Appending arbitrary libraries and link flags every executable
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-In order to append any set of arbitrary libraries and link flags to your
-executables use::
-
-  -D<Project>_EXTRA_LINK_FLAGS="<EXTRA_LINK_LIBRARIES>" \
-  -DCMAKE_EXE_LINKER_FLAGS="<EXTRA_LINK_FLAGG>"
-
-Above, you can pass any type of library and they will always be the last
-libraries listed, even after all of the TPLs.
-
-NOTE: This is how you must set extra libraries like Fortran libraries and
-MPI libraries (when using raw compilers).  Please only use this variable
-as a last resort.
-
-NOTE: You must only pass in libraries in ``<Project>_EXTRA_LINK_FLAGS`` and
-*not* arbitrary linker flags.  To pass in extra linker flags that are not
-libraries, use the built-in CMake variable ``CMAKE_EXE_LINKER_FLAGS``
-instead.  The TriBITS variable ``<Project>_EXTRA_LINK_FLAGS`` is badly named
-in this respect but the name remains due to backward compatibility
-requirements.
-
-.. _<TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS:
 
 Turning off strong warnings for individual packages
 +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+.. _<TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS:
 
 To turn off strong warnings (for all languages) for a given TriBITS package,
 set::
@@ -849,6 +867,7 @@ Note that strong warnings are only enabled by default in development mode
 (``<Project>_ENABLE_DEVELOPMENT_MODE==ON``) but not release mode
 (``<Project>_ENABLE_DEVELOPMENT_MODE==ON``).  A release of <Project> should
 therefore not have strong warning options enabled.
+
 
 Overriding all (strong warnings and debug/release) compiler options
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -874,6 +893,7 @@ NOTE: By setting ``CMAKE_BUILD_TYPE=NONE``, then ``CMAKE_<LANG>_FLAGS_NONE``
 will be empty and therefore the options set in ``CMAKE_<LANG>_FLAGS`` will
 be all that is passed in.
 
+
 Enable and disable shadowing warnings for all <Project> packages
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -891,6 +911,7 @@ NOTE: The default value is empty '' which lets each <Project> package
 decide for itself if shadowing warnings will be turned on or off for that
 package.
 
+
 Removing warnings as errors for CLEANED packages
 ++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -900,6 +921,7 @@ the following when configuring::
 
   -D <Project>_WARNINGS_AS_ERRORS_FLAGS=""
 
+
 Adding debug symbols to the build
 +++++++++++++++++++++++++++++++++
 
@@ -907,8 +929,52 @@ To get the compiler to add debug symbols to the build, configure with::
 
   -D <Project>_ENABLE_DEBUG_SYMBOLS=ON
 
-This will add ``-g`` on most compilers.  NOTE: One does **not** generally
-need to create a fully debug build to get debug symbols on most compilers.
+This will add ``-g`` on most compilers.  NOTE: One does **not** generally need
+to create a full debug build to get debug symbols on most compilers.
+
+
+Printing out compiler flags for each package
+++++++++++++++++++++++++++++++++++++++++++++
+
+To print out the exact ``CMAKE_<LANG>_FLAGS`` that will be used for each
+package, set::
+
+  -D <Project>_PRINT_PACKAGE_COMPILER_FLAGS=ON
+
+That will print lines in STDOUT that are formatted as::
+
+  <TRIBITS_SUBPACKAGE>: CMAKE_<LANG>_FLAGS="<exact-flags-usedy-by-package>"
+  <TRIBITS_SUBPACKAGE>: CMAKE_<LANG>_FLAGS_<BUILD_TYPE>="<build-type-flags>"
+
+This will print the value of the ``CMAKE_<LANG>_FLAGS`` and
+``CMAKE_<LANG>_FLAGS_<BUILD_TYPE>`` variables that are used as each package is
+being processed and will contain the flags in the exact order they are applied
+by CMake
+
+
+Appending arbitrary libraries and link flags every executable
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In order to append any set of arbitrary libraries and link flags to your
+executables use::
+
+  -D<Project>_EXTRA_LINK_FLAGS="<EXTRA_LINK_LIBRARIES>" \
+  -DCMAKE_EXE_LINKER_FLAGS="<EXTRA_LINK_FLAGG>"
+
+Above, you can pass any type of library and they will always be the last
+libraries listed, even after all of the TPLs.
+
+NOTE: This is how you must set extra libraries like Fortran libraries and
+MPI libraries (when using raw compilers).  Please only use this variable
+as a last resort.
+
+NOTE: You must only pass in libraries in ``<Project>_EXTRA_LINK_FLAGS`` and
+*not* arbitrary linker flags.  To pass in extra linker flags that are not
+libraries, use the built-in CMake variable ``CMAKE_EXE_LINKER_FLAGS``
+instead.  The TriBITS variable ``<Project>_EXTRA_LINK_FLAGS`` is badly named
+in this respect but the name remains due to backward compatibility
+requirements.
+
 
 Enabling support for Ninja
 --------------------------
@@ -925,15 +991,15 @@ generator)`_).
 
 .. _<Project>_WRITE_NINJA_MAKEFILES:
 
-In addition, for versions of CMake 3.7.0+, the TriBITS build system will, by
-default, generate Makefiles in every binary directory where there is a
-CMakeLists.txt file in the source tree.  These Makefiles have targets scoped
-to that subdirectory that use ``ninja`` to build targets in that subdirectory
-just like with the native CMake recursive ``-G"Unix Makefiles"`` generator.
-This allows one to ``cd`` into any binary directory and type ``make`` to build
-just the targets in that directory.  These TriBITS-generated Ninja makefiles
-also support ``help`` and ``help-objects`` targets making it easy to build
-individual executables, libraries and object files in any binary subdirectory.
+In addition, the TriBITS build system will, by default, generate Makefiles in
+every binary directory where there is a CMakeLists.txt file in the source
+tree.  These Makefiles have targets scoped to that subdirectory that use
+``ninja`` to build targets in that subdirectory just like with the native
+CMake recursive ``-G "Unix Makefiles"`` generator.  This allows one to ``cd``
+into any binary directory and type ``make`` to build just the targets in that
+directory.  These TriBITS-generated Ninja makefiles also support ``help`` and
+``help-objects`` targets making it easy to build individual executables,
+libraries and object files in any binary subdirectory.
 
 **WARNING:** Using ``make -j<N>`` with these TriBITS-generated Ninja Makefiles
 will **not** result in using ``<N>`` processes to build in parallel and will
@@ -946,10 +1012,7 @@ The generation of these Ninja makefiles can be disabled by setting::
   -D<Project>_WRITE_NINJA_MAKEFILES=OFF
 
 (But these Ninja Makefiles get created very quickly even for a very large
-CMake project so there is usually little reason to not generate them.)  Trying
-to set ``-D<Project>_WRITE_NINJA_MAKEFILES=ON`` for versions of CMake older
-than 3.7.0 will not work since features were added to CMake 3.7.0+ that allow
-for the generation of these makefiles.
+CMake project so there is usually little reason to not generate them.)
 
 
 Limiting parallel compile and link jobs for Ninja builds
@@ -978,30 +1041,30 @@ NOTE: These options are ignored when using Makefiles or other CMake
 generators.  They only work for the Ninja generator.
 
 
-Enabling explicit template instantiation for C++
-------------------------------------------------
+Disabling explicit template instantiation for C++
+-------------------------------------------------
 
-To enable explicit template instantiation for C++ code for packages that
-support it, configure with::
+By default, support for optional explicit template instantiation (ETI) for C++
+code is enabled.  To disable support for optional ETI, configure with::
 
-  -D <Project>_ENABLE_EXPLICIT_INSTANTIATION=ON
+  -D <Project>_ENABLE_EXPLICIT_INSTANTIATION=OFF
 
 When ``OFF``, all packages that have templated C++ code will use implicit
-template instantiation.
+template instantiation (unless they have hard-coded usage of ETI).
 
-Explicit template instantiation can be enabled (``ON``) or disabled (``OFF``)
-for individual packages with::
-
+ETI can be enabled (``ON``) or disabled (``OFF``) for individual packages
+with::
 
   -D <TRIBITS_PACKAGE>_ENABLE_EXPLICIT_INSTANTIATION=[ON|OFF]
 
 The default value for ``<TRIBITS_PACKAGE>_ENABLE_EXPLICIT_INSTANTIATION`` is
 set by ``<Project>_ENABLE_EXPLICIT_INSTANTIATION``.
 
-For packages that support it, explicit template instantation can massively
-reduce the compile times for the C++ code involved.  To see what packages
-support explicit instantation just search the CMakeCache.txt file for
-variables with ``ENABLE_EXPLICIT_INSTANTIATION`` in the name.
+For packages that support it, explicit template instantiation can massively
+reduce the compile times for the C++ code involved and can even avoid compiler
+crashes in some cases.  To see what packages support explicit template
+instantiation, just search the CMakeCache.txt file for variables with
+``ENABLE_EXPLICIT_INSTANTIATION`` in the name.
 
 
 Disabling the Fortran compiler and all Fortran code
@@ -1197,9 +1260,9 @@ c) **Setting up to run MPI programs:**
   the right program and options but you will have to override them in many
   cases.
 
-  MPI test and example executables are passed to CTest ``ADD_TEST()`` as::
+  MPI test and example executables are passed to CTest ``add_test()`` as::
 
-    ADD_TEST(
+    add_test(
       ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
       ${MPI_EXEC_NUMPROCS_FLAG} <NP>
       ${MPI_EXEC_POST_NUMPROCS_FLAGS}
@@ -1230,10 +1293,13 @@ c) **Setting up to run MPI programs:**
     -D MPI_EXEC_MAX_NUMPROCS=4
 
   (The maximum number of processes to allow when setting up and running MPI
-  test and example executables.  The default is set to '4' but should be set
-  to the largest number that can be tolerated for the given machine.  Tests
-  with more processes than this are excluded from the test suite at configure
-  time.)
+  tests and examples that use MPI.  The default is set to '4' but should be
+  set to the largest number that can be tolerated for the given machine or the
+  most cores on the machine that you want the test suite to be able to use.
+  Tests and examples that require more processes than this are excluded from
+  the CTest test suite at configure time.  ``MPI_EXEC_MAX_NUMPROCS`` is also
+  used to exclude tests in a non-MPI build (i.e. ``TPL_ENABLE_MPI=OFF``) if
+  the number of required cores for a given test is greater than this value.)
 
   ::
 
@@ -1261,6 +1327,7 @@ c) **Setting up to run MPI programs:**
   ``MPI_EXEC_POST_NUMPROCS_FLAGS`` must be quoted and separated by ``';'`` as
   these variables are interpreted as CMake arrays.
 
+
 Configuring for OpenMP support
 ------------------------------
 
@@ -1278,14 +1345,15 @@ To skip adding flags for OpenMP for ``<LANG>`` = ``C``, ``CXX``, or
 
 The single space " " will result in no flags getting added.  This is needed
 since one can't set the flags ``OpenMP_<LANG>_FLAGS`` to an empty string or
-the ``FIND_PACKAGE(OpenMP)`` command will fail.  Setting the variable
+the ``find_package(OpenMP)`` command will fail.  Setting the variable
 ``-DOpenMP_<LANG>_FLAGS_OVERRIDE= " "`` is the only way to enable OpenMP but
-skip adding the OpenMP flags provided by ``FIND_PACKAGE(OpenMP)``.
+skip adding the OpenMP flags provided by ``find_package(OpenMP)``.
 
-.. _BUILD_SHARED_LIBS:
 
 Building shared libraries
 -------------------------
+
+.. _BUILD_SHARED_LIBS:
 
 To configure to build shared libraries, set::
 
@@ -1311,6 +1379,7 @@ environment variables.  However, this can be disabled by setting::
 
 but it is hard to find a use case where that would be useful.
 
+
 Building static libraries and executables
 -----------------------------------------
 
@@ -1330,10 +1399,6 @@ libraries.  The second flag tells cmake to locate static library versions of
 any required TPLs.  The third flag tells the auto-detection routines that
 search for extra required libraries (such as the mpi library and the gfortran
 library for gnu compilers) to locate static versions.
-
-NOTE: The flag ``<Project>_LINK_SEARCH_START_STATIC`` is only supported in
-cmake version 2.8.5 or higher.  The variable will be ignored in prior releases
-of cmake.
 
 
 Enabling the usage of resource files to reduce length of build lines
@@ -1468,20 +1533,20 @@ the full library paths when setting ``TPL_<TPLNAME>_LIBRARIES``.
 When the variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
 ``TPL_<TPLNAME>_LIBRARIES`` are not specified, then most
 ``FindTPL<TPLNAME>.cmake`` modules use a default find operation.  Some will
-call ``FIND_PACKAGE(<TPLNAME>)`` internally by default and some may implement
+call ``find_package(<TPLNAME>)`` internally by default and some may implement
 the default find in some other way.  To know for sure, see the documentation
 for the specific TPL (e.g. looking in the ``FindTPL<TPLNAME>.cmake`` file to
 be sure).
 
 Most TPLs, however, use a standard system for finding include directories
 and/or libraries based on the function
-`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.  These simple standard
+`tribits_tpl_find_include_dirs_and_libraries()`_.  These simple standard
 ``FindTPL<TPLNAME>.cmake`` modules specify a set of header files and/or
 libraries that must be found.  The directories where these header files and
 library files are looked for are specified using the CMake cache variables:
 
 * ``<TPLNAME>_INCLUDE_DIRS:PATH``: List of paths to search for header files
-  using ``FIND_FILE()`` for each header file, in order.
+  using ``find_file()`` for each header file, in order.
 
 * ``<TPLNAME>_LIBRARY_NAMES:STRING``: List of unadorned library names, in the
   order of the link line.  The platform-specific prefixes (e.g.. 'lib') and
@@ -1491,7 +1556,7 @@ library files are looked for are specified using the CMake cache variables:
   ``blas``.
 
 * ``<TPLNAME>_LIBRARY_DIRS:PATH``: The list of directories where the library
-  files will be searched for using ``FIND_LIBRARY()``, for each library, in
+  files will be searched for using ``find_library()``, for each library, in
   order.
 
 Most ``FindTPL<TPLNAME>.cmake`` modules will define a default set of libraries
@@ -1556,7 +1621,7 @@ shown in the CMake output::
 
   -- TPL_BLAS_LIBRARIES='/user/lib/libblas.so'
 
-(NOTE: The CMake ``FIND_LIBRARY()`` command that is used internally will
+(NOTE: The CMake ``find_library()`` command that is used internally will
 always select the shared library by default if both shared and static
 libraries are specified, unless told otherwise.  See `Building static
 libraries and executables`_ for more details about the handling of shared and
@@ -1587,7 +1652,7 @@ There are many cases where the list of libraries specified in the
 ``FindTPL<TPLNAME>.cmake`` module is not correct for the TPL that one wants to
 use or is present on the system.  In this case, one will need to set the CMake
 cache variable ``<TPLNAME>_LIBRARY_NAMES`` to tell the
-`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ function what libraries to
+`tribits_tpl_find_include_dirs_and_libraries()`_ function what libraries to
 search for, and in what order.
 
 For example, the Intel Math Kernel Library (MKL) implementation for the BLAS
@@ -1619,7 +1684,7 @@ In this case, one could specify this with the following do-configure script::
     ...
     ${PROJECT_SOURCE_DIR}
 
-This would call ``FIND_LIBRARY()`` on each of the listed library names in
+This would call ``find_library()`` on each of the listed library names in
 these directories and would find them and list them in::
 
   -- TPL_BLAS_LIBRARIES='/usr/local/intel/Compiler/11.1/064/em64t/libmkl_intel_lp64.so;...'
@@ -1935,7 +2000,7 @@ configure time by setting::
 
 where ``<fullTestName>`` must exactly match the test listed out by ``ctest
 -N``.  This will result in the printing of a line for the excluded test when
-`Trace test addition or exclusion`_ is enabled and the test wil not be added
+`Trace test addition or exclusion`_ is enabled and the test will not be added
 with ``add_test()`` and therefore CTest (and CDash) will never see the
 disabled test.
 
@@ -2040,6 +2105,30 @@ at configure time.  Therefore, all of the decisions about what test targets
 should be build and which tests should be run can be made at configure time.
 
 
+Set specific tests to run in serial
++++++++++++++++++++++++++++++++++++
+
+In order to cause a specific test to run by itself on the machine and not at
+the same time as other tests (such as when running multiple tests at the same
+time with something like ``ctest -j16``), set at configure time::
+
+  -D <fullTestName>_SET_RUN_SERIAL=ON
+
+This will set the CTest test property ``RUN_SERIAL`` for the test
+``<fullTestName>``.
+
+This can help to avoid longer runtimes and timeouts when some individual tests
+don't run as quickly when run beside other tests running at the same time on
+the same machine.  These longer runtimes can often occur when running tests
+with CUDA code on GPUs and with OpenMP code on some platforms with some OpenMP
+options.
+
+Also, if individual tests have ``RUN_SERIAL`` set by default internally, they
+can have the ``RUN_SERIAL`` property removed by setting::
+
+  -D <fullTestName>_SET_RUN_SERIAL=OFF
+
+
 Trace test addition or exclusion
 ++++++++++++++++++++++++++++++++
 
@@ -2059,22 +2148,21 @@ arguments).
 Enable advanced test start and end times and timing blocks
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-For tests added using ``TRIBITS_ADD_ADVANCED_TEST()``, one can see start and
+For tests added using ``tribits_add_advanced_test()``, one can see start and
 end times for the tests and the timing for each ``TEST_<IDX>`` block in the
 detailed test output by configuring with::
 
   -D<Project>_SHOW_TEST_START_END_DATE_TIME=ON
 
-The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
+The implementation of this feature currently uses ``execute_process(date)``
 and therefore will only work on many (but perhaps not all) Linux/Unix/Mac
 systems and not native Windows systems.
 
 
-.. _DART_TESTING_TIMEOUT:
-
-
 Setting test timeouts at configure time
 +++++++++++++++++++++++++++++++++++++++
+
+.. _DART_TESTING_TIMEOUT:
 
 A maximum default time limit (timeout) for all the tests can be set at
 configure time using the cache variable::
@@ -2103,7 +2191,7 @@ NOTES:
 
 * Individual tests may have their timeout limit set on a test-by-test basis
   internally in the project's ``CMakeLists.txt`` files (see the ``TIMEOUT``
-  argument for ``TRIBITS_ADD_TEST()`` and ``TRIBITS_ADD_ADVANCED_TEST()``).
+  argument for ``tribits_add_test()`` and ``tribits_add_advanced_test()``).
   When this is the case, the global timeout set with ``DART_TESTING_TIMEOUT``
   has no impact on these individually set test timeouts.
 
@@ -2112,17 +2200,17 @@ NOTES:
   would not otherwise occur.
 
 * The value of ``DART_TESTING_TIMEOUT`` and the timeouts for individual tests
-  can be scaled up or down using the cache varaible
+  can be scaled up or down using the cache variable
   `<Project>_SCALE_TEST_TIMEOUT`_.
 
 * To set or override the default global test timeout limit at runtime, see
   `Overriding test timeouts`_.
 
-.. _<Project>_SCALE_TEST_TIMEOUT:
-
 
 Scaling test timeouts at configure time
 +++++++++++++++++++++++++++++++++++++++
+
+.. _<Project>_SCALE_TEST_TIMEOUT:
 
 The global default test timeout `DART_TESTING_TIMEOUT`_ as well as all of the
 timeouts for the individual tests that have their own timeout set (through the
@@ -2256,12 +2344,10 @@ NOTES:
   for the ``CTEST_RESOURCE_SPEC_FILE`` cache variable was not added until
   CMake 3.18.)
 
-* A patched version of CMake 3.17 can be used to get built-in CMake/CTest
-  support for the ``CTEST_RESOURCE_SPEC_FILE`` cache variable, as installed
-  using the TriBITS-provided ``install-cmake.py`` command (using option
-  ``--cmake-version=3.17``, see `Installing CMake from source [developers and
-  experienced users]`_).  This avoids needing to explicitly pass the ctest
-  resource file to ``ctest`` at runtime for CMake/CTest versions [3.16, 3.18).
+* CMake versions 3.18+ can be used to get built-in CMake/CTest support for the
+  ``CTEST_RESOURCE_SPEC_FILE`` cache variable.  This avoids needing to
+  explicitly pass the ctest resource file to ``ctest`` at runtime for
+  CMake/CTest versions 3.17.z.
 
 * **WARNING:** This currently only works for a single node, not multiple
   nodes.  (CTest needs to be extended to work correctly for multiple nodes
@@ -2372,7 +2458,7 @@ flexibility in the specification of extra repos.  This is not needed for a
 basic configure of the project but is useful in generating version information
 using `<Project>_GENERATE_VERSION_DATE_FILES`_ and
 `<Project>_GENERATE_REPO_VERSION_FILE`_ as well as in automated testing using
-the ctest -S scripts with the ``TRIBITS_CTEST_DRIVER()`` function and the
+the ctest -S scripts with the ``tribits_ctest_driver()`` function and the
 ``checkin-test.py`` tool.
 
 The valid values of ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` include
@@ -2400,6 +2486,7 @@ NOTE: The set of extra repositories listed in the file
 ``<Project>_EXTRAREPOS_FILE`` can be filtered down by setting the variables
 ``<Project>_PRE_REPOSITORIES`` if PRE extra repos are listed and/or
 ``<Project>_EXTRA_REPOSITORIES`` if POST extra repos are listed.
+
 
 Selecting a different source location for a package
 ---------------------------------------------------
@@ -2438,10 +2525,6 @@ If one really wants a clean slate, then try::
 
   $ rm -rf `ls | grep -v do-configure`
   $ ./do-configure [options]
-
-WARNING: Later versions of CMake (2.8.10.2+) require that you remove the
-top-level ``CMakeFiles/`` directory whenever you remove the ``CMakeCache.txt``
-file.
 
 
 Viewing configure errors
@@ -2494,9 +2577,10 @@ NOTES:
   command.
 
 * '''WARNING:''' Because this feature has to call the ``data`` using CMake's
-  ``EXECUTE_PROCESS()`` command, it can be expensive.  Therefore, this should
+  ``execute_process()`` command, it can be expensive.  Therefore, this should
   really only be turned on for large projects (where the extra overhead is
   small) or for smaller projects for extra informational purposes.
+
 
 Generating export files
 -----------------------
@@ -2513,7 +2597,7 @@ This will generate the file ``<Project>Config.cmake`` for the project and the
 files ``<Package>Config.cmake`` for each enabled package in the build tree.
 In addition, this will install versions of these files into the install tree.
 
-To confiugre Makefile export files, configure with::
+To configure Makefile export files, configure with::
 
   -D <Project>_ENABLE_EXPORT_MAKEFILES=ON
 
@@ -2534,10 +2618,11 @@ NOTES:
 * One would only want to limit the export files generated for very large
   projects where the cost my be high for doing so.
 
-.. _<Project>_GENERATE_REPO_VERSION_FILE:
 
 Generating a project repo version file
 --------------------------------------
+
+.. _<Project>_GENERATE_REPO_VERSION_FILE:
 
 When working with local git repos for the project sources, one can generate a
 ``<Project>RepoVersion.txt`` file which lists all of the repos and their
@@ -2553,10 +2638,11 @@ NOTE: If the base ``.git/`` directory is missing, then no
 ``<Project>RepoVersion.txt`` file will get generated and a ``NOTE`` message is
 printed to cmake STDOUT.
 
-.. _<Project>_GENERATE_VERSION_DATE_FILES:
 
 Generating git version date files
 ---------------------------------
+
+.. _<Project>_GENERATE_VERSION_DATE_FILES:
 
 When working with local git repos for the project sources, one can generate
 the files ``VersionDate.cmake`` and ``<Project>_version_date.h`` in the build
@@ -2654,7 +2740,7 @@ any missing packages and turn off all dependencies on these missing packages.
 
 Another type of checking is for optional inserted/external packages
 (e.g. packages who's source can optionally be included and is flagged with
-``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()``).  Any of these package
+``tribits_allow_missing_external_packages()``).  Any of these package
 directories that are missing result in the packages being silently ignored by
 default.  However, notes on what missing packages are being ignored can
 printed by configuring with::
@@ -2693,6 +2779,7 @@ But every other CMake generator is also supported such as Visual Studio on
 Windows, XCode on Macs, and Eclipse project files but using those build
 systems are not documented here (consult standard CMake and concrete build
 tool documentation).
+
 
 Building all targets
 --------------------
@@ -2746,7 +2833,6 @@ To build only the libraries for given TriBITS package, use::
   $ make <TRIBITS_PACKAGE>_libs
 
 
-
 Building all of the libraries for all enabled packages
 ------------------------------------------------------
 
@@ -2798,7 +2884,7 @@ find the target name and then doing a find ``find . -name
 "*<some-file-base-name>*"`` to find the actual object file path always works.
 
 For this process to work correctly, you must be in the subdirectory where the
-``TRIBITS_ADD_LIBRARY()`` or ``TRIBITS_ADD_EXECUTABLE()`` command is called
+``tribits_add_library()`` or ``tribits_add_executable()`` command is called
 from its ``CMakeLists.txt`` file, otherwise the object file targets will not be
 listed by ``make help``.
 
@@ -3064,8 +3150,8 @@ here.
 Running all tests
 -----------------
 
-To run all of the defined tests (i.e. created using ``TRIBITS_ADD_TEST()`` or
-``TRIBITS_ADD_ADVANCED_TEST()``) use::
+To run all of the defined tests (i.e. created using ``tribits_add_test()`` or
+``tribits_add_advanced_test()``) use::
 
   $ ctest -j<N>
 
@@ -3362,7 +3448,7 @@ be run without needing to set ``LD_LIBRARY_PATH`` or any other system
 environment variables.  However, this setting does not allow the installed
 libraries and executables to be easily moved or relocated.  There are several
 built-in CMake variables that control how RPATH is handled related to
-installations.  The build-in CMake variables that control RPATH handling
+installations.  The built-in CMake variables that control RPATH handling
 include ``CMAKE_INSTALL_RPATH``, ``CMAKE_SKIP_BUILD_RPATH``,
 ``CMAKE_SKIP_INSTALL_RPATH``, ``CMAKE_SKIP_RPATH``,
 ``CMAKE_BUILD_WITH_INSTALL_RPATH``, ``CMAKE_INSTALL_RPATH_USE_LINK_PATH``.
@@ -3711,7 +3797,7 @@ Dashboard submissions
 
 All TriBITS projects have built-in support for submitting configure, build,
 and test results to CDash using the custom ``dashbaord`` target.  This uses
-the `TRIBITS_CTEST_DRIVER()`_ function internally set up to work correctly
+the `tribits_ctest_driver()`_ function internally set up to work correctly
 from an existing binary directory with a valid initial configure.  The few of
 the advantages of using the custom TriBITS-enabled ``dashboard`` target over
 just using the standard ``ctest -D Experimental`` command are:
@@ -3721,7 +3807,7 @@ just using the standard ``ctest -D Experimental`` command are:
 
 * Additional notes files will be uploaded to the build on CDash.
 
-For more details, see `TRIBITS_CTEST_DRIVER()`_.
+For more details, see `tribits_ctest_driver()`_.
 
 To use the ``dashboard`` target, first, configure as normal but add cache vars
 for the the build and test parallel levels with::
@@ -3733,13 +3819,14 @@ test and submit with::
 
   $ make dashboard
 
-This invokes the `TRIBITS_CTEST_DRIVER()`_ function to do an experimental
-build for all of the packages that you have enabled tests.  (The packages that
-are implicitly enabled due to package dependencies are not directly processed
-and no rows on CDash will be show up for those packages.)
+This invokes a ``ctest -S`` script that calls the `tribits_ctest_driver()`_
+function to do an experimental build for all of the enabled packages for which
+you have enabled tests.  (The packages that are implicitly enabled due to
+package dependencies are not directly processed and no rows on CDash will be
+show up for those packages.)
 
-NOTE: This generates a lot of output, so it is typically better to pipe this
-to a file with::
+**NOTE:** This target generates a lot of output, so it is typically better to
+pipe this to a file with::
 
   $ make dashboard &> make.dashboard.out
 
@@ -3747,64 +3834,113 @@ and then watch that file in another terminal with::
 
   $ tail -f make.dashboard.out
 
-There are a number of options that you can set in the cache and/or in the
-environment to control what this script does.  For the full set of options,
-see `TRIBITS_CTEST_DRIVER()`_.  To see the full list of options, and their
-default values, one can run with::
 
-  $ env CTEST_DO_SUBMIT=FALSE CTEST_DEPENDENCY_HANDLING_UNIT_TESTING=TRUE \
+Setting options to change behavior of 'dashboard' target
+--------------------------------------------------------
+
+There are a number of options that you can set in the cache and/or in the
+environment to control what this script does.  Several options must be set in
+the cache in the CMake configure of the project such as the CDash sites where
+results are submitted to with the vars ``CTEST_DROP_METHOD``,
+``CTEST_DROP_SITE``, ``CTEST_DROP_LOCATION``,
+``TRIBITS_2ND_CTEST_DROP_LOCATION``, and ``TRIBITS_2ND_CTEST_DROP_SITE``.
+Other options that control the behavior of the ``dashboard`` target must be
+set in the env when calling ``make dashboard``.  For the full set of options
+that control the ``dashboard`` target, see `tribits_ctest_driver()`_.  To see
+the full list of options, and their default values, one can run with::
+
+  $ env CTEST_DEPENDENCY_HANDLING_UNIT_TESTING=TRUE \
     make dashboard
 
 This will print the options with their default values and then do a sort of
 mock running of the CTest driver script and point out what it will do with the
 given setup.
 
-One option one might what to set is the build name with::
+Any of the vars that are forwarded to the ``ctest -S`` invocation will be
+shown in the STDOUT of the ``make dashboard`` invocation on the line::
 
-  $ env CTEST_BUILD_NAME=MyBuild make dashboard
+  Running: env [vars passed through env] <path>/ctest ... -S ...
 
-After this finishes running, look for the build 'MyBuild' (or whatever build
-name you used above) in the <Project> CDash dashboard (the CDash URL is
-printed at the end of STDOUT).  It is useful to set ``CTEST_BUILD_NAME`` to
-some unique name to make it easier to find your results in the CDash
-dashboard.  If one does not set ``CTEST_BUILD_NAME``, the name of the binary
-directory is used instead by default (which may not be very descriptive if it
-called ``BUILD`` or something like that).
+Any variables passed through the ``env`` command listed there in ``[vars
+passed through env ]`` can only be changed by setting cache variables in the
+CMake project and can't be overridden in the env when invoking the
+``dashboard`` target.  For example, the variable ``CTEST_DO_SUBMIT`` is
+forwarded to the ``ctest -S`` invocation and can't be overridden with::
+
+  $ env CTEST_DO_SUBMIT=OFF make dashboard
+
+Instead, to change this value, one must reconfigure and then run as::
+
+  $ cmake CTEST_DO_SUBMIT=OFF .
+  $ make dashboard
+
+But any variable that is not listed in ``[vars passed through env ]`` in the
+printed out ``ctest -S`` command that are read in by `tribits_ctest_driver()`_
+can be set in the env by calling::
+
+  $ env [other vars read by tribits_ctest_driver()] make dashboard
+
+To know that these vars are picked up, grep the STDOUT from ``make dashboard``
+for lines containing::
+
+  -- ENV_<var_name>=
+
+That way, you will know the var was pick up and read correctly.
+
+
+Common options and use cases for the 'dashboard' target
+-------------------------------------------------------
+
+What follows are suggestions on how to use the ``dashboard`` target for
+different use cases.
+
+One option that is useful to set is the build name on CDash at configure time
+with::
+
+  -DCTEST_BUILD_NAME=MyBuild
+
+After ``make dashboard`` finishes running, look for the build 'MyBuild' (or
+whatever build name you used above) in the <Project> CDash dashboard (the
+CDash URL is printed at the end of STDOUT).  It is useful to set
+``CTEST_BUILD_NAME`` to some unique name to make it easier to find your
+results on the CDash dashboard.  If one does not set ``CTEST_BUILD_NAME``,
+then the name of the binary directory is used instead by default (which may
+not be very descriptive if it called something like ``BUILD``).
 
 If there is already a valid configure and build and one does not want to
-submit configure and build results to CDash, then one can run with::
+reconfigure and rebuild or submit configure and build results then one can run
+with::
 
-  $ env CTEST_BUILD_NAME=<build-name> CTEST_DO_CONFIGURE=OFF CTEST_DO_BUILD=OFF \
+  $ env CTEST_DO_CONFIGURE=OFF CTEST_DO_BUILD=OFF \
     make dashboard
 
-which will only run the enabled tests and submit results to the CDash build
-``<build-name>``.
+This will only run the enabled pre-built tests and submit test results to
+CDash.  (But is usually good to reconfigure and rebuild and submit those
+results to CDash as well in order to define more context for the test
+results.)
 
 The configure, builds, and submits are either done package-by-package or
-all-at-once as controlled by the varaible ``<Project>_CTEST_DO_ALL_AT_ONCE``.
+all-at-once as controlled by the variable ``<Project>_CTEST_DO_ALL_AT_ONCE``.
 This can be set in the CMake cache when configuring the project using::
 
   -D<Project>_CTEST_DO_ALL_AT_ONCE=TRUE
 
-or when running the ``dashboard`` target with::
-
-  $ env <Project>_CTEST_DO_ALL_AT_ONCE=TRUE make dashbaord.
-
 Using the ``dashboard`` target, one can also run coverage and memory testing
 and submit to CDash as described below.  But to take full advantage of the
 all-at-once mode and to have results displayed on CDash broken down
-package-by-package, one must be using CMake/CTest 3.10 or newer and be
-submitting to a newer CDash version (from about mid 2018 and newer).
+package-by-package, one must be submitting to a newer CDash version 3.0+.
 
-For submitting line coverage results, once you configure with
-``-D<Project>_ENABLE_COVERAGE_TESTING=ON``, the environment variable
-``CTEST_DO_COVERAGE_TESTING=TRUE`` is automatically set by the target
-``dashboard`` so you don't have to set this yourself.  Then when you run the
-``dashboard`` target, it will automatically submit coverage results to CDash
-as well.
+For submitting line coverage results, configure with::
+
+  -D<Project>_ENABLE_COVERAGE_TESTING=ON
+
+and the environment variable ``CTEST_DO_COVERAGE_TESTING=TRUE`` is
+automatically set by the target ``dashboard`` so you don't have to set this
+yourself.  Then, when you run the ``dashboard`` target, it will automatically
+submit coverage results to CDash as well.
 
 Doing memory checking running the enabled tests with Valgrind requires that
-you set ``CTEST_DO_MEMORY_TESTING=TRUE`` with the 'env' command when running
+you set ``CTEST_DO_MEMORY_TESTING=TRUE`` with the ``env`` command when running
 the ``dashboard`` target as::
 
   $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard
@@ -3824,38 +3960,60 @@ The CMake cache variable ``<Project>_DASHBOARD_CTEST_ARGS`` can be set on the
 cmake configure line in order to pass additional arguments to ``ctest -S``
 when invoking the package-by-package CTest driver.  For example::
 
-  -D<Project>_DASHBOARD_CTEST_ARGS="-VV"
+  -D<Project>_DASHBOARD_CTEST_ARGS="-VV" \
 
-will set verbose output with CTest.
+will set very verbose output with CTest that includes the STDOUT for every
+test run.  (The default args are ``-V`` which shows which tests are run but
+not the test STDOUT.)
+
+
+Changing the CDash sites for the 'dashboard' target
+---------------------------------------------------
+
+As described above in `Setting options to change behavior of 'dashboard'
+target`_, one can change the location where configure, build, and test results
+are submitted to one more two CDash sites.  For well-structured TriBITS CMake
+projects defining a flexible ``CTestConfig.cmake`` file, the location of the
+main CDash site can be changed by configuring with::
+
+  -DCTEST_DROP_SITE="some-site.com" \
+  -DCTEST_DROP_LOCATION="/cdash/submit.php?project=<Project>" \
 
 .. _TRIBITS_2ND_CTEST_DROP_SITE:
 .. _TRIBITS_2ND_CTEST_DROP_LOCATION:
 
-Also note that one can submit results to a second CDash site as well by
-setting::
+Also note that one can submit results to a second CDash site by configuring
+with::
 
-  $ env \
-    TRIBITS_2ND_CTEST_DROP_SITE=<second-site> \
-    TRIBITS_2ND_CTEST_DROP_LOCATION=<second-location> \
-    ... \
-    make dashboard
+  -DTRIBITS_2ND_CTEST_DROP_SITE="<second-site>" \
+  -DTRIBITS_2ND_CTEST_DROP_LOCATION="<second-location>" \
 
 If left the same as ``CTEST_DROP_SITE`` or ``CTEST_DROP_LOCATION``, then
-``TRIBITS_2ND_CTEST_DROP_SITE`` and ``TRIBITS_2ND_CTEST_DROP_LOCATION`` can be
-left empty "" and the defaults will be used.  However, the user must set at
+``TRIBITS_2ND_CTEST_DROP_SITE`` and ``TRIBITS_2ND_CTEST_DROP_LOCATION``,
+respectively, can be left empty "" and the defaults will be used.  For
+example, to submit to an experimental CDash site on the same machine, one
+would configure with::
+
+  -DTRIBITS_2ND_CTEST_DROP_LOCATION="/testing/cdash/submit.php?project=<Project>"
+
+and ``CTEST_DROP_SITE`` would be used for ``TRIBITS_2ND_CTEST_DROP_SITE``
+since ``TRIBITS_2ND_CTEST_DROP_SITE`` is empty.  This is a common use case
+when upgrading to a new CDash installation or testing new features for CDash
+before impacting the existing CDash site.  (However, the user must set at
 least one of these variables to non-empty in order to trigger the second
-submit.  For example, to submit to an experimental CDash site on the same
-machine, one would run::
+submit.)
 
-  $ env TRIBITS_2ND_CTEST_DROP_LOCATION="/testing/cdash/submit.php?project=<Project>" \
-    ... \
-    make dashboard
+**NOTE:** If the project is already set up to submit to a second CDash site
+and one wants to turn that off, one can configure with::
 
-and ``TRIBITS_2ND_CTEST_DROP_SITE`` would be used for ``CTEST_DROP_SITE``.
-This is a common use case when upgrading to a new CDash installation or
-testing new features for CDash before impacting the existing CDash site.
+  -DTRIBITS_2ND_CTEST_DROP_SITE=OFF \
+  -DTRIBITS_2ND_CTEST_DROP_LOCATION=OFF \
 
-Finally, note in package-by-package mode
+
+Configuring from scratch needed if 'dashboard' target aborts early
+------------------------------------------------------------------
+
+Finally, note that in package-by-package mode
 (i.e. ``<Project>_CTEST_DO_ALL_AT_ONCE=FALSE``) that if one kills the ``make
 dashboard`` target before it completes, then one must reconfigure from scratch
 in order to get the build directory back into the same state before the
@@ -3870,3 +4028,5 @@ original configure state.  Even with the all-at-once mode, if one kills the
 with an invalid configuration of the project.  In these cases, one may need to
 configure from scratch to get back to the original state before calling ``make
 dashboard``.
+
+..  LocalWords:  templated instantiation Makefiles CMake

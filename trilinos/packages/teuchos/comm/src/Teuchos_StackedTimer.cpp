@@ -627,6 +627,14 @@ static void printXMLEscapedString(std::ostream& os, const std::string& str)
       case '&':
         os << "&amp;";
         break;
+      //NOTE: unescaped curly braces {} are valid in XML,
+      //however Watchr has a bug with parsing them
+      case '{':
+        os << '(';
+        break;
+      case '}':
+        os << ')';
+        break;
       default:
         os << c;
     }
@@ -744,6 +752,7 @@ std::string
 StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   const char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
   const char* rawBuildName = getenv("WATCHR_BUILD_NAME");
+  const char* rawGitSHA = getenv("TRILINOS_GIT_SHA");
   //WATCHR_PERF_DIR is required (will also check nonempty below)
   if(!rawWatchrDir)
     return "";
@@ -798,6 +807,14 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
     std::vector<bool> printed(flat_names_.size(), false);
     os << "<?xml version=\"1.0\"?>\n";
     os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+    if(rawGitSHA)
+    {
+      std::string gitSHA(rawGitSHA);
+      //Output the first 10 (hex) characters
+      if(gitSHA.length() > 10)
+        gitSHA = gitSHA.substr(0, 10);
+      os << "  <metadata key=\"Trilinos Version\" value=\"" << gitSHA << "\"/>\n";
+    }
     printLevelXML("", 0, os, printed, 0.0, buildName + ": " + name);
     os << "</performance-report>\n";
   }
@@ -812,5 +829,11 @@ void StackedTimer::enableVerboseTimestamps(const unsigned levels)
 
 void StackedTimer::setVerboseOstream(const Teuchos::RCP<std::ostream>& os)
 {verbose_ostream_ = os;}
+
+void StackedTimer::disableTimers()
+{enable_timers_ = false;}
+
+void StackedTimer::enableTimers()
+{enable_timers_ = true;}
 
 } //namespace Teuchos

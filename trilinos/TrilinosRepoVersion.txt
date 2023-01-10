@@ -1,3 +1,3 @@
 *** Base Git Repo: Trilinos
-9fec352 [Wed Aug 5 19:22:40 2020 -0600] <trilinos@sandia.gov>
-Merge Pull Request #7735 from ZUUL42/Trilinos/update_ver_num_13
+3cf925bab1d [Thu Nov 10 16:02:37 2022 -0600] <jim.mn21@yahoo.com>
+Merge pull request #11252 from trilinos/jwillenbring-patch-1
