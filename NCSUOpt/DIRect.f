@@ -37,6 +37,9 @@ C+-----------------------------------------------------------------------+
 !            - Barron J Bichon, Vanderbilt University
 !            - Changed code marked with "bjb"
 ! 03/21/2014 - BMA: changed to ncsuopt_direct due to Dakota conflicts
+! 07/28/2023 - MSE: increased Maxfunc for use with fast subproblem solves.
+!            - Maxfunc must be larger than the passed maxf by some amount
+!              (note: a typical client max_eval = 250k)
 
       SUBROUTINE ncsuopt_direct(fep, x, n, eps, maxf, maxT, fmin, l, u,
      +                          algmethod, Ierror, logfile, fglobal,
@@ -153,7 +156,7 @@ C| The maximum number of divisions allowed.                              |
 C| The maximal dimension of the problem.                                 |
 C+-----------------------------------------------------------------------+
       INTEGER maxfunc, maxdeep, maxdiv, MaxDim, mdeep
-      PARAMETER (Maxfunc = 90000)
+      PARAMETER (Maxfunc = 255000)
       PARAMETER (maxdeep = 600)
       PARAMETER (maxdiv = 3000)
       PARAMETER (MaxDim = 64)
