@@ -48,6 +48,20 @@ std::vector<std::shared_ptr<SamplingState>> MIKernel::Step(unsigned int const t,
   std::shared_ptr<SamplingState> coarseProp = coarse_proposal->Sample(coarsePrevState);
   std::shared_ptr<SamplingState> fineProp = proposalInterpolation->Interpolate (coarseProp, prop);
 
+  // The following metadata is needed by the expensive sampling problem
+  if(prevState->HasMeta("iteration")) {
+    fineProp->meta["iteration"] = prevState->meta["iteration"];
+  }
+  if(coarsePrevState->HasMeta("iteration")) {
+    coarseProp->meta["iteration"] = coarsePrevState->meta["iteration"];
+  } else {
+    coarseProp->meta["iteration"] = (unsigned int)0;
+    coarsePrevState->meta["iteration"] = (unsigned int)0;
+  }
+  coarsePrevState->meta["IsProposal"] = false;
+  fineProp->meta["IsProposal"] = true;
+  coarseProp->meta["IsProposal"] = true;
+
   // compute acceptance probability
   double propTarget;
   double currentTarget;
@@ -98,10 +112,7 @@ std::vector<std::shared_ptr<SamplingState>> MIKernel::Step(unsigned int const t,
   } else {
     // Return copy of previous state in order to attach the new coarse proposal to it
     auto prevStateCopy = std::make_shared<SamplingState>(prevState->state);
-    prevStateCopy->meta["LogTarget"] = prevState->meta["LogTarget"];
-    if (prevState->HasMeta("QOI")) {
-      prevStateCopy->meta["QOI"] = prevState->meta["QOI"];
-    }
+    prevStateCopy->meta = prevState->meta;
     prevStateCopy->meta["coarseSample"] = coarseProp;
     return std::vector<std::shared_ptr<SamplingState>>(1,prevStateCopy);
   }

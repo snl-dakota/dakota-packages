@@ -18,6 +18,21 @@ namespace muq {
 
       /**
 	 @param[in] target The target distribution
+   @param[in] qoi The quantity of interest
+   @param[in] centroid The centroid of the distribution
+	 @param[in] pt Options for the sampling problem
+       */
+      ExpensiveSamplingProblem(std::shared_ptr<muq::Modeling::ModPiece> const& target, std::shared_ptr<muq::Modeling::ModPiece> const& qoi, Eigen::VectorXd const& centroid, boost::property_tree::ptree pt);
+
+      /**
+	 @param[in] target The target distribution
+   @param[in] qoi The quantity of interest
+	 @param[in] pt Options for the sampling problem
+       */
+      ExpensiveSamplingProblem(std::shared_ptr<muq::Modeling::ModPiece> const& target, std::shared_ptr<muq::Modeling::ModPiece> const& qoi, boost::property_tree::ptree pt);
+
+      /**
+	 @param[in] target The target distribution
 	 @param[in] pt Options for the sampling problem
        */
       ExpensiveSamplingProblem(std::shared_ptr<muq::Modeling::ModPiece> const& target, boost::property_tree::ptree pt);
@@ -54,6 +69,8 @@ namespace muq {
 
 
       virtual void AddOptions(boost::property_tree::ptree & pt) const override;
+
+      virtual std::shared_ptr<SamplingState> QOI() override;
 
     private:
 
@@ -135,7 +152,11 @@ namespace muq {
       */
       double LogLyapunovFunction(Eigen::VectorXd const& x) const;
 
+      /// The regression for the log-likelihood
       std::shared_ptr<muq::Approximation::LocalRegression> reg;
+
+      /// The regression for the quantity of interest
+      std::shared_ptr<muq::Approximation::LocalRegression> regQoI;
 
       /// Parameters for random refinement
       /**
@@ -167,6 +188,9 @@ namespace muq {
       /// The current error threshold level
       unsigned int level = 1;
 
+      /// The current step in the MCMC chain
+      unsigned int step = 0;
+public:
       /// Cumulative beta refinements
       unsigned int cumbeta = 0;
 

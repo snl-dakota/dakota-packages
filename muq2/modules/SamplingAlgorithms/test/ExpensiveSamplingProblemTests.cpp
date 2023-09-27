@@ -45,8 +45,8 @@ TEST(ExpensiveSamplingProblemTests, GaussianTarget) {
 
   pt.put("MySamplingProblem.LambdaScale", 25.0);
 
-  // create a sampling problem
-  auto problem = std::make_shared<ExpensiveSamplingProblem>(dist, pt.get_child("MySamplingProblem"));
+  // create a sampling problem---add the distribution twice so there is a QOI
+  auto problem = std::make_shared<ExpensiveSamplingProblem>(dist, dist, pt.get_child("MySamplingProblem"));
 
   // starting point
   const Eigen::VectorXd start = Eigen::VectorXd::Random(2);

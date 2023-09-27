@@ -53,10 +53,11 @@ namespace muq {
        * @brief Construct UMBridgeModPiece, connecting to model server
        *
        * @param host The host adress (and possibly port) to connect to. May be local.
+       * @param name The name of the model to connect to.
        * @param config Configuration parameters may be passed to the model.
        * @param headers Additional headers may be passed to the server, e.g. access tokens.
        */
-      UMBridgeModPiece(const std::string host, json config = json(), httplib::Headers headers = httplib::Headers());
+      UMBridgeModPiece(const std::string host, std::string name, json config = json(), httplib::Headers headers = httplib::Headers());
 
       static const std::vector<double> EigenvectordToStdVector(const Eigen::VectorXd& vector) {
         const std::vector<double> vec(vector.data(), vector.data() + vector.rows());
@@ -106,9 +107,9 @@ namespace muq {
 
     private:
 
-      Eigen::VectorXi read_input_size(const std::string host, const httplib::Headers& headers);
+      Eigen::VectorXi read_input_size(const std::string host, std::string name, const httplib::Headers& headers);
 
-      Eigen::VectorXi read_output_size(const std::string host, const httplib::Headers& headers);
+      Eigen::VectorXi read_output_size(const std::string host, std::string name, const httplib::Headers& headers);
 
       void EvaluateImpl(muq::Modeling::ref_vector<Eigen::VectorXd> const& inputs) override;
 

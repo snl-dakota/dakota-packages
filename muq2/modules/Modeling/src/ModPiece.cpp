@@ -6,6 +6,11 @@
 
 using namespace muq::Modeling;
 
+ModPiece::ModPiece(std::vector<int> const& inputSizes,
+                   std::vector<int> const& outputSizes) : ModPiece(Eigen::Map<const Eigen::VectorXi>(&inputSizes[0],inputSizes.size()),
+                                                          Eigen::Map<const Eigen::VectorXi>(&outputSizes[0],outputSizes.size())){};
+
+
 ModPiece::ModPiece(Eigen::VectorXi const& inputSizesIn,
                    Eigen::VectorXi const& outputSizesIn) :
   WorkPiece(std::vector<std::string>(inputSizesIn.size(), typeid(Eigen::VectorXd).name()),

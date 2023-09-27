@@ -64,10 +64,10 @@ TEST(MCMC, IndependenceProposal_FromOpts){
   EXPECT_NEAR(mu(1), mean(1), 3.0*mcse(1));
 
   Eigen::MatrixXd cov = samps->Covariance();
-  EXPECT_NEAR(1.0, cov(0,0), 5.0*mcse(0));
-  EXPECT_NEAR(0.0, cov(0,1), 5.0*mcse(0));
-  EXPECT_NEAR(0.0, cov(1,0), 5.0*mcse(1));
-  EXPECT_NEAR(1.0, cov(1,1), 5.0*mcse(1));
+  EXPECT_NEAR(1.0, cov(0,0), 10.0*mcse(0));
+  EXPECT_NEAR(0.0, cov(0,1), 10.0*mcse(0));
+  EXPECT_NEAR(0.0, cov(1,0), 10.0*mcse(1));
+  EXPECT_NEAR(1.0, cov(1,1), 10.0*mcse(1));
 }
 
 

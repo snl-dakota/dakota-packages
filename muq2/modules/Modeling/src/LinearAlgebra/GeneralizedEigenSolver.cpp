@@ -15,7 +15,7 @@ void GeneralizedEigenSolver::SortVec(std::vector<std::pair<int,int>> const& swap
                                      std::vector<bool>                    & vec)
 {
   for(auto& swap : swapInds)
-    std::swap(vec[swap.first],vec[swap.second]);
+    std::vector<bool>::swap(vec[swap.first],vec[swap.second]);
 }
 
 void GeneralizedEigenSolver::SortCols(std::vector<std::pair<int,int>> const& swapInds,
@@ -54,7 +54,7 @@ std::vector<std::pair<int,int>> GeneralizedEigenSolver::GetSortSwaps(Eigen::Ref<
   while(firstInactiveInd<lastActiveInd){
 
     swaps.push_back(std::make_pair(firstInactiveInd,lastActiveInd));
-    std::swap(newIsActive.at(firstInactiveInd), newIsActive.at(lastActiveInd));
+    std::vector<bool>::swap(newIsActive.at(firstInactiveInd), newIsActive.at(lastActiveInd));
     std::swap(newResids(firstInactiveInd), newResids(lastActiveInd));
 
     while((firstInactiveInd<isActive.size())&&(newIsActive.at(firstInactiveInd)))

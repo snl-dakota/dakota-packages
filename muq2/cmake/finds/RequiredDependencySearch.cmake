@@ -53,9 +53,9 @@ macro (GetDependency name)
 
 endmacro(GetDependency)
 
-file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/)
-file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/include)
-file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/lib)
+#file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/)
+#file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/include)
+#file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/lib)
 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/include)

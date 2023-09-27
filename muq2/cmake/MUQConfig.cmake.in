@@ -6,6 +6,14 @@
 #  MUQ_INCLUDE_DIRS   - Include directories that MUQ uses
 #  MUQ_COMPILE_DEFINITIONS -Definitions used during compilation (i.e. variables added with add_definitions)
 
+include(CMakeFindDependencyMacro)
+if (@OpenMP_CXX_FOUND@)
+  find_dependency(OpenMP)
+endif()
+if (@Boost_FOUND@)
+  find_dependency(Boost @BOOST_MIN_VERSION@ COMPONENTS system filesystem graph)
+endif()
+
 set(MUQ_INCLUDE_DIRS @CMAKE_INSTALL_PREFIX@/include @MUQ_EXTERNAL_INCLUDES@)
 
 set(MUQ_LIBRARY_DIR @CMAKE_INSTALL_PREFIX@/lib)

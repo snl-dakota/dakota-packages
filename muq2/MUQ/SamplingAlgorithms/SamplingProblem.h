@@ -47,12 +47,12 @@ namespace muq {
 
       std::shared_ptr<muq::Modeling::ModPiece> qoi;
 
+      std::shared_ptr<SamplingState> lastState;
+
     private:
 
       static unsigned GetNumBlocks(std::shared_ptr<muq::Modeling::ModPiece> const& target);
       static std::vector<int> GetBlockSizes(std::shared_ptr<muq::Modeling::ModPiece> const& target);
-
-      std::shared_ptr<SamplingState> lastState;
     };
   } // namespace SamplingAlgorithms
 } // namespace muq
