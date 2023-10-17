@@ -1,0 +1,13 @@
+diff --git a/muq2/cmake/finds/RequiredDependencySearch.cmake b/muq2/cmake/finds/RequiredDependencySearch.cmake
+index 2f7113c..5b73eab 100644
+--- a/muq2/cmake/finds/RequiredDependencySearch.cmake
++++ b/muq2/cmake/finds/RequiredDependencySearch.cmake
+@@ -15,7 +15,7 @@ macro (GetDependency name)
+ 
+             else()
+ 
+-                find_package(${name})
++                find_package(${name} HINTS "${MUQ_${name}_DIR}")
+                 if(${name}_FOUND)
+                     # check to make sure the library can be linked to
+                     include(Check${name})

@@ -12,6 +12,29 @@ using namespace muq::Modeling;
 using namespace muq::Approximation;
 using namespace muq::SamplingAlgorithms;
 
+ExpensiveSamplingProblem::ExpensiveSamplingProblem(std::shared_ptr<muq::Modeling::ModPiece> const& target, std::shared_ptr<muq::Modeling::ModPiece> const& qoi, Eigen::VectorXd const& centroid, pt::ptree pt) : SamplingProblem(target, qoi), centroid(centroid) {
+  // create the local regressor
+  const std::string regOptions = pt.get<std::string>("RegressionOptions");
+  reg = std::make_shared<LocalRegression>(target, pt.get_child(regOptions));
+
+  regQoI = std::make_shared<LocalRegression>(qoi, pt.get_child(pt.get<std::string>("QoIRegressionOptions", regOptions)));
+
+  // must becaused after reg is created
+  SetUp(pt);
+}
+
+
+ExpensiveSamplingProblem::ExpensiveSamplingProblem(std::shared_ptr<muq::Modeling::ModPiece> const& target, std::shared_ptr<muq::Modeling::ModPiece> const& qoi, pt::ptree pt) : SamplingProblem(target, qoi), centroid(Eigen::VectorXd::Zero(target->inputSizes(0))) {
+  // create the local regressor
+  const std::string regOptions = pt.get<std::string>("RegressionOptions");
+  reg = std::make_shared<LocalRegression>(target, pt.get_child(regOptions));
+
+  regQoI = std::make_shared<LocalRegression>(qoi, pt.get_child(pt.get<std::string>("QoIRegressionOptions", regOptions)));
+
+  // must becaused after reg is created
+  SetUp(pt);
+}
+
 ExpensiveSamplingProblem::ExpensiveSamplingProblem(std::shared_ptr<muq::Modeling::ModPiece> const& target, pt::ptree pt) : SamplingProblem(target), centroid(Eigen::VectorXd::Zero(target->inputSizes(0))) {
   // create the local regressor
   reg = std::make_shared<LocalRegression>(target, pt.get_child(pt.get<std::string>("RegressionOptions")));
@@ -67,12 +90,14 @@ void ExpensiveSamplingProblem::SetUp(boost::property_tree::ptree& pt) {
 
 double ExpensiveSamplingProblem::LogDensity(std::shared_ptr<SamplingState> const& state) {
 
+  lastState = state;
+
   std::vector<Eigen::VectorXd> neighbors, results;
 
   assert(state->HasMeta("iteration"));
   assert(state->HasMeta("IsProposal"));
 
-  unsigned int step = AnyCast(state->meta["iteration"]);
+  step = AnyCast(state->meta["iteration"]);
   bool addThreshold = AnyCast(state->meta["IsProposal"]);
 
   double threshold = RefineSurrogate(step, state, neighbors, results);
@@ -101,15 +126,6 @@ double ExpensiveSamplingProblem::LogDensity(std::shared_ptr<SamplingState> const
 }
 
 double ExpensiveSamplingProblem::LogLyapunovFunction(Eigen::VectorXd const& x) const {
-  /*(const Eigen::VectorXd diff = x-centroid;
-
-  Eigen::VectorXd scale = Eigen::VectorXd::Constant(diff.size(), lyapunovScale);
-  scale(0) = 1.0;
-  scale(1) = 1.0;
-
-  return diff.dot(scale.asDiagonal()*diff);*/
-
-  //return lyapunovScale*(x-centroid).norm();
   return lyapunovPara.first*std::pow((x-centroid).norm(), lyapunovPara.second);
 }
 
@@ -118,6 +134,7 @@ void ExpensiveSamplingProblem::CheckNumNeighbors(std::shared_ptr<SamplingState> 
     auto gauss = std::make_shared<muq::Modeling::Gaussian>(state->state[0], std::pow(std::exp(gamma.first), 1.0/(1.0+reg->Order()))*Eigen::VectorXd::Ones(state->state[0].size()));
     const Eigen::VectorXd& x = gauss->Sample();
     reg->Add(x);
+    if( regQoI ) { regQoI->Add(x); }
     ++cumkappa;
   }
 }
@@ -208,6 +225,7 @@ double ExpensiveSamplingProblem::RefineSurrogate(unsigned int const step, std::s
 void ExpensiveSamplingProblem::RefineSurrogate(Eigen::VectorXd const& point, unsigned int const index, std::vector<Eigen::VectorXd>& neighbors, std::vector<Eigen::VectorXd>& results) {
   assert(!reg->InCache(point));
   const Eigen::VectorXd& result = reg->Add(point);
+  if( regQoI ) { regQoI->Add(point); }
 
   assert(neighbors.size()==results.size());
   assert(index<neighbors.size());
@@ -220,7 +238,13 @@ void ExpensiveSamplingProblem::RefineSurrogate(Eigen::VectorXd const& point, uns
 
 unsigned int ExpensiveSamplingProblem::CacheSize() const { return reg->CacheSize(); }
 
-
 void ExpensiveSamplingProblem::AddOptions(boost::property_tree::ptree & pt) const {
   pt.put("ReevaluateAcceptedDensity", true);
 }
+
+ std::shared_ptr<SamplingState> ExpensiveSamplingProblem::QOI() {
+   if( qoi==nullptr ) { return nullptr; }
+   assert(regQoI);
+
+   return std::make_shared<SamplingState>(regQoI->Evaluate(lastState->state));
+ }

@@ -3,23 +3,23 @@
 using namespace muq::Modeling;
 
 
-UMBridgeModPiece::UMBridgeModPiece(const std::string host, json config, httplib::Headers headers)
-: config(config), client(host, headers),
-  ModPiece(read_input_size(host, headers), read_output_size(host, headers))
+UMBridgeModPiece::UMBridgeModPiece(const std::string host, std::string name, json config, httplib::Headers headers)
+: config(config), client(host, name, headers),
+  ModPiece(read_input_size(host, name, headers), read_output_size(host, name, headers))
 {
   this->outputs.resize(this->numOutputs);
 }
 
 
-Eigen::VectorXi UMBridgeModPiece::read_input_size(const std::string host, const httplib::Headers& headers){
+Eigen::VectorXi UMBridgeModPiece::read_input_size(const std::string host, std::string name, const httplib::Headers& headers){
   // Would prefer to reuse the existing client, circular dependency in constructor though...
-  umbridge::HTTPModel client(host, headers);
-  return StdVectorToEigenvectori(client.inputSizes);
+  umbridge::HTTPModel client(host, name, headers);
+  return StdVectorToEigenvectori(client.GetInputSizes(config));
 }
 
-Eigen::VectorXi UMBridgeModPiece::read_output_size(const std::string host, const httplib::Headers& headers){
-  umbridge::HTTPModel client(host, headers);
-  return StdVectorToEigenvectori(client.outputSizes);
+Eigen::VectorXi UMBridgeModPiece::read_output_size(const std::string host, std::string name, const httplib::Headers& headers){
+  umbridge::HTTPModel client(host, name, headers);
+  return StdVectorToEigenvectori(client.GetOutputSizes(config));
 }
 
 void UMBridgeModPiece::EvaluateImpl(muq::Modeling::ref_vector<Eigen::VectorXd> const& inputs) {
@@ -29,9 +29,9 @@ void UMBridgeModPiece::EvaluateImpl(muq::Modeling::ref_vector<Eigen::VectorXd> c
   for (int i = 0; i < this->numInputs; i++) {
     inputs_stdvec[i] = EigenvectordToStdVector(inputs[i]);
   }
-  client.Evaluate(inputs_stdvec, config);
+  std::vector<std::vector<double>> out = client.Evaluate(inputs_stdvec, config);
   for (int i = 0; i < this->numOutputs; i++) {
-    outputs[i] = StdVectorToEigenvectord(client.outputs[i]);
+    outputs[i] = StdVectorToEigenvectord(out[i]);
   }
 }
 
@@ -40,8 +40,7 @@ void UMBridgeModPiece::GradientImpl(unsigned int outWrt,
                                 muq::Modeling::ref_vector<Eigen::VectorXd> const& inputs,
                                 Eigen::VectorXd const& sens) {
   if (client.SupportsGradient()) {
-    client.Gradient(outWrt, inWrt, EigenvectordsToStdVectors(inputs), EigenvectordToStdVector(sens), config);
-    gradient = StdVectorToEigenvectord(client.gradient);
+    gradient = StdVectorToEigenvectord(client.Gradient(outWrt, inWrt, EigenvectordsToStdVectors(inputs), EigenvectordToStdVector(sens), config));
   } else
     gradient = GradientByFD(outWrt, inWrt, inputs, sens);
 }
@@ -51,8 +50,7 @@ void UMBridgeModPiece::ApplyJacobianImpl(unsigned int outWrt,
                                     muq::Modeling::ref_vector<Eigen::VectorXd> const& inputs,
                                     Eigen::VectorXd const& vec){
   if (client.SupportsApplyJacobian()) {
-    client.ApplyJacobian(outWrt, inWrt, EigenvectordsToStdVectors(inputs), EigenvectordToStdVector(vec), config);
-    jacobianAction = StdVectorToEigenvectord(client.jacobianAction);
+    jacobianAction = StdVectorToEigenvectord(client.ApplyJacobian(outWrt, inWrt, EigenvectordsToStdVectors(inputs), EigenvectordToStdVector(vec), config));
   } else
     jacobianAction = ApplyJacobianByFD(outWrt, inWrt, inputs, vec);
 }
@@ -64,8 +62,7 @@ void UMBridgeModPiece::ApplyHessianImpl(unsigned int outWrt,
                                     Eigen::VectorXd const& sens,
                                     Eigen::VectorXd const& vec){
   if (client.SupportsApplyHessian()) {
-    client.ApplyHessian(outWrt, inWrt1, inWrt2, EigenvectordsToStdVectors(inputs), EigenvectordToStdVector(sens), EigenvectordToStdVector(vec), config);
-    hessAction = StdVectorToEigenvectord(client.hessAction);
+    hessAction = StdVectorToEigenvectord(client.ApplyHessian(outWrt, inWrt1, inWrt2, EigenvectordsToStdVectors(inputs), EigenvectordToStdVector(sens), EigenvectordToStdVector(vec), config));
   } else
     hessAction = ApplyHessianByFD(outWrt, inWrt1, inWrt2, inputs, sens, vec);
 }

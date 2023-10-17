@@ -18,7 +18,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     set(BOOST_TOOLSET_NAME intel-linux)
   endif()
 
-  set(BOOST_CXX_FLAGS "-std=c++11")
+  set(BOOST_CXX_FLAGS "")
   set(BOOST_LINK_FLAGS "")
 
 # is this an OSX machine?
@@ -27,11 +27,11 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(BOOST_TOOLSET_NAME clang)
 
   if(MUQ_USE_LIBC11)
-  	set(BOOST_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+  	set(BOOST_CXX_FLAGS "-stdlib=libc++")
   	set(BOOST_LINK_FLAGS "-stdlib=libc++")
   else(MUQ_USE_LIBC11)
-	  set(BOOST_CXX_FLAGS "-std=c++11")
-	  set(BOOST_LINK_FLAGS "")
+    set(BOOST_CXX_FLAGS "")
+    set(BOOST_LINK_FLAGS "")
   endif(MUQ_USE_LIBC11)
 
 # is the compiler clang?
@@ -40,10 +40,10 @@ elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     set(BOOST_TOOLSET_NAME clang)
 
     if(MUQ_USE_LIBC11)
-    	set(BOOST_CXX_FLAGS "-std=c++11 -stdlib=libc++")
+    	set(BOOST_CXX_FLAGS "-stdlib=libc++")
     	set(BOOST_LINK_FLAGS "-stdlib=libc++")
     else(MUQ_USE_LIBC11)
-        set(BOOST_CXX_FLAGS "-std=c++11")
+        set(BOOST_CXX_FLAGS "")
         set(BOOST_LINK_FLAGS "")
     endif(MUQ_USE_LIBC11)
 
@@ -52,7 +52,7 @@ elseif(CMAKE_COMPILER_IS_GNUCXX)
 
     set(BOOST_TOOLSET_NAME gcc)
 
-    set(BOOST_CXX_FLAGS "-std=c++11")
+    set(BOOST_CXX_FLAGS "")
     set(BOOST_LINK_FLAGS "")
 
 # is this an windows machine?
@@ -68,7 +68,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     message( FATAL_ERROR "Unable to find a BOOST toolset that matches your compiler and system.  Either use a different compiler, or try installing boost manually." )
   endif()
 
-  set(BOOST_CXX_FLAGS "-std=c++11")
+  set(BOOST_CXX_FLAGS "")
   set(BOOST_LINK_FLAGS "")
 
 else()
@@ -115,7 +115,7 @@ if(CMAKE_OSX_ARCHITECTURES)
     URL ${BOOST_EXTERNAL_SOURCE}
     PATCH_COMMAND ""
     UPDATE_COMMAND ""
-    CONFIGURE_COMMAND ./bootstrap.sh --prefix=${Boost_INSTALL_DIR} --with-toolset=clang cxxflags="-arch x86_64 -arch arm64 -std=c++11" cflags="-arch x86_64 -arch arm64" linkflags="-arch x86_64 -arch arm64" --with-libraries=graph
+    CONFIGURE_COMMAND ./bootstrap.sh --prefix=${Boost_INSTALL_DIR} --with-toolset=clang cxxflags="-arch x86_64 -arch arm64" cflags="-arch x86_64 -arch arm64" linkflags="-arch x86_64 -arch arm64" --with-libraries=graph
     BUILD_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cmake/builds/boost-build-universal-osx.sh ${Boost_INSTALL_DIR}
     INSTALL_COMMAND ""
     )
@@ -154,12 +154,12 @@ set_property( TARGET BOOST PROPERTY FOLDER "Externals")
 
 set( Boost_INCLUDE_DIRS ${Boost_INSTALL_DIR}/include )
 
-#set( Boost_LIBRARIES ${Boost_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}boost_filesystem${CMAKE_SHARED_LIBRARY_SUFFIX})
+#list(APPEND Boost_LIBRARIES ${Boost_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}boost_filesystem${CMAKE_SHARED_LIBRARY_SUFFIX})
 #list(APPEND Boost_LIBRARIES ${Boost_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}boost_system${CMAKE_SHARED_LIBRARY_SUFFIX})
-set(Boost_LIBRARIES ${Boost_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}boost_graph${CMAKE_SHARED_LIBRARY_SUFFIX})
-#list(APPEND Boost_LIBRARIES ${Boost_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}boost_regex${CMAKE_SHARED_LIBRARY_SUFFIX})
+list(APPEND Boost_LIBRARIES ${Boost_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}boost_graph${CMAKE_SHARED_LIBRARY_SUFFIX})
+list(APPEND Boost_LIBRARIES ${Boost_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}boost_regex${CMAKE_SHARED_LIBRARY_SUFFIX})
 
-#set( Boost_LIBRARIES_STATIC ${Boost_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}boost_filesystem${CMAKE_STATIC_LIBRARY_SUFFIX})
+#list(APPEND Boost_LIBRARIES_STATIC ${Boost_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}boost_filesystem${CMAKE_STATIC_LIBRARY_SUFFIX})
 #list(APPEND Boost_LIBRARIES_STATIC ${Boost_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}boost_system${CMAKE_STATIC_LIBRARY_SUFFIX})
-set(Boost_LIBRARIES_STATIC ${Boost_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}boost_graph${CMAKE_STATIC_LIBRARY_SUFFIX})
-#list(APPEND Boost_LIBRARIES_STATIC ${Boost_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}boost_regex${CMAKE_STATIC_LIBRARY_SUFFIX})
+list(APPEND Boost_LIBRARIES_STATIC ${Boost_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}boost_graph${CMAKE_STATIC_LIBRARY_SUFFIX})
+list(APPEND Boost_LIBRARIES_STATIC ${Boost_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}boost_regex${CMAKE_STATIC_LIBRARY_SUFFIX})

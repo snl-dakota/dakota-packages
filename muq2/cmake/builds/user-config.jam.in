@@ -1,1 +1,1 @@
-using @BOOST_TOOLSET_NAME@ : muq : @CMAKE_CXX_COMPILER@ : <cxxflags>-std=c++11;
+using @BOOST_TOOLSET_NAME@ : muq : @CMAKE_CXX_COMPILER@ : ;
