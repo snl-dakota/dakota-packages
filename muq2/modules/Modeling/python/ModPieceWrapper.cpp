@@ -71,9 +71,9 @@ public:
 // The server spawns threads for requests which may have to evaluate a Python model, in turn locking the GIL.
 // We therefore have to unlock the GIL for the server loop, else we get a deadlock once
 // a Python model is evaluated by the server.
-void serveModPieceWithoutGIL(std::shared_ptr<ModPiece> modPiece, std::string host, int port) {
+void serveModPieceWithoutGIL(std::shared_ptr<ModPiece> modPiece, std::string name, std::string host, int port) {
   Py_BEGIN_ALLOW_THREADS
-  muq::Modeling::serveModPiece(modPiece, host, port);
+  muq::Modeling::serveModPiece(modPiece, name, host, port);
   Py_END_ALLOW_THREADS
 }
 
@@ -140,8 +140,8 @@ void muq::Modeling::PythonBindings::ModPieceWrapper(py::module &m)
 
   py::class_<UMBridgeModPiece, ModPiece, WorkPiece, std::shared_ptr<UMBridgeModPiece>> hmp(m, "UMBridgeModPiece");
   hmp
-    .def(py::init( [](std::string host) {return new UMBridgeModPiece(host); }))
-    .def(py::init( [](std::string host, py::dict config) {return new UMBridgeModPiece(host, config); }));
+    .def(py::init( [](std::string host, std::string name) {return new UMBridgeModPiece(host, name); }))
+    .def(py::init( [](std::string host, std::string name, py::dict config) {return new UMBridgeModPiece(host, name, config); }));
 
   m.def("serveModPiece", &serveModPieceWithoutGIL);
 

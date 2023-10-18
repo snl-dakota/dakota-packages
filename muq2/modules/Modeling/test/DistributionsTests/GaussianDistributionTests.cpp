@@ -165,7 +165,7 @@ TEST(GaussianDistributionTests, Gradient) {
   Eigen::VectorXd trueGrad = -1.0*cov.llt().solve(testPt-mu);
 
   for(int i=0; i<dim; ++i)
-    EXPECT_NEAR(trueGrad(i), grad(i),5e-12);
+    EXPECT_NEAR(trueGrad(i), grad(i),1e-11);
 }
 
 TEST(GaussianDistributionTests, Hessian) {

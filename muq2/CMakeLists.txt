@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.10)
 
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.24.0") 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.24.0")
     cmake_policy(SET CMP0135 NEW)
 endif()
 
@@ -17,7 +17,7 @@ IF(APPLE)
 	  execute_process(COMMAND sysctl hw.optional.arm64 OUTPUT_VARIABLE ARM_TEST OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 		# If arm64 is supported, set the CMAKE_OSX_ARCHITECTURES variable
-	  if(${ARM_TEST} STREQUAL "hw.optional.arm64: 1")
+	  if("${ARM_TEST}" STREQUAL "hw.optional.arm64: 1")
 	    message(STATUS "FOUND APPLE M1.  Setting architecture to ARM64")
 			set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Architecture" FORCE)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch arm64 -arch x86_64")
@@ -202,6 +202,4 @@ if(DOXYGEN_FOUND)
 
 	endif(Python3_Interpreter_FOUND)
 endif(DOXYGEN_FOUND)
-endif()
-
-#add_subdirectory(examples EXCLUDE_FROM_ALL)
+endif(MUQ_ENABLE_DOCS)

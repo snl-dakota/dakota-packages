@@ -17,8 +17,13 @@ macro (GetDependency name)
 
                 find_package(${name})
                 if(${name}_FOUND)
-                    # check to make sure the library can be linked to
-                    include(Check${name})
+
+                    if(SKIP_MUQ_TPL_CHECKS)
+                        set(${name}_TEST_FAIL 0)
+                    else()
+                        # check to make sure the library can be linked to
+                        include(Check${name})
+                    endif()
 
                     # If the test code compiled...
                     if(NOT ${name}_TEST_FAIL)
@@ -53,9 +58,9 @@ macro (GetDependency name)
 
 endmacro(GetDependency)
 
-file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/)
-file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/include)
-file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/lib)
+#file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/)
+#file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/include)
+#file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/muq_external/lib)
 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/include)
