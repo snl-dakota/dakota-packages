@@ -152,8 +152,14 @@ Demo_Opt::execute(bool verbose)
     ++i;
   }
 
-  if( verbose )
+  if( verbose ) {
     std::cout << "Found best_f_ = " << best_f_ << std::endl;
+    std::cout << "Using x = { ";
+    for( auto const & x : best_x_ )
+      std::cout << x << " ";
+    std::cout << " }" << std::endl;
+
+  }
 
   return true;
 }
