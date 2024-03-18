@@ -10,11 +10,6 @@
 # ************************************************************************
 
 
-#---- Copy the LICENSE file to the target location.
-CONFIGURE_FILE (LICENSE_HOPSPACK
-                ${HOPSPACK_BINARY_DIR}/LICENSE_HOPSPACK
-                COPYONLY)
-
 
 IF (lapack)
   #---- Probe for Fortran, without enabling, for help with linking

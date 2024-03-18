@@ -10,11 +10,6 @@
 # ************************************************************************
 
 
-#---- Copy the README file to the target location.
-CONFIGURE_FILE (${HOPSPACK_SOURCE_DIR}/examples/README.txt
-                ${HOPSPACK_BINARY_DIR}/examples/README.txt
-                COPYONLY)
-
 #---- List subdirectories in the order they are to be processed.
 ADD_SUBDIRECTORY (1-var-bnds-only)
 ADD_SUBDIRECTORY (2-linear-constraints)

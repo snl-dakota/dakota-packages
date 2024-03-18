@@ -12,10 +12,6 @@
 
 #---- Copy the README file to the target location.
 SET (PARAMS_FILE_NAME test/startpoint-tests/README.txt)
-CONFIGURE_FILE (${HOPSPACK_SOURCE_DIR}/${PARAMS_FILE_NAME}
-                ${HOPSPACK_BINARY_DIR}/${PARAMS_FILE_NAME}
-                COPYONLY)
-
 #---- Specify directories with required include files.
 INCLUDE_DIRECTORIES (
   ${HOPSPACK_BINARY_DIR_SRC}/src-shared

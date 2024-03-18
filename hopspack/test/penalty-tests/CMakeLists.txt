@@ -10,11 +10,6 @@
 # ************************************************************************
 
 
-#---- Copy the README file to the target location.
-CONFIGURE_FILE (${HOPSPACK_SOURCE_DIR}/test/penalty-tests/README.txt
-                ${HOPSPACK_BINARY_DIR}/test/penalty-tests/README.txt
-                COPYONLY)
-
 #---- Specify directories with required include files.
 INCLUDE_DIRECTORIES (
   ${HOPSPACK_BINARY_DIR_SRC}/src-shared

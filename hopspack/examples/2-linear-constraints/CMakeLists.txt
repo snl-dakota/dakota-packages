@@ -13,9 +13,6 @@ include(ModifyTargetRpath)
 
 #---- Copy the parameters file to the target location.
 SET (PARAMS_FILE_NAME examples/2-linear-constraints/example2_params.txt)
-CONFIGURE_FILE (${HOPSPACK_SOURCE_DIR}/${PARAMS_FILE_NAME}
-                ${HOPSPACK_BINARY_DIR}/${PARAMS_FILE_NAME}
-                COPYONLY)
 
 #---- Define how to build the target executable.
 ADD_EXECUTABLE (
