@@ -791,7 +791,10 @@ Serialization_Manager::resolve_user_name(std::string mangled)
          uname += ',';
          sep = next_sep;
       }
-      *uname.rbegin() = '>';
+      if (uname.length() != 0)
+      {
+         *uname.rbegin() = '>';
+      }  
    }
 
    // insert the newly-resolved name...

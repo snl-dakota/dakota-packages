@@ -82,6 +82,11 @@ void PackBuffer::writeBinary(ostream& ostr)
 
 void UnPackBuffer::resize(const size_type newsize)
 {
+  if (newsize > std::numeric_limits<size_type>::max()) {
+    // handle integer overflow error
+    throw std::overflow_error("integer overflow in UnPackBuffer::resize()");
+  }
+  
   if (newsize != Size) {
     if (buffer && own_flag)
       delete [] buffer;

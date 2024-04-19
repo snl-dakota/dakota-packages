@@ -24,7 +24,7 @@
         </xsd:all>
     </xsd:complexType>
     <xsd:complexType name="RequestsType">
-        <xsd:sequence maxOccurs="unbounded">
+        <xsd:sequence maxOccurs="999999">
             <xsd:element name="FunctionValues" minOccurs="0"/>
             <xsd:element name="FunctionValue" minOccurs="0">
                 <xsd:complexType>
@@ -43,10 +43,10 @@
                     <xsd:attribute name="index" use="required" type="xsd:string"/>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="Generic" maxOccurs="unbounded" minOccurs="0">
+            <xsd:element name="Generic" maxOccurs="999999" minOccurs="0">
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="Data" maxOccurs="unbounded">
+                        <xsd:element name="Data" maxOccurs="999999">
                             <xsd:complexType>
                                 <xsd:attribute name="id" type="xsd:string"/>
                             </xsd:complexType>

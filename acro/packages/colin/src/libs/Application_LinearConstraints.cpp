@@ -1028,7 +1028,7 @@ cb_jacobian_info( Application_Jacobian::EqualityFilter equality,
       }
 
       components.push_back(part);
-      return ans.get_nrows();
+      return static_cast<size_t>(ans.get_nrows());
    }
 
 }

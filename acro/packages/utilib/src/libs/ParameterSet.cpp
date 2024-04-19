@@ -339,6 +339,7 @@ while (tcurr != tlast) {
   }
 char tformat[32];
 #ifdef _MSC_VER
+if (len > 1024) len = 1024;
 sprintf_s(tformat,32,"%%-%lds",(long int)len);
 #else
 sprintf(tformat,"%%-%lds",(long int)len);

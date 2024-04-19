@@ -350,7 +350,7 @@ void ArrayBase<A,P>::resize(const size_type newl,int set_new_contents)
   
   if (new_alloc == alloc_size(Len))
     d = Data;
-  else if (newl > 0) 
+  else if (newl > 0 && newl <= std::numeric_limits<int>::max()) 
     {
       d = new A[new_alloc];
       if (d == 0)

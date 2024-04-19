@@ -306,7 +306,7 @@ View_Pareto::cb_insert(cache_t::iterator src)
    //
    unsigned long info_type = 
       ( appHandle->problem_type() & ProblemTraitValue_multiple_objectives ) 
-      ? mf_info : f_info;
+      ? static_cast<unsigned long>(mf_info) : static_cast<unsigned long>(f_info);
    if ( ! response.is_computed(info_type) )
       return;
 

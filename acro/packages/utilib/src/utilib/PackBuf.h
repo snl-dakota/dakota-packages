@@ -72,7 +72,7 @@ class PackBuffer {
 public:
  
   /// Constructor, which allows the default buffer size to be set.
-  PackBuffer(int size_=1024) {Index=0; Size=size_; buffer = new char [size_];}
+  PackBuffer(int size_=1024) {Index=0; Size=static_cast<size_type>(size_); buffer = new char [size_];}
 
   /// Constructor that copies an UnPackBuffer
   PackBuffer(UnPackBuffer& copyBuf);

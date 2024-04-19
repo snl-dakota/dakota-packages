@@ -405,7 +405,7 @@ oBinarySerialStream::put(const SerialObject &so)
          write(reinterpret_cast<char*>(&pod_size), sizeof(pod_size));
       }
       else
-         pod_size = len;
+         pod_size = static_cast<size_t>(len);
       write(pod.data(),  static_cast<std::streamsize>(pod_size));
    }
    else

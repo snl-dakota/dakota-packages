@@ -67,6 +67,11 @@ std::string pscientific(const double t, int mantissa, int expwidth,
     negexp = false;
 
   std::string format;
+  if (mantissa < 0) mantissa = 0;
+  if (expwidth < 0) expwidth = 0;
+  if (mantissa > 20) mantissa = 20;
+  if (expwidth > 20) expwidth = 20;
+
   char* ss = new char [mantissa + expwidth + 10];
 
   // Ex: cout.setf(std::ios::showpos); cout << pscientific(.0123,4,3,&cout)

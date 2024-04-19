@@ -283,8 +283,8 @@ private: // callback methods
       while ( row > 0 )
       {
          --row;
-         size_t i = cg.get_matbeg()[row];
-         size_t n = cg.get_matcnt()[row];
+         size_t i = static_cast<size_t>(cg.get_matbeg()[row]);
+         size_t n = static_cast<size_t>(cg.get_matcnt()[row]);
          while ( n > 0 )
          {
             g_val[cg.get_matind()[i]] += p*2.0*cv[row]*cg.get_matval()[i];

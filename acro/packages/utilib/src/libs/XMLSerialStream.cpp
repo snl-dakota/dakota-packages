@@ -706,7 +706,7 @@ oXMLSerialStream::put_xml(const SerialObject &so, std::string indent)
            << std::hex << std::setfill('0');
          const unsigned char *c 
             = reinterpret_cast<const unsigned char*>(pod.data()) - 1;
-         size_t mod = ( (m_format & XML::noindent) ? 1 : 25 );
+         size_t mod = ( (m_format & XML::noindent) ? 1u : 25u );
          size_t pod_size = pod.size();
          for( size_t i = 1; i <= pod_size; ++i )
          {

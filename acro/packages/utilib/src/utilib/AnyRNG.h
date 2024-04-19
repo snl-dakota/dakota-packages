@@ -148,7 +148,7 @@ public:
   /// Return long in 0...LONG_MAX
   unsigned long asLong()
 	{
-	return content ? content->asLong() : 0;
+	return content ? static_cast<unsigned long>(content->asLong()) : 0u;
 	}
 
   /// A generic API for setting seeds for the RNG

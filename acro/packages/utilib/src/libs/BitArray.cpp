@@ -96,7 +96,7 @@ void BitArray::set()
 { 
   size_type nwords = alloc_size(Len);
   for(size_type i=0; i<nwords; i++)
-    Data[i] = ~0;
+    Data[i] = ~0u;
 }
 
 

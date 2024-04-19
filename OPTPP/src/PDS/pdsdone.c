@@ -90,7 +90,7 @@ int pdsdone(int maxitr, int count, int n, double stol, double *length,
   /* Function Body */
 
   ret_val = 0;
-  strcpy(emesg, "");
+  strncpy(emesg, "", sizeof(emesg));
 
 #ifdef OPTPP_HAVE_MPI
 
@@ -117,19 +117,19 @@ int pdsdone(int maxitr, int count, int n, double stol, double *length,
   if (count >= maxitr) {
     ret_val = 3;
     *conv = -stol;
-    strcpy(emesg, "Algorithm terminated - Number of iterations exceeds the specified limit");
+    strncpy(emesg, "Algorithm terminated - Number of iterations exceeds the specified limit", 80);
   }
   else if (total_fevals >= max_fevals) {
     ret_val = 4;
     *conv = -stol;
-    strcpy(emesg, "Algorithm terminated - Number of fcn evaluations exceeds the specified limit");
+    strncpy(emesg, "Algorithm terminated - Number of fcn evaluations exceeds the specified limit", 80);
   }
   else {
     norm = dnrm2(&n, v0, &incx);
     delta = max(1.,norm);
     *conv = *length / delta;
     ret_val = *conv <= stol;
-    strcpy(emesg, "pdsdone: Step tolerance passed");
+    strncpy(emesg, "pdsdone: Step tolerance passed", 80);
   }
 
   /* check for function decrease - If TRPDS, compare to initial
@@ -143,7 +143,7 @@ int pdsdone(int maxitr, int count, int n, double stol, double *length,
 
     if (fbest <= (ftol*finit)) {
       ret_val = 2;
-      strcpy(emesg, "pdsdone: Function tolerance passed");
+      strncpy(emesg, "pdsdone: Function tolerance passed", 80);
     }
   }
   else {
@@ -151,7 +151,7 @@ int pdsdone(int maxitr, int count, int n, double stol, double *length,
     rftol = ftol*max(1.0,fabs(fbest));
 
     if (deltaf <= rftol) {
-      strcpy(emesg,"pdsdone: Function tolerance test passed");
+      strncpy(emesg,"pdsdone: Function tolerance test passed", 80);
       ret_val = 2;
     }
   }

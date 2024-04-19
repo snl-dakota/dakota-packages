@@ -129,14 +129,14 @@
     </xsd:complexType>
     <xsd:complexType name="SolverType">
         <xsd:sequence>
-            <xsd:element name="Problem" type="tns:NameType" minOccurs="1" maxOccurs="unbounded" default="default"/>
+            <xsd:element name="Problem" type="tns:NameType" minOccurs="1" maxOccurs="999999" default="default"/>
             <xsd:element name="Options" type="tns:OptionsType" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="type" type="tns:NameType" use="required"/>
     </xsd:complexType>
     <xsd:complexType name="OptionsType">
         <xsd:sequence>
-            <xsd:element name="Option" maxOccurs="unbounded" minOccurs="1">
+            <xsd:element name="Option" maxOccurs="999999" minOccurs="1">
                 <xsd:complexType mixed="true">
                     <xsd:simpleContent>
                         <xsd:extension base="xsd:string">
@@ -150,7 +150,7 @@
     <xsd:element name="ColinInput">
         <xsd:complexType>
             <xsd:sequence>
-                <xsd:element ref="tns:Problem" maxOccurs="unbounded"/>
+                <xsd:element ref="tns:Problem" maxOccurs="999999"/>
                 <xsd:element name="Solver" type="tns:SolverType"></xsd:element>
             </xsd:sequence>
         </xsd:complexType>

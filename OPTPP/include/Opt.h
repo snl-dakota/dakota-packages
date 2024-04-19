@@ -134,7 +134,7 @@ protected:
   /// What method is being used
   char method[80];  
   /// Optional message
-  char mesg[80];    
+  char mesg[94];    
   /// Return code from Optimization class
   int  ret_code;    
   /// Number of iterations taken 

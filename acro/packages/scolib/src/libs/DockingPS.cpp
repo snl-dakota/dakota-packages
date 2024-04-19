@@ -68,8 +68,11 @@ if (Delta_init > 1.0)
 
 basis_str = "coordinate";
 
-ntrials = ncore_trials = 2*problem->num_real_vars.as<size_t>() 
-   - 4 + num_rotations;
+size_t tmp = 2 * problem->num_real_vars.as<size_t>()
+   - 4 + static_cast<unsigned int>(num_rotations);
+ntrials = static_cast<unsigned int>(tmp);
+ncore_trials = static_cast<int>(tmp);
+
 ex_factor=1.0;
 }
 

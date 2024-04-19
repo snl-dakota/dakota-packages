@@ -31,6 +31,7 @@
 // desired.)
 //----------------------------------------------------------------------
 
+#include <limits>
 #include "kd_tree.h"					// kd-tree declarations
 #include "bd_tree.h"					// bd-tree declarations
 
@@ -270,7 +271,7 @@ static ANNkd_ptr annReadDump(
 	//	Input file header
 	//------------------------------------------------------------------
 	in >> str;									// input header
-	if (strcmp(str, "#ANN") != 0) {				// incorrect header
+	if (strncmp(str, "#ANN", 4) != 0) {				// incorrect header
 		annError("Incorrect header for dump file", ANNabort);
 	}
 	in.getline(version, STRING_LEN);			// get version (ignore)
@@ -281,7 +282,7 @@ static ANNkd_ptr annReadDump(
 	//			the dump file.
 	//------------------------------------------------------------------
 	in >> str;									// get major heading
-	if (strcmp(str, "points") == 0) {			// points section
+	if (strncmp(str, "points", 6) == 0) {			// points section
 		in >> the_dim;							// input dimension
 		in >> the_n_pts;						// number of points
 												// allocate point storage
@@ -310,7 +311,7 @@ static ANNkd_ptr annReadDump(
 	//			but we do not deallocate them.	They will be deallocated
 	//			when the tree is destroyed.
 	//------------------------------------------------------------------
-	if (strcmp(str, "tree") == 0) {				// tree section
+	if (strncmp(str, "tree", 4) == 0) {				// tree section
 		in >> the_dim;							// read dimension
 		in >> the_n_pts;						// number of points
 		in >> the_bkt_size;						// bucket size
@@ -323,6 +324,9 @@ static ANNkd_ptr annReadDump(
 		for (j = 0; j < the_dim; j++) {			// read bounding box low
 			in >> the_bnd_box_hi[j];
 		}
+                if (the_n_pts < 0) {
+                        the_n_pts = std::numeric_limits<int>::max();
+                }
 		the_pidx = new ANNidx[the_n_pts];		// allocate point index array
 		int next_idx = 0;						// number of indices filled
 												// read the tree and indices
@@ -382,7 +386,7 @@ static ANNkd_ptr annReadTree(
 
 	in >> tag;									// input node tag
 
-	if (strcmp(tag, "null") == 0) {				// null tree
+	if (strncmp(tag, "null", 4) == 0) {				// null tree
 		return NULL;
 	}
 	//------------------------------------------------------------------
@@ -405,7 +409,7 @@ static ANNkd_ptr annReadTree(
 	//------------------------------------------------------------------
 	//	Read a splitting node
 	//------------------------------------------------------------------
-	else if (strcmp(tag, "split") == 0) {		// splitting node
+	else if (strncmp(tag, "split", 5) == 0) {		// splitting node
 
 		in >> cd >> cv >> lb >> hb;
 
@@ -418,13 +422,15 @@ static ANNkd_ptr annReadTree(
 	//------------------------------------------------------------------
 	//	Read a shrinking node (bd-tree only)
 	//------------------------------------------------------------------
-	else if (strcmp(tag, "shrink") == 0) {		// shrinking node
+	else if (strncmp(tag, "shrink", 6) == 0) {		// shrinking node
 		if (tree_type != BD_TREE) {
 			annError("Shrinking node not allowed in kd-tree", ANNabort);
 		}
 
 		in >> n_bnds;							// number of bounding sides
-												// allocate bounds array
+                if (n_bnds < 0) {
+                        n_bnds = std::numeric_limits<int>::max();
+                }		
 		ANNorthHSArray bds = new ANNorthHalfSpace[n_bnds];
 		for (int i = 0; i < n_bnds; i++) {
 			in >> cd >> cv >> sd;				// input bounding halfspace

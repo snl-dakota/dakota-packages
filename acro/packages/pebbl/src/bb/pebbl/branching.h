@@ -1077,7 +1077,7 @@ public:
 
   // Basic repository functions
 
-  size_type repositorySize() { return reposHeap.size(); };
+  size_type repositorySize() { return static_cast<size_t>(reposHeap.size()); };
 
   solution* worstReposSol();
 

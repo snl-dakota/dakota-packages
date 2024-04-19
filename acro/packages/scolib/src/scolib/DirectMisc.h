@@ -59,7 +59,7 @@ class boxsort
    	boxsort()
     	   {numb = 0; o1 = 0; o2 = 0; o3 = 0; }
     	boxsort(int a, double b, double c, double d)
-    	   {numb = a; o1 = b; o2 = c; o3 = d; }
+    	   {numb = static_cast<unsigned int>(a); o1 = b; o2 = c; o3 = d; }
       
     	friend bool operator<(const boxsort &b1, const boxsort &b2);
    	friend bool operator>(const boxsort &b1, const boxsort &b2);
@@ -283,7 +283,7 @@ public:
 	{}
 
   NeighborHood(std::vector<double>& v, int nn[3], double d)
-	{V = v; n[0] = nn[0]; n[1] = nn[1]; n[2] = nn[2]; dist = d;}
+	{V = v; n[0] = static_cast<unsigned int>(nn[0]); n[1] = static_cast<unsigned int>(nn[1]); n[2] = static_cast<unsigned int>(nn[2]); dist = d;}
 
   NeighborHood(const NeighborHood &N)
   	{*this = N;}

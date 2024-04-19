@@ -723,7 +723,7 @@ void RMSparseMatrix<T>::delete_rows(const size_t i, const size_t count)
    if ( offset )
    {
       nnzeros -= offset;
-      for (size_t j=matbeg[i]; j<static_cast<size_t>(nnzeros); j++) {
+      for (size_t j=static_cast<size_t>(matbeg[i]); j<static_cast<size_t>(nnzeros); j++) {
          matind[j] = matind[j+offset];
          matval[j] = matval[j+offset];
       }
@@ -983,7 +983,7 @@ void CMSparseMatrix<T>::delete_cols(const size_t i, const size_t count)
    if ( offset )
    {
       nnzeros -= offset;
-      for (size_t j=matbeg[i]; j<static_cast<size_t>(nnzeros); j++) {
+      for (size_t j=static_cast<size_t>(matbeg[i]); j<static_cast<size_t>(nnzeros); j++) {
          matind[j] = matind[j+offset];
          matval[j] = matval[j+offset];
       }
@@ -1151,7 +1151,7 @@ void RMSparseMatrix<T>::adjoinRows(const RMSparseMatrix &rhs)
       matind.resize(newNNZeros);
    }
 
-   size_t i = rhs.nrows;
+   size_t i = static_cast<size_t>(rhs.nrows);
    while ( i > 0 )
    {
       --i;
@@ -1159,7 +1159,7 @@ void RMSparseMatrix<T>::adjoinRows(const RMSparseMatrix &rhs)
       matbeg[nrows + i] = nnzeros + rhs.matbeg[i];
    }
 
-   i = rhs.nnzeros;
+   i = static_cast<size_t>(rhs.nnzeros);
    while ( i > 0 )
    {
       --i;
@@ -1247,7 +1247,7 @@ int cast_from_rm_to_dense(const Any& from_, Any& to_)
    {
       for (size_t i = 0; i < nr; i++)
       {
-         size_t k = from.get_matcnt()[i];
+         size_t k = static_cast<size_t>(from.get_matcnt()[i]);
          if ( ! k )
             continue;
 
