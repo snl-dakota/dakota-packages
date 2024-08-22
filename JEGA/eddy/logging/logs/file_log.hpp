@@ -297,7 +297,7 @@ class EDDY_SL_IEDECL file_log
             std::ios_base::openmode mode=std::ios_base::out|std::ios_base::app
             )
         {
-            if(this->_fstream.is_open()) this->_fstream.close();
+            this->close_stream();
             this->_fstream.open(fname, mode);
             this->_fname = fname;
             EDDY_LOGGING_THROW_EXCEPTION_IF(
@@ -331,6 +331,18 @@ class EDDY_SL_IEDECL file_log
             )
         {
             this->_fstream.flush();
+        }
+        
+        inline
+        void
+        close_stream(
+            )
+        {
+            if (this->_fstream.is_open())
+            {
+                this->flush_stream();
+                this->_fstream.close();
+            }
         }
 
     /*
@@ -438,9 +450,8 @@ class EDDY_SL_IEDECL file_log
         ~file_log(
             )
         {
-            if(this->_fstream.is_open()) this->_fstream.close();
+            this->close_stream();
         }
-
 
 }; // class file_log
 
@@ -481,3 +492,4 @@ End of Multiple Inclusion Check
 ================================================================================
 */
 #endif // EDDY_LOGGING_FILE_LOG_HPP
+
