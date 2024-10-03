@@ -4,6 +4,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 
+#include <deque>
+
 #include "MUQ/Modeling/WorkPiece.h"
 #include "MUQ/Modeling/ConstantPiece.h"
 #include "MUQ/Modeling/NodeNameFinder.h"
