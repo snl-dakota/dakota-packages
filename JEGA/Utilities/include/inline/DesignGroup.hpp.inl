@@ -585,8 +585,11 @@ DesignGroup::FlushIfFalse(
     const BoolPredT& pred
     )
 {
-    return this->Flush(std::unary_negate<BoolPredT>(pred));
-
+#if __cplusplus >= 202002L
+    return this->Flush(std::not_fn(pred));
+#else
+    return this->Flush(std::not1(pred));
+#endif
 } // DesignGroup::FlushIfFalse
 
 inline
