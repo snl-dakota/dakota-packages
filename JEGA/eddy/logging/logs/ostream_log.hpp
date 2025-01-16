@@ -248,7 +248,7 @@ class EDDY_SL_IEDECL ostream_log
 
             if(!(*this->_stream)) EDDY_LOGGING_THROW_EXCEPTION(
                 logging_ostream_error(
-                    "Attempt to write " + static_cast<std::string>(e) +
+                    "Attempt to write " + static_cast<const std::string>(e) +
                     " to bad stream in an ostream_log"
                     )
                 );
