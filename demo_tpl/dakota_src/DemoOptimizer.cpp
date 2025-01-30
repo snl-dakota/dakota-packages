@@ -16,6 +16,7 @@
 // in the Dakota input file.
 
 #include "ProblemDescDB.hpp"
+#include "model_utils.hpp"
 
 // Demo_Opt headers
 // There are two sets of source files needed for integrating a TPL
@@ -70,7 +71,7 @@ namespace Dakota {
 // the necessary objects have to be instantiated/initialized in the
 // constructor as long as they are created before they are accessed.
 
-DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, Model& model):
+DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, std::shared_ptr<Model> model):
   Optimizer(problem_db, model, std::shared_ptr<TraitsBase>(new DemoOptTraits())),
   Demo_Opt::ObjectiveFn(),
   Demo_Opt::NonlinearEqFn(),
@@ -140,8 +141,8 @@ void DemoTPLOptimizer::core_run()
     // anything with this code.  It manages needed sign changes
     // depending on whether minimize or maximize has been specified in
     // the Dakota input file.
-    const BoolDeque& max_sense = iteratedModel.primary_response_fn_sense();
-    RealVector best_fns(iteratedModel.response_size());
+    const BoolDeque& max_sense = iteratedModel->primary_response_fn_sense();
+    RealVector best_fns(ModelUtils::response_size(*iteratedModel));
 
     // Get best (single) objcetive value respecting max/min expectations
     best_fns[0] = (!max_sense.empty() && max_sense[0]) ?  -best_f : best_f;
@@ -172,7 +173,7 @@ void DemoTPLOptimizer::core_run()
   std::vector<double> best_x = demoOpt->get_best_x(); // TPL_SPECIFIC
 
   // Set Dakota optimal value data.
-  set_variables<>(best_x, iteratedModel, bestVariablesArray.front());
+  set_variables<>(best_x, *iteratedModel, bestVariablesArray.front());
 
 } // core_run
 
@@ -258,7 +259,7 @@ void DemoTPLOptimizer::initialize_variables_and_constraints()
                     upper(num_total_vars);
 
   // More on DemoOptTraits can be found in DemoOptimizer.hpp.
-  get_variables(iteratedModel, init_point);
+  get_variables(*iteratedModel, init_point);
   get_variable_bounds_from_dakota<DemoOptTraits>( lower, upper );
 
   // Replace this line by whatever the TPL being integrated uses to
@@ -286,15 +287,15 @@ DemoTPLOptimizer::compute_obj(const std::vector<double> & x, bool verbose)
   // Tell Dakota what variable values to use for the function
   // valuation.  x must be (converted to) a std::vector<double> to use
   // this demo with minimal changes.
-  set_variables<>(x, iteratedModel, iteratedModel.current_variables());
+  set_variables<>(x, *iteratedModel, iteratedModel->current_variables());
 
   // Evaluate the function at the specified x.
-  iteratedModel.evaluate();
+  iteratedModel->evaluate();
 
   // Retrieve the the function value and sign it appropriately based
   // on whether minimize or maximize has been specified in the Dakota
   // input file.
-  double f = dataTransferHandler->get_response_value_from_dakota(iteratedModel.current_response());
+  double f = dataTransferHandler->get_response_value_from_dakota(iteratedModel->current_response());
 
   return f;
 }
@@ -323,13 +324,13 @@ DemoTPLOptimizer::compute_nln_eq(std::vector<Real> &c, const std::vector<Real> &
   // Tell Dakota what variable values to use for the nonlinear constraint
   // evaluations.  x must be (converted to) a std::vector<double> to use
   // this demo with minimal changes.
-  set_variables<>(x, iteratedModel, iteratedModel.current_variables());
+  set_variables<>(x, *iteratedModel, iteratedModel->current_variables());
 
   // Evaluate the function at the specified x.
-  iteratedModel.evaluate();
+  iteratedModel->evaluate();
 
   // Use an adapter to copy data
-  dataTransferHandler->get_nonlinear_eq_constraints_from_dakota(iteratedModel.current_response(), c);
+  dataTransferHandler->get_nonlinear_eq_constraints_from_dakota(iteratedModel->current_response(), c);
 
 } // nonlinear eq constraints value
 
@@ -356,13 +357,13 @@ DemoTPLOptimizer::compute_nln_ineq(std::vector<Real> &c, const std::vector<Real>
   // Tell Dakota what variable values to use for the nonlinear constraint
   // evaluations.  x must be (converted to) a std::vector<double> to use
   // this demo with minimal changes.
-  set_variables<>(x, iteratedModel, iteratedModel.current_variables());
+  set_variables<>(x, *iteratedModel, iteratedModel->current_variables());
 
   // Evaluate the function at the specified x.
-  iteratedModel.evaluate();
+  iteratedModel->evaluate();
 
   // Use an adapter to copy data from Dakota into Demo_Opt
-  dataTransferHandler->get_nonlinear_ineq_constraints_from_dakota(iteratedModel.current_response(), c);
+  dataTransferHandler->get_nonlinear_ineq_constraints_from_dakota(iteratedModel->current_response(), c);
 
 } // nonlinear ineq constraints value
 
