@@ -30,7 +30,7 @@
 namespace colin
 {
 
-class ResponseFunctor : public std::unary_function<const std::vector<utilib::Any>, utilib::Any >
+class ResponseFunctors : public std::unary_function<const std::vector<utilib::Any>, utilib::Any >
 {
 public:
    /// Empty virtual destructor to silence compiler warnings
