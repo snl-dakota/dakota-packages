@@ -1,45 +1,17 @@
 # @HEADER
-# ************************************************************************
-#
+# *****************************************************************************
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
 #
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ************************************************************************
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
 # @HEADER
 
 
+include("${CMAKE_CURRENT_LIST_DIR}/../test_support/TribitsAddTest.cmake")
+
 include(TribitsAddExecutable)
-include(TribitsAddTest)
+include(TribitsDeprecatedHelpers)
 
 
 #
@@ -78,7 +50,7 @@ macro(tribits_add_test_wrapper)
   endif()
 endmacro()
 
-#
+
 # @FUNCTION: tribits_add_executable_and_test()
 #
 # Add an executable and a test (or several tests) all in one shot (just calls
@@ -105,6 +77,7 @@ endmacro()
 #     [COMM [serial] [mpi]]
 #     [ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...]
 #     [NUM_MPI_PROCS <numProcs>]
+#     [RUN_SERIAL]
 #     [LINKER_LANGUAGE (C|CXX|Fortran)]
 #     [STANDARD_PASS_OUTPUT
 #       | PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."]
@@ -113,6 +86,7 @@ endmacro()
 #     [ENVIRONMENT <var0>=<value0> <var1>=<value1> ...]
 #     [INSTALLABLE]
 #     [TIMEOUT <maxSeconds>]
+#     [LIST_SEPARATOR <sep>]
 #     [ADDED_EXE_TARGET_NAME_OUT <exeTargetName>]
 #     [ADDED_TESTS_NAMES_OUT <testsNames>]
 #     )
@@ -145,6 +119,16 @@ endmacro()
 # through ``ARGS``.  For more flexibility, just use
 # ``tribits_add_executable()`` followed by ``tribits_add_test()``.
 #
+# Finally, the tests are only added if tests are enabled for the package
+# (i.e. `${PACKAGE_NAME}_ENABLE_TESTS`_ ``= ON``) and other criteria are met.
+# But the test executable will always be added if this function is called,
+# regardless of the value of ``${PACKAGE_NAME}_ENABLE_TESTS``.  To avoid
+# adding the test (or example) executable when
+# ``${PACKAGE_NAME}_ENABLE_TESTS=OFF``, put this command in a subdir under
+# ``test/`` or ``example/`` and that subdir with
+# `tribits_add_test_directories()`_ or `tribits_add_example_directories()`_,
+# respectively.
+#
 function(tribits_add_executable_and_test EXE_NAME)
 
   #
@@ -155,11 +139,11 @@ function(tribits_add_executable_and_test EXE_NAME)
      #prefix
      PARSE
      #options
-     "STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;INSTALLABLE;NOEXEPREFIX;NOEXESUFFIX"
+     "RUN_SERIAL;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;INSTALLABLE;NOEXEPREFIX;NOEXESUFFIX"
      #one_value_keywords
      "DISABLED"
      #mulit_value_keywords
-     "SOURCES;DEPLIBS;TESTONLYLIBS;IMPORTEDLIBS;NAME;NAME_POSTFIX;NUM_MPI_PROCS;DIRECTORY;KEYWORDS;COMM;ARGS;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;ENVIRONMENT;TIMEOUT;CATEGORIES;HOST;XHOST;XHOST_TEST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;XHOSTTYPE_TEST;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT;ADDED_TESTS_NAMES_OUT"
+     "SOURCES;DEPLIBS;TESTONLYLIBS;IMPORTEDLIBS;NAME;NAME_POSTFIX;NUM_MPI_PROCS;DIRECTORY;KEYWORDS;COMM;ARGS;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION;ENVIRONMENT;TIMEOUT;LIST_SEPARATOR;CATEGORIES;HOST;XHOST;XHOST_TEST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;XHOSTTYPE_TEST;LINKER_LANGUAGE;TARGET_DEFINES;DEFINES;ADDED_EXE_TARGET_NAME_OUT;ADDED_TESTS_NAMES_OUT"
      ${ARGN}
      )
 
@@ -193,8 +177,12 @@ function(tribits_add_executable_and_test EXE_NAME)
   tribits_fwd_parse_opt(COMMON_CALL_ARGS NOEXESUFFIX)
 
   #
-  # C) tribitsaddexecutable(...)
+  # C) tribits_add_executable(...)
   #
+
+  if (PARSE_DEPLIBS)
+    tribits_deprecated("DEPLIBS argument of tribits_add_executable_and_test() is deprecated.")
+  endif()
 
   set(CALL_ARGS "")
   tribits_fwd_parse_arg(CALL_ARGS SOURCES)
@@ -219,7 +207,7 @@ function(tribits_add_executable_and_test EXE_NAME)
   endif()
 
   #
-  # D) tribitsaddtest(...)
+  # D) tribits_add_test(...)
   #
 
   set(CALL_ARGS "")
@@ -233,9 +221,11 @@ function(tribits_add_executable_and_test EXE_NAME)
   tribits_fwd_parse_arg(CALL_ARGS FAIL_REGULAR_EXPRESSION)
   tribits_fwd_parse_arg(CALL_ARGS ENVIRONMENT)
   tribits_fwd_parse_arg(CALL_ARGS DISABLED)
+  tribits_fwd_parse_opt(CALL_ARGS RUN_SERIAL)
   tribits_fwd_parse_opt(CALL_ARGS STANDARD_PASS_OUTPUT)
   tribits_fwd_parse_opt(CALL_ARGS WILL_FAIL)
   tribits_fwd_parse_arg(CALL_ARGS TIMEOUT)
+  tribits_fwd_parse_arg(CALL_ARGS LIST_SEPARATOR)
   tribits_fwd_parse_opt(CALL_ARGS ADD_DIR_TO_NAME)
   tribits_fwd_parse_opt(CALL_ARGS ADDED_TESTS_NAMES_OUT)
   if (PARSE_XHOST_TEST)
@@ -255,3 +245,5 @@ function(tribits_add_executable_and_test EXE_NAME)
   endif()
 
 endfunction()
+
+#  LocalWords:  executables

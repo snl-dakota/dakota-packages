@@ -48,17 +48,17 @@ various Trilinos packages can be enabled using the following options:
 
   ``-DTrilinos_ENABLE_FLOAT=ON``
 
-    Enables suppport and explicit instantiations for the ``float`` scalar
+    Enables support and explicit instantiations for the ``float`` scalar
     data-type in all supported Trilinos packages.
 
   ``-DTrilinos_ENABLE_COMPLEX=ON``
 
-    Enables suppport and explicit instantiations for the ``std::complex<T>``
+    Enables support and explicit instantiations for the ``std::complex<T>``
     scalar data-type in all supported Trilinos packages.
 
   ``-DTrilinos_ENABLE_COMPLEX_FLOAT=ON``
 
-    Enables suppport and explicit instantiations for the
+    Enables support and explicit instantiations for the
     ``std::complex<float>`` scalar data-type in all supported Trilinos
     packages.  This is set to ``ON`` by default when
     ``-DTrilinos_ENABLE_FLOAT=ON`` and ``-DTrilinos_ENABLE_COMPLEX=ON`` are
@@ -66,7 +66,7 @@ various Trilinos packages can be enabled using the following options:
 
   ``-DTrilinos_ENABLE_COMPLEX_DOUBLE=ON``
 
-    Enables suppport and explicit instantiations for the
+    Enables support and explicit instantiations for the
     ``std::complex<double>`` scalar data-type in all supported Trilinos
     packages.  This is set to ``ON`` by default when
     ``-DTrilinos_ENABLE_COMPLEX=ON`` is set.
@@ -125,7 +125,7 @@ target machine.  These build-related flags are selected to create correct and
 perforamnt code and for C++ software that uses Kokkos.
 
 ============================    ======================================
-Functionality                   CMake Cache Varaible
+Functionality                   CMake Cache Variable
 ============================    ======================================
 Specify architecture            ``KOKKOS_ARCH``
 Debug builds                    ``KOKKOS_DEBUG``
@@ -142,7 +142,6 @@ Advanced options:
 * Enable dualview modify chk    ``KOKKOS_ENABLE_DUALVIEW_MODIFY_CHECK``
 Kokkos TPLs:                 
 * Use hwloc library             ``TPL_ENABLE_HWLOC``
-* Use memkind library           ``KOKKOS_ENABLE_MEMKIND``
 * Use librt                     ``KOKKOS_ENABLE_LIBRT``
 CUDA Options:                
 * Enable CUDA LDG               ``KOKKOS_ENABLE_CUDA_LDG_INTRINSIC`` (global mem load)
@@ -190,26 +189,26 @@ To see more documentation for each of these options, run a configure with
 Setting the C++ language standard for Trilinos
 ----------------------------------------------
 
-Trilinos currently supports building with the C++14 language standard as
+Trilinos currently supports building with the C++17 language standard as
 supported by a wide range of C++ compilers.  In addition, the library targets
 imported from the installed ``<Package>Config.cmake`` files (also pulled in
 through ``TrilinosConfig.cmake``) will automatically require downstream CMake
-projects turn on C++14 or later standard support in the compiler options
+projects turn on C++17 or later standard support in the compiler options
 (using the CMake ``INTERFACE_COMPILE_FEATURES`` properties of the Trilinos
-library targets).  Building Trilinos with C++11 or lower C++ language
+library targets).  Building Trilinos with C++14 or lower C++ language
 standards is not supported.
 
 However, to try building Trilinos with a higher C++ language standard (with a
 supporting compiler), set the CMake cache variable ``CMAKE_CXX_STANDARD`` to
-an appropriate value.  For example, to try building Trilinos with C++17 turned
+an appropriate value.  For example, to try building Trilinos with C++20 turned
 on, configure with::
 
-  -D CMAKE_CXX_STANDARD:STRING=17
+  -D CMAKE_CXX_STANDARD:STRING=20
 
 As mentioned above, that will also result in all downstream C++ software built
-CMake to be built with C++17 compiler options turned on as well.
+with CMake to be built with C++20 compiler options turned on as well.
 
-However, Trilinos is currently only rigorously tested with C++14 compiler
+However, Trilinos is currently only rigorously tested with C++17 compiler
 options so trying to build and use with a higher language standard may not
 give satisfactory results.
 
@@ -218,7 +217,7 @@ Addressing problems with large builds of Trilinos
 -------------------------------------------------
 
 Trilinos is a large collection of complex software.  Depending on what gets
-enbaled when building Trlinos, one can experience build and installation
+enabled when building Trlinos, one can experience build and installation
 problems due to this large size.
 
 When running into problems like these, the first thing that should be tried is

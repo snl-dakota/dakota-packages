@@ -1,47 +1,18 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-//              Copyright (2012) Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #ifndef KOKKOSCOMPAT_VIEW_HPP
 #define KOKKOSCOMPAT_VIEW_HPP
@@ -81,7 +52,7 @@ namespace Kokkos {
     Kokkos::View<T*,D>
     getKokkosViewDeepCopy (const Teuchos::ArrayView<T>& a)
     {
-      typedef typename Kokkos::Impl::if_c<
+      typedef typename std::conditional<
         SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
@@ -101,7 +72,7 @@ namespace Kokkos {
     Kokkos::View<const T*,D>
     getKokkosViewDeepCopy(const Teuchos::ArrayView<const T>& a)
     {
-      typedef typename Kokkos::Impl::if_c<
+      typedef typename std::conditional<
         SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
@@ -129,7 +100,7 @@ namespace Kokkos {
     ViewType
     create_view (const std::string& label, size_t size) {
       static_assert(Kokkos::is_view<ViewType>::value==true,"Kokkos::Compat::create_view() called with non-view argument.");
-      static_assert(ViewType::Rank==1,"Kokkos::Compat::create_view() called with non-rank-1 view argument.");
+      static_assert(ViewType::rank==1,"Kokkos::Compat::create_view() called with non-rank-1 view argument.");
       return ViewType (label, size);
     }
 
@@ -211,7 +182,7 @@ namespace Kokkos {
                    const Ordinal end)
     {
       static_assert(Kokkos::is_view<ViewType>::value==true,"Kokkos::Compat::subview_range() called with non-view argument.");
-      static_assert(ViewType::Rank==1,"Kokkos::Compat::subview_range() called with non-rank-1 view argument.");
+      static_assert(ViewType::rank==1,"Kokkos::Compat::subview_range() called with non-rank-1 view argument.");
       return Kokkos::subview (view, std::make_pair (begin, end));
     }
 
@@ -222,7 +193,7 @@ namespace Kokkos {
                     const Ordinal size)
     {
       static_assert(Kokkos::is_view<ViewType>::value==true,"Kokkos::Compat::subview_offset() called with non-view argument.");
-      static_assert(ViewType::Rank==1,"Kokkos::Compat::subview_offset() called with non-rank-1 view argument.");
+      static_assert(ViewType::rank==1,"Kokkos::Compat::subview_offset() called with non-rank-1 view argument.");
       return Kokkos::subview (view, std::make_pair (offset, offset+size));
     }
 
@@ -237,7 +208,7 @@ namespace Kokkos {
     {
       static_assert(Kokkos::is_view<DstViewType>::value==true,"Kokkos::Compat::deep_copy_range() called with non-view argument.");
       static_assert(Kokkos::is_view<SrcViewType>::value==true,"Kokkos::Compat::deep_copy_range() called with non-view argument.");
-      static_assert(DstViewType::Rank==1 && SrcViewType::Rank==1,"Kokkos::Compat::deep_copy_range() called with non-rank-1 view argument.");
+      static_assert(DstViewType::rank==1 && SrcViewType::rank==1,"Kokkos::Compat::deep_copy_range() called with non-rank-1 view argument.");
       const Ordinal size = src_end - src_begin;
       const Ordinal dst_end = dst_begin + size;
       DstViewType dst_sub = Kokkos::subview(
@@ -258,7 +229,7 @@ namespace Kokkos {
     {
       static_assert(Kokkos::is_view<DstViewType>::value==true,"Kokkos::Compat::deep_copy_offset() called with non-view argument.");
       static_assert(Kokkos::is_view<SrcViewType>::value==true,"Kokkos::Compat::deep_copy_offset() called with non-view argument.");
-      static_assert(DstViewType::Rank==1 && SrcViewType::Rank==1,"Kokkos::Compat::deep_copy_offset() called with non-rank-1 view argument.");
+      static_assert(DstViewType::rank==1 && SrcViewType::rank==1,"Kokkos::Compat::deep_copy_offset() called with non-rank-1 view argument.");
       const Ordinal dst_end = dst_offset + size;
       const Ordinal src_end = src_offset + size;
       DstViewType dst_sub = Kokkos::subview(

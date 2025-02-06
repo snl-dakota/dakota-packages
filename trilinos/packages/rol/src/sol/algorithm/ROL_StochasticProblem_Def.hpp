@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_STOCHASTICPROBLEM_DEF_HPP
@@ -93,6 +59,35 @@ void StochasticProblem<Real>::makeObjectiveStochastic(ParameterList             
     ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> ROL::StochasticProblem::makeObjectiveStochastic: Invalid stochastic optimization type!");
   }
+}
+
+template<typename Real>
+void StochasticProblem<Real>::makeObjectiveStochastic(const Ptr<RandVarFunctional<Real>> &rvf,
+                                                      ParameterList                      &list,
+                                                      const Ptr<SampleGenerator<Real>>   &fsampler,
+                                                      const Ptr<SampleGenerator<Real>>   &gsampler,
+                                                      const Ptr<SampleGenerator<Real>>   &hsampler) {
+  // Throw an exception if problem has been finalized
+  ROL_TEST_FOR_EXCEPTION(isFinalized(),std::invalid_argument,
+    ">>> ROL::StochasticProblem::makeObjectiveStochastic: Cannot set stochastic objective after problem has been finalized!");
+  // Throw an exception if the value sampler is null
+  ROL_TEST_FOR_EXCEPTION(fsampler == nullPtr,std::invalid_argument,
+    ">>> ROL::StochasticProblem::makeObjectiveStochastic: Objective function value sampler is null!");
+  // Throw an exception if the value sampler is null
+  ROL_TEST_FOR_EXCEPTION(rvf == nullPtr,std::invalid_argument,
+    ">>> ROL::StochasticProblem::makeObjectiveStochastic: Risk measure is null!");
+  // Store original objective function for reuse later
+  ORIGINAL_obj_ = INPUT_obj_;
+  // Check samplers
+  Ptr<SampleGenerator<Real>> _gsampler, _hsampler;
+  _gsampler = (gsampler == nullPtr ?  fsampler : gsampler);
+  _hsampler = (hsampler == nullPtr ? _gsampler : hsampler);
+  // Determine Stochastic Objective Type
+  needRiskLessObj_ = false;
+  objList_  = makePtr<ParameterList>();
+  *objList_ = list;
+  //objList_->sublist("SOL") = list.sublist("SOL").sublist("Objective");
+  INPUT_obj_ = makePtr<StochasticObjective<Real>>(ORIGINAL_obj_,rvf,fsampler,_gsampler,_hsampler);
 }
 
 template<typename Real>

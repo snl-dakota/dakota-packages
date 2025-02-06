@@ -1,47 +1,13 @@
 # @HEADER
-# ************************************************************************
-#
+# *****************************************************************************
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
 #
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ************************************************************************
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
 # @HEADER
 
-if (__TribitsReportInvalidTribitsUsage_INCLUDED__)
-  return()
-else()
-  set(__TribitsReportInvalidTribitsUsage_INCLUDED__ TRUE)
-endif()
+include_guard()
 
 include(MessageWrapper)
 
@@ -57,6 +23,7 @@ include(MessageWrapper)
 #   * FATAL_ERROR: Calls message(FATAL_ERROR "<error_message>")
 #   * SEND_ERROR: Calls message(SEND_ERROR "<error_message>")
 #   * WARNING: Calls message(WARNING "<error_message>")
+#   * NOTICE: Calls message(NOTICE "<error_message>")
 #   * IGNORE: Does not call message() at all and is silent
 #
 # If '${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE}' is empty on call, then
@@ -64,24 +31,14 @@ include(MessageWrapper)
 #
 function(tribits_report_invalid_tribits_usage)
   if ("${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE}" STREQUAL "")
-    set(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE FATAL_ERROR)
+    set(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE  FATAL_ERROR)
   endif()
-  set(PRINT_ERR_MSG)
-  if (${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE STREQUAL "FATAL_ERROR")
-    set(PRINT_ERR_MSG FATAL_ERROR)
-  elseif (${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE STREQUAL "SEND_ERROR")
-    set(PRINT_ERR_MSG SEND_ERROR)
-  elseif (${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE STREQUAL "WARNING")
-    set(PRINT_ERR_MSG WARNING)
-  elseif (${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE STREQUAL "IGNORE")
-    set(PRINT_ERR_MSG)
-  else()
-    message_wrapper(FATAL_ERROR "Error, invalid value for"
-      " ${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE ="
-      " '${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE}'!"
-      "  Value values include 'FATAL_ERROR', 'SEND_ERROR', 'WARNING', and 'IGNORE'!")
+  set(printErrMsgMode ${${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE})
+  set(ignoreValues  "IGNORE" "OFF")
+  if(${PROJECT_NAME}_ASSERT_CORRECT_TRIBITS_USAGE  IN_LIST  ignoreValues)
+    set(printErrMsgMode "")
   endif()
-  if (PRINT_ERR_MSG)
-    message_wrapper(${PRINT_ERR_MSG} ${ARGN})
+  if (printErrMsgMode)
+    message_wrapper(${printErrMsgMode} ${ARGN})
   endif()
 endfunction()

@@ -102,11 +102,6 @@ if (NOT BUILD_IN_TRILINOS)
       message(WARNING	"OPT++ requires teuchos, but could not find local nor parent copy!")
     endif() # Teuchos_DIR
 
-    # Additional setting to prevent multiple targets with the same name
-    set(Trilinos_TARGETS_IMPORTED 1)
-
-    find_package( Teuchos NO_MODULE REQUIRED )
-
   endif() # Trilinos_DIR
 
 endif() # NOT BUILD_IN_TRILINOS

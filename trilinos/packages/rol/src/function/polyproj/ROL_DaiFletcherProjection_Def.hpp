@@ -1,46 +1,11 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
 
 #ifndef ROL_DAIFLETCHERPROJECTION_DEF_H
 #define ROL_DAIFLETCHERPROJECTION_DEF_H
@@ -65,10 +30,48 @@ DaiFletcherProjection<Real>::DaiFletcherProjection(const Vector<Real>           
     ltol_      (DEFAULT_ltol_),
     maxit_     (DEFAULT_maxit_),
     verbosity_ (DEFAULT_verbosity_) {
+  initialize(xprim,xdual,bnd,con,mul,res);
+}
+
+template<typename Real>
+DaiFletcherProjection<Real>::DaiFletcherProjection(const Vector<Real>               &xprim,
+                                                   const Vector<Real>               &xdual,
+                                                   const Ptr<BoundConstraint<Real>> &bnd,
+                                                   const Ptr<Constraint<Real>>      &con,
+                                                   const Vector<Real>               &mul,
+                                                   const Vector<Real>               &res,
+                                                   ParameterList                    &list)
+  : PolyhedralProjection<Real>(xprim,xdual,bnd,con,mul,res),
+    DEFAULT_atol_      (std::sqrt(ROL_EPSILON<Real>()*std::sqrt(ROL_EPSILON<Real>()))),
+    DEFAULT_rtol_      (std::sqrt(ROL_EPSILON<Real>())),
+    DEFAULT_ltol_      (ROL_EPSILON<Real>()),
+    DEFAULT_maxit_     (5000),
+    DEFAULT_verbosity_ (0),
+    atol_      (DEFAULT_atol_),
+    rtol_      (DEFAULT_rtol_),
+    ltol_      (DEFAULT_ltol_),
+    maxit_     (DEFAULT_maxit_),
+    verbosity_ (DEFAULT_verbosity_) {
+  atol_      = list.sublist("General").sublist("Polyhedral Projection").get("Absolute Tolerance",   DEFAULT_atol_);
+  rtol_      = list.sublist("General").sublist("Polyhedral Projection").get("Relative Tolerance",   DEFAULT_rtol_);
+  ltol_      = list.sublist("General").sublist("Polyhedral Projection").get("Multiplier Tolerance", DEFAULT_ltol_);
+  maxit_     = list.sublist("General").sublist("Polyhedral Projection").get("Iteration Limit",      DEFAULT_maxit_);
+  verbosity_ = list.sublist("General").get("Output Level", DEFAULT_verbosity_);
+  initialize(xprim,xdual,bnd,con,mul,res);
+}
+
+template<typename Real>
+void DaiFletcherProjection<Real>::initialize(const Vector<Real>               &xprim,
+                                             const Vector<Real>               &xdual,
+                                             const Ptr<BoundConstraint<Real>> &bnd,
+                                             const Ptr<Constraint<Real>>      &con,
+                                             const Vector<Real>               &mul,
+                                             const Vector<Real>               &res) {
   dim_ = mul.dimension();
   ROL_TEST_FOR_EXCEPTION(dim_!=1,std::logic_error,
     ">>> ROL::DaiFletcherProjection : The range of the linear constraint must be one dimensional!");
   xnew_  = xprim.clone();
+  Px_    = xprim.clone();
   mul1_  = static_cast<Real>(0);
   dlam1_ = static_cast<Real>(2);
   // con.value(x) = xprim_->dot(x) + b_
@@ -85,29 +88,12 @@ DaiFletcherProjection<Real>::DaiFletcherProjection(const Vector<Real>           
   //xnew_->zero();
   //bnd_->project(*xnew_);
   //Real res0 = std::abs(residual(*xnew_));
-  Real resl = std::abs(residual(*bnd_->getLowerBound()));
-  Real resu = std::abs(residual(*bnd_->getUpperBound()));
+  Real resl = ROL_INF<Real>(), resu = ROL_INF<Real>();
+  if (bnd_->isLowerActivated()) resl = residual(*bnd_->getLowerBound());
+  if (bnd_->isUpperActivated()) resu = residual(*bnd_->getUpperBound());
   Real res0 = std::max(resl,resu);
-  if (res0 < atol_) {
-    res0 = static_cast<Real>(1);
-  }
+  if (res0 < atol_) res0 = static_cast<Real>(1);
   ctol_ = std::min(atol_,rtol_*res0);
-}
-
-template<typename Real>
-DaiFletcherProjection<Real>::DaiFletcherProjection(const Vector<Real>               &xprim,
-                                                   const Vector<Real>               &xdual,
-                                                   const Ptr<BoundConstraint<Real>> &bnd,
-                                                   const Ptr<Constraint<Real>>      &con,
-                                                   const Vector<Real>               &mul,
-                                                   const Vector<Real>               &res,
-                                                   ParameterList                    &list)
-  : DaiFletcherProjection<Real>(xprim,xdual,bnd,con,mul,res) {
-  atol_      = list.sublist("General").sublist("Polyhedral Projection").get("Absolute Tolerance",   DEFAULT_atol_);
-  rtol_      = list.sublist("General").sublist("Polyhedral Projection").get("Relative Tolerance",   DEFAULT_rtol_);
-  ltol_      = list.sublist("General").sublist("Polyhedral Projection").get("Multiplier Tolerance", DEFAULT_ltol_);
-  maxit_     = list.sublist("General").sublist("Polyhedral Projection").get("Iteration Limit",      DEFAULT_maxit_);
-  verbosity_ = list.sublist("General").get("Output Level", DEFAULT_verbosity_);
 }
 
 template<typename Real>
@@ -116,7 +102,9 @@ void DaiFletcherProjection<Real>::project(Vector<Real> &x, std::ostream &stream)
     bnd_->project(x);
   }
   else {
-    mul1_  = -residual(x)/cdot_;
+    Px_->set(x); bnd_->project(*Px_);
+    mul1_  = -residual(*Px_)/cdot_;
+    //mul1_  = -residual(x)/cdot_;
     //mul1_  = static_cast<Real>(0);
     dlam1_ = static_cast<Real>(2);
     //dlam1_ = static_cast<Real>(1)+std::abs(mul1_);

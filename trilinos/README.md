@@ -6,8 +6,10 @@
 [Mailing List](https://trilinos.github.io/mail_lists.html) |
 [Packages](http://trilinos.github.io/packages.html)
 
-[![Coverity Scan
-Build](https://scan.coverity.com/projects/1680/badge.svg)](https://scan.coverity.com/projects/1680)
+
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/trilinos/Trilinos/badge)](https://securityscorecards.dev/viewer/?uri=github.com/trilinos/Trilinos)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9452/badge)](https://www.bestpractices.dev/projects/9452)
+
 
 The Trilinos Project is an effort to develop algorithms and enabling
 technologies within an object-oriented software framework for the solution of
@@ -25,15 +27,30 @@ unique design feature of Trilinos is its focus on packages.
 
 - [Trilinos Configure, Build, Test, and Install Reference Guide](https://trilinos.org/docs/files/TrilinosBuildReference.html)
 
+- To ensure appropriate parties receive your issues, please direct issues by mentioning the
+  [Trilinos package owners](https://github.com/trilinos/Trilinos/wiki/Trilinos-Package-Owners).
+  External users may not mention Github teams, but may mention individual owners instead.
+
 - For help with a particular package, see the website and accompanying
   documentation for that package. Links to these can be found down the
   right side of any page on the website and at [the package website](https://trilinos.github.io/packages.html).
 
+- Sample build scripts for various platforms can be found in the
+  sampleScripts directory.  Please note that these sample scripts are
+  only a starting point for you to develop a script that works for
+  your own platform.
+
+- If you have questions, please submit an issue on the Trilinos repo 
+  [GitHub Issues page](https://github.com/trilinos/Trilinos/issues).
+
+
 ### License
 
-Trilinos is licensed on a per-package basis. Most packages are now under a BSD
-license, some are published under the (L)GPL. Details can be taken from the
-documentation of each package.
+Trilinos is licensed on a per-package basis. Most packages are now
+under a BSD license, some are published under the (L)GPL. Details
+can be taken from the documentation of each package.  See COPYRIGHT,
+LICENSE, https://trilinos.github.io/license.html and individual package,
+directory and/or file headers for additional information.
 
 ### Contributing
 

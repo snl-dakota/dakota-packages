@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8; mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 """
 """
@@ -41,7 +41,7 @@ import argparse
 import multiprocessing
 import subprocess
 
-from LoadEnv import setenvironment
+import setenvironment
 import trilinosprhelpers
 
 
@@ -165,7 +165,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     Test TrilinsoPRConfigurationBase class
     """
     def setUp(self):
-        #os.environ["TRILINOS_SOURCE_BRANCH"]  = "trilinos_source_branch_value"
         #os.environ["TRILINOS_SOURCE_REPO"]    = "trilinos_source_repo_value"
         #os.environ["TRILINOS_SOURCE_SHA"]     = "trilinos_source_sha_value"
         #os.environ["TRILINOS_TARGET_BRANCH"]  = "trilinos_target_branch_value"
@@ -209,11 +208,11 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         output = argparse.Namespace(
             source_repo_url="https://github.com/trilinos/Trilinos",
-            source_branch_name="source_branch_name",
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
-            pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
-            genconfig_build_name="rhel7_sems-gnu-7.2.0-openmpi-1.10.1-openmp_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-package-enables",
+            pullrequest_build_name="Trilinos-pullrequest-gcc",
+            genconfig_build_name="rhel8_sems-gnu-openmpi_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-package-enables",
+            dashboard_build_name=None,
             jenkins_job_number=99,
             pullrequest_number='0000',
             pullrequest_cdash_track="Pull Request",
@@ -226,10 +225,12 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             ctest_drop_site="testing.sandia.gov",
             filename_packageenables="../packageEnables.cmake",
             filename_subprojects="../package_subproject_list.cmake",
+            skip_create_packageenables=False,
             mode="standard",
             req_mem_per_core=3.0,
             max_cores_allowed=12,
             num_concurrent_tests=-1,
+            ccache_enable=False,
             dry_run=False
         )
         return output
@@ -250,14 +251,20 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         Generate dummy command line arguments
         """
         args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_build_name = "python-3"
-        args.genconfig_build_name = "python-3"
+        args.pullrequest_build_name = "Trilinos_PR_python3"
+        args.genconfig_build_name = "Trilinos_PR_python3"
         return args
 
 
     def dummy_args_gcc_720(self):
         args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_build_name = "Trilinos-pullrequest-gcc-7.2.0"
+        args.pullrequest_build_name = "Trilinos-pullrequest-gcc"
+        return args
+
+
+    def dummy_args_non_pr_track(self):
+        args = copy.deepcopy(self.dummy_args())
+        args.pullrequest_cdash_track = "some_random_track"
         return args
 
 
@@ -268,7 +275,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         args = copy.deepcopy(self.dummy_args())
         args.target_branch_name = "master"
-        args.source_branch_name = "master_merge_20200101_000000"
         return args
 
 
@@ -279,7 +285,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         args = copy.deepcopy(self.dummy_args())
         args.target_branch_name = "master"
-        args.source_branch_name = "invalid_source_branch_name"
         return args
 
 
@@ -319,28 +324,6 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(pr_config.concurrency_test, 3)
 
 
-    def test_TrilinosPRConfigurationValidateBranchNameDevelop(self):
-        args = self.dummy_args()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        pr_config.validate_branch_constraints()
-
-
-    def test_TrilinosPRConfigurationValidateBranchNameMasterPASS(self):
-        args = self.dummy_args_master_pass()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        pr_config.validate_branch_constraints()
-
-
-    def test_TrilinosPRConfigurationValidateBranchNameMasterFAIL(self):
-        args = self.dummy_args_master_fail()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        with patch('sys.stdout', new=StringIO()) as fake_out:
-            with patch('sys.exit', side_effect=mock_early_return) as m:
-                pr_config.validate_branch_constraints()
-                m.assert_called_once()
-                self.assertTrue( "ERROR:" in fake_out.getvalue())
-
-
     def test_TrilinosPRConfigurationCDashTrack(self):
         args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
@@ -349,22 +332,59 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(cdash_track, "Pull Request")
 
 
-    def test_TrilinosPRConfigurationBuildNamePython2(self):
-        args = self.dummy_args_python3()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        build_name = pr_config.pullrequest_build_name
-        print("--- build_name = {}".format(build_name))
-        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
-        self.assertEqual(build_name, expected_build_name)
-
-
     def test_TrilinosPRConfigurationBaseBuildNameGCC720(self):
         args = self.dummy_args_gcc_720()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        build_name = pr_config. pullrequest_build_name
-        print("--- build_name = {}".format(build_name))
-        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
+        build_name = pr_config.pullrequest_build_name
+        expected_build_name = f"PR-{args.pullrequest_number}-test-{args.genconfig_build_name}-{args.jenkins_job_number}"
         self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBaseBuildGroupContainsPullRequest(self):
+        """Test that a group containing 'Pull Request' causes the build name to reflect a PR build."""
+        args = self.dummy_args_gcc_720()
+        args.pullrequest_cdash_track = "Pull Request (Non-blocking)"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        build_name = pr_config.pullrequest_build_name
+        expected_build_name = f"PR-{args.pullrequest_number}-test-{args.genconfig_build_name}-{args.jenkins_job_number}"
+        self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBaseBuildNameNonPRTrack(self):
+        """Test that the default (non-PR) dashboard name is the GenConfig build ID."""
+        args = self.dummy_args_non_pr_track()
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        build_name = pr_config.pullrequest_build_name
+        expected_build_name = args.genconfig_build_name
+        self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBaseBuildNamePassed(self):
+        """Test that a passed build name is used."""
+        args = self.dummy_args()
+        args.dashboard_build_name = "some-dashboard-build-name"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        build_name = pr_config.pullrequest_build_name
+        expected_build_name = args.dashboard_build_name
+        self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBaseDashboardModelPRTrack(self):
+        args = self.dummy_args()
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        dashboard_model = pr_config.dashboard_model
+        print("--- dashboard_model = {}".format(dashboard_model))
+        expected_dashboard_model = "Experimental"
+        self.assertEqual(dashboard_model, expected_dashboard_model)
+
+
+    def test_TrilinosPRConfigurationBaseDashboardModelNonPRTrack(self):
+        args = self.dummy_args_non_pr_track()
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        dashboard_model = pr_config.dashboard_model
+        print("--- dashboard_model = {}".format(dashboard_model))
+        expected_dashboard_model = "Nightly"
+        self.assertEqual(dashboard_model, expected_dashboard_model)
 
 
     def test_TrilinosPRConfigurationBasePackageEnablesPython3(self):
@@ -483,13 +503,12 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
     def test_TrilinosPRConfigurationBaseProperty_config_script(self):
         """
         Validate that the property config_script loads properly.
-        Since dummy args is loading the configuration for "Trilinos_pullrequest_gcc_7.2.0"
-        the mapped configuration script should be loading "PullRequestLinuxGCC7.2.0TestingSettings.cmake"
+        Since dummy args is loading the configuration for "Trilinos_pullrequest_gcc"
+        the mapped configuration script should be loading "PullRequestLinuxGCCTestingSettings.cmake"
         """
         args = self.dummy_args()
 
-        # Test the gcc 7.2.0 mapping
-        args.pullrequest_build_name = "Trilinos-pullrequest-gcc-7.2.0"
+        args.pullrequest_build_name = "Trilinos-pullrequest-gcc"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         self.assertEqual(pr_config.config_script, "generatedPRFragment.cmake")
 
@@ -662,6 +681,21 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
                            side_effect=mock_subprocess_check_output) as m_output:
                     ret = pr_config.prepare_test()
                     self.assertEqual(ret, 0)
+
+
+    def test_TrilinosPRConfigurationBase_prepare_test_skip_create_package_enables_file(self):
+        """
+        Test that the prepare_test method does not call the member function create_package_enables_file
+        when skip_create_packageenables is True
+        """
+        args = self.dummy_args()
+        args.skip_create_packageenables = True
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
+        pr_config.create_package_enables_file = Mock()
+        pr_config.prepare_test()
+
+        pr_config.create_package_enables_file.assert_not_called()
 
 
     def test_TrilinosPRConfigurationBase_prepare_test_FAIL(self):

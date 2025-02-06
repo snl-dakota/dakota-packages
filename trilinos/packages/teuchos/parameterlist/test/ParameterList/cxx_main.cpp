@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_ParameterList.hpp"
@@ -1411,7 +1379,7 @@ int main( int argc, char *argv[] )
   // the parameter
   //
 
-  for( int type_i = 0; type_i < 3; ++type_i ) {
+  for( int type_i = 0; type_i < 4; ++type_i ) {
 
     ParameterList &Polynomial_sublist
       = PL_Main.sublist("Line Search",true).sublist("Polynomial",true);
@@ -1432,6 +1400,10 @@ int main( int argc, char *argv[] )
       case 2:
         typeName = "std::string";
         Teuchos::setNumericStringParameter("Max Iters","3","",&Polynomial_sublist);
+        break;
+      case 3:
+        typeName = "long long";
+        Teuchos::setLongLongParameter("Max Iters",3,"",&Polynomial_sublist);
         break;
       default:
         TEUCHOS_TEST_FOR_EXCEPT(true);
@@ -1509,6 +1481,33 @@ int main( int argc, char *argv[] )
         l_result = (lineserchMaxIters == "3");
       cout
         << "Read value = \"" << lineserchMaxIters << "\" == \"3\" : "
+        << ( l_result ? "passed" : "failed") << "\n";
+      if(!l_result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab tab(std::cerr); std::cerr << e.what() << std::endl;
+      }
+      ++FailedTests;
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use the nomember help function to access a "<<typeName<<" as an long long ...\n";
+      print_break();
+    }
+    try {
+      const long long
+        lineserchMaxIters
+        = Teuchos::getLongLongParameter(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
+          );
+      const bool
+        l_result = (lineserchMaxIters == (long long)(3));
+      cout
+        << "Read value = " << lineserchMaxIters << " == 3 : "
         << ( l_result ? "passed" : "failed") << "\n";
       if(!l_result) ++FailedTests;
     }

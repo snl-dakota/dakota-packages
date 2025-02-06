@@ -1,47 +1,19 @@
 # @HEADER
-# ************************************************************************
-#
+# *****************************************************************************
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
 #
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ************************************************************************
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
 # @HEADER
 
-include(PrintVar)
-include(AppendStringVar)
-include(Join)
-include(TimingUtils)
-include(TribitsGetCategoriesString)
+include_guard()
+
+include("${CMAKE_CURRENT_LIST_DIR}/PrintVar.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/AppendStringVar.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/Join.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/TimingUtils.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/TribitsGetCategoriesString.cmake")
 
 
 function(print_current_date_time  PREFIX_STR)
@@ -58,11 +30,29 @@ function(print_uptime  PREFIX_STR)
 endfunction()
 
 
-function(print_single_check_result  MSG_BEGIN  TEST_CASE_PASSED_IN)
+function(print_single_check_result  msgBegin  TEST_CASE_PASSED_IN)
   if (TEST_CASE_PASSED_IN)
-    message("${MSG_BEGIN} [PASSED]")
+    message("${msgBegin} [PASSED]")
   else()
-    message("${MSG_BEGIN} [FAILED]")
+    message("${msgBegin} [FAILED]")
+  endif()
+endfunction()
+
+
+function(print_any_regex_pass_match  msgBegin  regexMatch)
+  if (regexMatch)
+    message("${msgBegin} [PASSED]")
+  else()
+    message("${msgBegin} [not matched]")
+  endif()
+endfunction()
+
+
+function(print_any_regex_fail_match  msgBegin  regexMatch)
+  if (regexMatch)
+    message("${msgBegin} [FAILED]")
+  else()
+    message("${msgBegin} [does not match]")
   endif()
 endfunction()
 
@@ -160,10 +150,12 @@ macro(setup_and_run_test_idx_cmnd_block)
 
   # Set up the TEST_<IDX> command block
   join( TEST_CMND_STR " " TRUE ${TEST_${CMND_IDX}_CMND} )
+  string(REPLACE "${LIST_SEPARATOR}" ";" TEST_CMND_STR "${TEST_CMND_STR}")
   message("Running: ${TEST_CMND_STR}\n")
   set(EXEC_CMND COMMAND ${TEST_${CMND_IDX}_CMND})
+  string(REPLACE "${LIST_SEPARATOR}" "\\\;" EXEC_CMND "${EXEC_CMND}")
 
-  # Set up the workig directory that this TEST_<IDX> CMND block will run in
+  # Set up the working directory that this TEST_<IDX> CMND block will run in
 
   set(WORKING_DIR_SET)
   if (TEST_${CMND_IDX}_WORKING_DIRECTORY)
@@ -247,16 +239,16 @@ macro(determine_test_idx_cmnd_block_pass_fail)
       "TEST_${CMND_IDX}: Pass criteria = Pass Any"
       ${TEST_CASE_PASSED} )
   elseif (TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION)
-    string(REGEX MATCH "${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION}"
-      MATCH_STR "${TEST_CMND_OUT}" )
-    if (MATCH_STR)
-      set(TEST_CASE_PASSED TRUE)
-    else()
-      set(TEST_CASE_PASSED FALSE)
-    endif()
-    print_single_check_result(
-      "TEST_${CMND_IDX}: Pass criteria = Match REGEX {${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION}}"
-      ${TEST_CASE_PASSED})
+    set(TEST_CASE_PASSED FALSE)
+    foreach(REGEX_STR ${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION})
+      string(REGEX MATCH "${REGEX_STR}" MATCH_STR "${TEST_CMND_OUT}")
+      if (MATCH_STR)
+        set(TEST_CASE_PASSED TRUE)
+      endif()
+      print_any_regex_pass_match(
+        "TEST_${CMND_IDX}: Pass criteria = Match any REGEX {${REGEX_STR}}"
+        "${MATCH_STR}")
+    endforeach()
   elseif (TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL)
     set(TEST_CASE_PASSED TRUE)
     foreach(REGEX_STR ${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL})
@@ -270,7 +262,7 @@ macro(determine_test_idx_cmnd_block_pass_fail)
         set(TEST_CASE_PASSED FALSE)
       endif()
       print_single_check_result(
-        "TEST_${CMND_IDX}: Pass criteria = Match REGEX {${REGEX_STR}}"
+        "TEST_${CMND_IDX}: Pass criteria = Match all REGEX {${REGEX_STR}}"
         ${THIS_REGEX_MATCHED} )
     endforeach()
   else()
@@ -286,14 +278,15 @@ macro(determine_test_idx_cmnd_block_pass_fail)
 
   # B) Check for failing regex matching?
   if (TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION)
-    string(REGEX MATCH "${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION}"
-      MATCH_STR "${TEST_CMND_OUT}" )
-    if (MATCH_STR)
-      set(TEST_CASE_PASSED FALSE)
-    endif()
-    print_single_check_result(
-      "TEST_${CMND_IDX}: Pass criteria = Not match REGEX {${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION}}"
-     ${TEST_CASE_PASSED} )
+    foreach(REGEX_STR ${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION})
+      string(REGEX MATCH "${REGEX_STR}" MATCH_STR "${TEST_CMND_OUT}")
+      if (MATCH_STR)
+        set(TEST_CASE_PASSED FALSE)
+      endif()
+      print_any_regex_fail_match(
+        "TEST_${CMND_IDX}: Pass criteria = Not match REGEX {${REGEX_STR}}"
+        "${MATCH_STR}")
+    endforeach()
   endif()
 
   # C) Check for return code always 0?
@@ -387,7 +380,7 @@ function(drive_advanced_test)
     if (CMND_IDX EQUAL 0)
       set(TEST_NAMES_STR "TEST_0")
     else()
-      append_string_var( TEST_NAMES_STR ", TEST_${CMND_IDX}" )
+      string(APPEND  TEST_NAMES_STR ", TEST_${CMND_IDX}" )
     endif()
   endforeach()
   message("Running test commands: ${TEST_NAMES_STR}")

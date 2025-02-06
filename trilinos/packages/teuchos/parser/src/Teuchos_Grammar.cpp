@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Teuchos_Grammar.hpp"
 
 #include <Teuchos_Assert.hpp>
@@ -29,9 +38,9 @@ int as_nonterminal(Grammar const& g, int symbol) {
 
 int find_goal_symbol(Grammar const& g) {
   std::set<int> nonterminals_in_rhss;
-  for (int i = 0; i < size(g.productions); ++i) {
+  for (int i = 0; i < Teuchos::size(g.productions); ++i) {
     const Grammar::Production& p = at(g.productions, i);
-    for (int j = 0; j < size(p.rhs); ++j) {
+    for (int j = 0; j < Teuchos::size(p.rhs); ++j) {
       const int s = at(p.rhs, j);
       TEUCHOS_DEBUG_ASSERT(0 <= s);
       if (is_nonterminal(g, s)) nonterminals_in_rhss.insert(s);
@@ -55,10 +64,10 @@ int find_goal_symbol(Grammar const& g) {
 }
 
 void add_end_terminal(Grammar& g) {
-  for (int i = 0; i < size(g.productions); ++i) {
+  for (int i = 0; i < Teuchos::size(g.productions); ++i) {
     Grammar::Production& prod = at(g.productions, i);
     if (is_nonterminal(g, prod.lhs)) prod.lhs++;
-    for (int j = 0; j < size(prod.rhs); ++j) {
+    for (int j = 0; j < Teuchos::size(prod.rhs); ++j) {
       int& rhs_symb = at(prod.rhs, j);
       if (is_nonterminal(g, rhs_symb)) rhs_symb++;
     }
@@ -83,7 +92,7 @@ void add_accept_production(Grammar& g) {
 }
 
 int get_accept_production(Grammar const& g) {
-  return size(g.productions) - 1;
+  return Teuchos::size(g.productions) - 1;
 }
 
 int get_accept_nonterminal(Grammar const& g) {
@@ -92,14 +101,14 @@ int get_accept_nonterminal(Grammar const& g) {
 
 std::ostream& operator<<(std::ostream& os, Grammar const& g) {
   os << "symbols:\n";
-  for (int i = 0; i < size(g.symbol_names); ++i) {
+  for (int i = 0; i < Teuchos::size(g.symbol_names); ++i) {
     os << i << ": " << at(g.symbol_names, i) << "\n";
   }
   os << "productions:\n";
-  for (int i = 0; i < size(g.productions); ++i) {
+  for (int i = 0; i < Teuchos::size(g.productions); ++i) {
     const Grammar::Production& prod = at(g.productions, i);
     os << i << ": " << prod.lhs << " ::=";
-    for (int j = 0; j < size(prod.rhs); ++j) {
+    for (int j = 0; j < Teuchos::size(prod.rhs); ++j) {
       int symb = at(prod.rhs, j);
       os << ' ' << symb;
     }

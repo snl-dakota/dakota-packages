@@ -111,12 +111,20 @@
 
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
+#cmakedefine HAVE_TEUCHOS_INST_FLOAT
+
+#cmakedefine HAVE_TEUCHOS_INST_COMPLEX_FLOAT
+
+#cmakedefine HAVE_TEUCHOS_INST_COMPLEX_DOUBLE
+
 // This exists only for backwards compatibility.
 #define HAVE_TEUCHOS_LONG_LONG_INT 1
 
 #cmakedefine HAVE_TEUCHOS_DEBUG
 
 #cmakedefine HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
+
+#cmakedefine HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION
 
 #cmakedefine HAVE_TEUCHOS_DEMANGLE
 
@@ -145,6 +153,8 @@
 #cmakedefine HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
 
 #cmakedefine HAVE_TEUCHOS_KOKKOS_PROFILING
+
+#cmakedefine HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
 
 /* template qualifier required for calling template methods from non-template
    code */

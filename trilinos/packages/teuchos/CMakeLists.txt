@@ -149,26 +149,87 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
-ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_DOUBLE)
-ASSERT_DEFINED(Trilinos_ENABLE_COMPLEX_FLOAT)
+#
+# Set cache vars for support/instantiations of various types
+#
+# NOTE: The else() statements for the default are for the case where Teuchos
+# is configured as its own CMake project and variables tarting with Trilinos_
+# have not been set.
+#
+
+IF (Trilinos_ENABLE_LONG_DOUBLE)
+  SET(${PACKAGE_NAME}_ENABLE_LONG_DOUBLE_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_LONG_DOUBLE_DEFAULT  FALSE)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_LONG_DOUBLE
+  HAVE_TEUCHOS_LONG_DOUBLE
+  "Enable Teuchos features for long double data type."
+  ${${PACKAGE_NAME}_ENABLE_LONG_DOUBLE_DEFAULT}
+  )
+
+IF (Trilinos_ENABLE_FLOAT)
+  SET(${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT  FALSE)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_FLOAT
+  HAVE_TEUCHOS_FLOAT
+  "Enable Teuchos features for float data type."
+  ${${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT}
+  )
+
 IF (Trilinos_ENABLE_COMPLEX_DOUBLE OR Trilinos_ENABLE_COMPLEX_FLOAT)
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  TRUE)
 ELSE()
-  # If Teuchos is configured as its own CMake project, independent of
-  # Trilinos, then Teuchos_ENABLE_COMPLEX could be OFF by default.
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  FALSE)
 ENDIF()
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_COMPLEX
   HAVE_TEUCHOS_COMPLEX
-  "Enable Teuchos features for complex data type."
+  "Enable basic Teuchos features for complex data types."
   ${${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT}
   )
 
-# ToDo: Above, split ${PACKAGE_NAME}_ENABLE_COMPLEX into
-# ${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT and
-# ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.  See Trilinos GitHub #362.
+IF (${PACKAGE_NAME}_ENABLE_FLOAT)
+  SET(${PACKAGE_NAME}_INST_FLOAT_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_INST_FLOAT_DEFAULT  FALSE)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_FLOAT
+  HAVE_TEUCHOS_INST_FLOAT
+  "Do explicit instantaitions for float scalar type."
+  ${${PACKAGE_NAME}_INST_FLOAT_DEFAULT}
+  )
+
+IF (NOT Trilinos_ENABLE_COMPLEX_FLOAT STREQUAL "")
+  SET(${PACKAGE_NAME}_INST_COMPLEX_FLOAT_DEFAULT ${Trilinos_ENABLE_COMPLEX_FLOAT})
+ELSEIF (${PACKAGE_NAME}_ENABLE_COMPLEX AND ${PACKAGE_NAME}_ENABLE_FLOAT)
+  SET(${PACKAGE_NAME}_INST_COMPLEX_FLOAT_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_INST_COMPLEX_FLOAT_DEFAULT  FALSE)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_COMPLEX_FLOAT
+  HAVE_TEUCHOS_INST_COMPLEX_FLOAT
+  "Do explicit instantiations for complex<float> scalar type."
+  ${${PACKAGE_NAME}_INST_COMPLEX_FLOAT_DEFAULT}
+  )
+
+IF (Trilinos_ENABLE_COMPLEX_DOUBLE OR ${PACKAGE_NAME}_ENABLE_COMPLEX)
+  SET(${PACKAGE_NAME}_INST_COMPLEX_DOUBLE_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_INST_COMPLEX_DOUBLE_DEFAULT  FALSE)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_COMPLEX_DOUBLE
+  HAVE_TEUCHOS_INST_COMPLEX_DOUBLE
+  "Do explicit instantiations for complex<float> scalar type."
+  ${${PACKAGE_NAME}_INST_COMPLEX_DOUBLE_DEFAULT}
+  )
 
 # Check whether the C++ compiler can compile __attribute__((constructor)).
 INCLUDE(CheckCXXAttributeConstructorCompiles)
@@ -191,12 +252,28 @@ IF (DEFINED BUILD_SHARED_LIBS)
   ENDIF ()
 ENDIF ()
 
+
+# As per the discussion in #11921, we explicitly enable thread safe RCPs,
+# if Kokkos has a host thread-parallel backend
+SET(Teuchos_ENABLE_THREAD_SAFE_Default ${Trilinos_ENABLE_THREAD_SAFE})
+IF(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos)
+  IF( (DEFINED Kokkos_ENABLE_THREADS AND Kokkos_ENABLE_THREADS) OR
+      (DEFINED Kokkos_ENABLE_OPENMP AND Kokkos_ENABLE_OPENMP) )
+    IF (NOT ${PACKAGE_NAME}_ENABLE_THREAD_SAFE)
+      MESSAGE(WARNING "A Kokkos host thread-parallel backend is enabled, requiring Trilinos to enable thread-safe RCP classes.  You can do this manually by specifying Teuchos_ENABLE_THREAD_SAFE=ON")
+      SET(Teuchos_ENABLE_THREAD_SAFE_Default ON)
+    ENDIF()
+  ENDIF()
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_THREAD_SAFE
   HAVE_TEUCHOS_THREAD_SAFE
   "Enable thread safe code for RCP classes."
-  ${Trilinos_ENABLE_THREAD_SAFE}
+  ${Teuchos_ENABLE_THREAD_SAFE_Default}
   )
+
+
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_THREAD_SAFE)
 ASSERT_DEFINED(${PACKAGE_NAME}Core_ENABLE_Pthread)
@@ -208,6 +285,10 @@ COMBINED_OPTION(
   DOCSTR
     "Enable thread safe unit tests for ${PACKAGE_NAME} Memory Management classes."
   )
+
+
+
+
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ABC
@@ -268,32 +349,11 @@ ENDIF() # ${PACKAGE_NAME}_ENABLE_COMPLEX
 # C) Set up package-specific options
 #
 
-IF (Trilinos_ENABLE_FLOAT)
-  SET(${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT  TRUE)
-ELSE()
-  SET(${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT  FALSE)
-  # ABove will be set in case Teuchos is confiugred as its own CMake project!
-ENDIF()
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_FLOAT
-  HAVE_TEUCHOS_FLOAT
-  "Enable Teuchos features for float data type."
-  ${${PACKAGE_NAME}_ENABLE_FLOAT_DEFAULT}
-  )
-
-IF (Trilinos_ENABLE_LONG_DOUBLE)
-  SET(${PACKAGE_NAME}_ENABLE_LONG_DOUBLE_DEFAULT  TRUE)
-ELSE()
-  SET(${PACKAGE_NAME}_ENABLE_LONG_DOUBLE_DEFAULT  FALSE)
-  # ABove will be set in case Teuchos is confiugred as its own CMake project!
-ENDIF()
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_LONG_DOUBLE
-  HAVE_TEUCHOS_LONG_DOUBLE
-  "Enable Teuchos features for long double data type."
-  ${${PACKAGE_NAME}_ENABLE_LONG_DOUBLE_DEFAULT}
+  ${PACKAGE_NAME}_MODIFY_DEFAULTS_DURING_VALIDATION
+  HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION
+  "Modify default parameters during validation."
+  ON
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -373,9 +433,7 @@ IF(TPL_ENABLE_Valgrind)
   ENDIF()
 ENDIF()
 
-# Enabling Kokkos profiling hooks in Teuchos timers requires that the
-# Kokkos package be enabled
-
+#Option Teuchos_KOKKOS_PROFILING
 IF(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos)
   SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT ON)
 ELSE()
@@ -388,9 +446,28 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_KOKKOS_PROFILING
   "Wrap every Teuchos timer with a Kokkos profiling region."
   "${${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT}")
 IF (${PACKAGE_NAME}_KOKKOS_PROFILING)
+  # Enabling Kokkos profiling hooks in Teuchos timers requires that the
+  # Kokkos package be enabled
+  IF(NOT(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos))
+    MESSAGE(FATAL_ERROR "Setting Teuchos_KOKKOS_PROFILING=ON requires that the Kokkos package is enabled.")
+  ENDIF()
   MESSAGE(STATUS "Wrapping every Teuchos timer with a Kokkos profiling region.")
 ENDIF()
 
+#Option Teuchos_TIMER_KOKKOS_FENCE
+SET(Teuchos_TIMER_KOKKOS_FENCE_DEFAULT OFF)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Teuchos_TIMER_KOKKOS_FENCE
+  HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
+  "Call Kokkos::fence() whenever a Teuchos timer starts or stops."
+  "${Teuchos_TIMER_KOKKOS_FENCE_DEFAULT}")
+IF (Teuchos_TIMER_KOKKOS_FENCE)
+  # Enabling Kokkos::fence() in Teuchos timers requires that the Kokkos package be enabled
+  IF(NOT(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos))
+    MESSAGE(FATAL_ERROR "Setting Teuchos_TIMER_KOKKOS_FENCE=ON requires that the Kokkos package is enabled.")
+  ENDIF()
+  MESSAGE(STATUS "Will call Kokkos::fence() when a Teuchos timer starts or stops.")
+ENDIF()
 
 #
 # D) Process the subpackages for Teuchos
@@ -413,8 +490,6 @@ TRIBITS_PACKAGE_DEF()
 #
 # Exclude files for source package.
 #
-
-TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
 TRIBITS_EXCLUDE_FILES(
   config.h.in

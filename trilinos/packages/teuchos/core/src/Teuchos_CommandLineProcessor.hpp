@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TEUCHOS_COMMAND_LINE_PROCESSOR_HPP
@@ -307,9 +275,9 @@ public:
    * \param enum_option_name [in] (null terminated std::string) The name of
    * the option (without the leading '--' or trailing '=').
    *
-   * \param enum_option_val [in/out] On input, <tt>*enum_option_val</tt> give
+   * \param enum_option_val [in/out] On input, <tt>*enum_option_val</tt> gives
    * the default value of the enumeration (used for printing in --help).
-   * After <tt>parse()</tt> finished executing successfully,
+   * After <tt>parse()</tt> finishes executing successfully,
    * <tt>*enum_option_val</tt> will contain the user-selected value of the
    * enumeration.
    *
@@ -332,14 +300,13 @@ public:
    */
   template <class EType>
   void setOption(
-    const char    enum_option_name[]
-    ,EType        *enum_option_val
-    ,const int    num_enum_opt_values
-    ,const EType  enum_opt_values[]
-    ,const char*  enum_opt_names[]
-    ,const char   documentation[] = NULL
-    ,const bool   required        = false
-    );
+    const char enum_option_name[],
+    EType* enum_option_val,
+    const int num_enum_opt_values,
+    const EType  enum_opt_values[],
+    const char * const enum_opt_names[],
+    const char documentation[] = nullptr,
+    const bool required = false );
 
   //@}
 
@@ -500,14 +467,14 @@ private:
       :enum_option_val(NULL), num_enum_opt_values(0)
       {}
     enum_opt_data_t(
-      int          *_enum_option_val
-      ,const int    _num_enum_opt_values
-      ,const int    _enum_opt_values[]
-      ,const char*  _enum_opt_names[]
+      int* _enum_option_val
+      ,const int _num_enum_opt_values
+      ,const int _enum_opt_values[]
+      ,const char * const _enum_opt_names[]
       )
-      :enum_option_val(_enum_option_val)
-      ,num_enum_opt_values(_num_enum_opt_values)
-      ,enum_opt_values(_enum_opt_values,_enum_opt_values+_num_enum_opt_values)
+      :enum_option_val(_enum_option_val),
+       num_enum_opt_values(_num_enum_opt_values),
+       enum_opt_values(_enum_opt_values,_enum_opt_values+_num_enum_opt_values)
       {
         for( int k = 0; k < num_enum_opt_values; ++k )
           enum_opt_names.push_back(std::string(_enum_opt_names[k]));
@@ -570,13 +537,13 @@ private:
 
   // Set an integer enumeration option
   void setEnumOption(
-    const char    enum_option_name[]
-    ,int          *enum_option_val
-    ,const int    num_enum_opt_values
-    ,const int    enum_opt_values[]
-    ,const char*  enum_opt_names[]
-    ,const char   documentation[]
-    ,const bool   required
+    const char enum_option_name[],
+    int* enum_option_val,
+    const int num_enum_opt_values,
+    const int enum_opt_values[],
+    const char * const enum_opt_names[],
+    const char documentation[],
+    const bool required
     );
 
   // Set an enum int option
@@ -723,13 +690,13 @@ bool CommandLineProcessor::addOutputSetupOptions() const
 template <class EType>
 inline
 void CommandLineProcessor::setOption(
-  const char    enum_option_name[]
-  ,EType       *enum_option_val
-  ,const int    num_enum_opt_values
-  ,const EType  enum_opt_values[]
-  ,const char*  enum_opt_names[]
-  ,const char   documentation[]
-  ,const bool   required
+  const char enum_option_name[],
+  EType* enum_option_val,
+  const int num_enum_opt_values,
+  const EType  enum_opt_values[],
+  const char * const enum_opt_names[],
+  const char documentation[],
+  const bool required
   )
 {
   // RAB: 2004/05/25: Every C++ implementation that I know of just
@@ -742,14 +709,13 @@ void CommandLineProcessor::setOption(
   CompileTimeAssert<sizeof(int)-sizeof(EType)>();
   //CompileTimeAssert<sizeof(int)-sizeof(EType)-1>(); // Uncomment to see compilation error
   setEnumOption(
-    enum_option_name
-    ,reinterpret_cast<int*>(enum_option_val)
-    ,num_enum_opt_values
-    ,reinterpret_cast<const int*>(enum_opt_values)
-    ,enum_opt_names
-    ,documentation
-    ,required
-    );
+    enum_option_name,
+    reinterpret_cast<int*>(enum_option_val),
+    num_enum_opt_values,
+    reinterpret_cast<const int*>(enum_opt_values),
+    enum_opt_names,
+    documentation,
+    required );
 }
 
 

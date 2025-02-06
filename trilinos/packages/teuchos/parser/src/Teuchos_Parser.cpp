@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Teuchos_Parser.hpp"
 
 #include "Teuchos_Table.hpp"
@@ -40,7 +49,7 @@ void add_terminal_action(Parser& p, int state, int terminal, Action action) {
     TEUCHOS_ASSERT(action.next_state < get_nstates(p));
   } else {
     TEUCHOS_ASSERT(0 <= action.production);
-    TEUCHOS_ASSERT(action.production < size(p.grammar->productions));
+    TEUCHOS_ASSERT(action.production < Teuchos::size(p.grammar->productions));
   }
   at(p.terminal_table, state, terminal) = action;
 }
@@ -62,7 +71,7 @@ int execute_action(Parser const& p, std::vector<int>& stack, Action const& actio
     stack.push_back(action.next_state);
   } else {
     const Grammar::Production& prod = at(p.grammar->productions, action.production);
-    for (int i = 0; i < size(prod.rhs); ++i) stack.pop_back();
+    for (int i = 0; i < Teuchos::size(prod.rhs); ++i) stack.pop_back();
     TEUCHOS_ASSERT(p.grammar.get());
     const Grammar& grammar = *(p.grammar);
     int nt = as_nonterminal(grammar, prod.lhs);

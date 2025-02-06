@@ -1,42 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # @HEADER
-# ************************************************************************
-#
+# *****************************************************************************
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
 #
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ************************************************************************
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
 # @HEADER
 
 
@@ -45,7 +15,7 @@
 #
 
 cmakeBaseName = "cmake"
-cmakeDefaultVersion = "3.17.4"
+cmakeDefaultVersion = "3.23.4"
 
 
 #
@@ -106,9 +76,23 @@ This build script sets the environment vars CXXFLAGS=-O3 AND CFLAGS=-O3
 when doing the configure.  Therefore, this builds and installs an optimized
 version of CMake by default.
 
-If CMake 3.17 is selected, a patch is applied which adds the CTEST_RESOURCE_SPEC_FILE
-variable.  (For versions 3.18+ this is not needed.)
-"""
+NOTE: To install CMake from the tip of a branch such as 'master', one must
+override the 'download' command and eliminate the 'untar' command.  One must
+stick with the directory structure that is assumed by the underlying code
+which creates temp directories based in the CMake version.  For example, to
+cone and install the tip of the CMake 'master' branch one can run:
+
+  install-cmake.py \\
+    --install-dir=<install-prefix./cmake-master-YYYYMMDD \\
+    --cmake-version=master \\
+    --download-cmnd="git clone git@github.com:kitware/cmake.git cmake-master" \\
+    --parallel=15 --download --configure --build --install
+
+What this does is to combine the 'download' and 'untar' commands together to
+produce the source dir 'cmake-master' in one shot.  Note that the 'master' in
+'cmake-master' in the git clone command must match the 'master' passed in the
+argument '--cmake-version=master'.
+ """
 
   def injectExtraCmndLineOptions(self, clp, version):
     setStdGithubDownloadCmndOption(self, "kitware", "cmake", clp, version)
@@ -166,9 +150,6 @@ variable.  (For versions 3.18+ this is not needed.)
     createDir(self.cmakeSrcDir, verbose=True)
     echoRunSysCmnd("tar -xzf "+self.cmakeTarball \
      +" -C "+self.cmakeSrcDir+" --strip-components 1")
-    if self.inOptions.version.startswith("3.17"):
-      echoRunSysCmnd("patch -d "+self.cmakeSrcDir+" -p1 -i " \
-       +os.path.join(devtools_install_dir, "0001-CTest-Add-CTEST_RESOURCE_SPEC_FILE-variable.patch"))
 
   def doConfigure(self):
     createDir(self.cmakeBuildBaseDir, True, True)

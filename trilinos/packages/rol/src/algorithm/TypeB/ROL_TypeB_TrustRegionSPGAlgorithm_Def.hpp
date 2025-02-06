@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_TYPEB_TRUSTREGIONSPGALGORITHM_DEF_HPP
@@ -69,11 +35,12 @@ TrustRegionSPGAlgorithm<Real>::TrustRegionSPGAlgorithm(ParameterList &list,
   TRsafe_    = trlist.get("Safeguard Size",                       100.0);
   eps_       = TRsafe_*ROL_EPSILON<Real>();
   interpRad_ = trlist.get("Use Radius Interpolation",             false);
-  verbosity_    = trlist.sublist("General").get("Output Level",                     0);
+  verbosity_    = trlist.sublist("General").get("Output Level",   0);
+  // Nonmonotone Parameters
+  storageNM_ = trlist.get("Nonmonotone Storage Size",             0);
+  useNM_     = (storageNM_ <= 0 ? false : true);
   // Algorithm-Specific Parameters
   ROL::ParameterList &lmlist = trlist.sublist("SPG");
-  useNM_     = lmlist.get("Use Nonmonotone Trust Region",                              false);
-  maxNM_     = lmlist.get("Maximum Storage Size",                                      10);
   mu0_       = lmlist.get("Sufficient Decrease Parameter",                             1e-2);
   spexp_     = lmlist.get("Relative Tolerance Exponent",                               1.0);
   spexp_     = std::max(static_cast<Real>(1),std::min(spexp_,static_cast<Real>(2)));
@@ -94,6 +61,9 @@ TrustRegionSPGAlgorithm<Real>::TrustRegionSPGAlgorithm(ParameterList &list,
   tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",                  1e-2);
   useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",          true);
   useNMSP_   = lmlist.sublist("Solver").get("Use Nonmonotone Search",              false);
+
+  bool useCachyPoint = lmlist.sublist("Solver").get("Compute Cauchy Point", true);
+  useSimpleSPG_ = !useCachyPoint;
   // Inexactness Information
   ParameterList &glist = list.sublist("General");
   useInexact_.clear();
@@ -123,7 +93,8 @@ TrustRegionSPGAlgorithm<Real>::TrustRegionSPGAlgorithm(ParameterList &list,
   // Initialize trust region model
   model_ = makePtr<TrustRegionModel_U<Real>>(list,secant,mode);
   if (secant == nullPtr) {
-    esec_ = StringToESecant(list.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS"));
+    std::string secantType = list.sublist("General").sublist("Secant").get("Type","Limited-Memory BFGS");
+    esec_ = StringToESecant(secantType);
   }
 }
 
@@ -147,7 +118,7 @@ void TrustRegionSPGAlgorithm<Real>::initialize(Vector<Real>          &x,
   state_->value = obj.value(x,ftol); 
   state_->nfval++;
   //obj.gradient(*state_->gradientVec,x,ftol);
-  state_->gnorm = computeGradient(x,*state_->gradientVec,*state_->stepVec,state_->searchSize,obj,outStream);
+  computeGradient(x,*state_->gradientVec,*state_->stepVec,state_->searchSize,obj,true,gtol_,state_->gnorm,outStream);
   state_->ngrad++;
   //state_->stepVec->set(x);
   //state_->stepVec->axpy(-one,state_->gradientVec->dual());
@@ -186,30 +157,34 @@ Real TrustRegionSPGAlgorithm<Real>::computeValue(Real inTol,
 }
 
 template<typename Real>
-Real TrustRegionSPGAlgorithm<Real>::computeGradient(const Vector<Real> &x,
+void TrustRegionSPGAlgorithm<Real>::computeGradient(const Vector<Real> &x,
                                                     Vector<Real> &g,
                                                     Vector<Real> &pwa,
                                                     Real del,
                                                     Objective<Real> &obj,
+                                                    bool accept,
+                                                    Real &gtol,
+                                                    Real &gnorm,
                                                     std::ostream &outStream) const {
-  Real gnorm(0);
   if ( useInexact_[1] ) {
     const Real one(1);
-    Real gtol1 = scale0_*del;
-    Real gtol0 = gtol1 + one;
-    while ( gtol0 > gtol1 ) {
-      obj.gradient(g,x,gtol1);
+    Real gtol0 = scale0_*del;
+    if (accept) gtol  = gtol0 + one;
+    else        gtol0 = scale0_*std::min(gnorm,del);
+    while ( gtol > gtol0 ) {
+      gtol = gtol0;
+      obj.gradient(g,x,gtol);
       gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,g,pwa,outStream);
-      gtol0 = gtol1;
-      gtol1 = scale0_*std::min(gnorm,del);
+      gtol0 = scale0_*std::min(gnorm,del);
     }
   }
   else {
-    Real gtol = std::sqrt(ROL_EPSILON<Real>());
-    obj.gradient(g,x,gtol);
-    gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,g,pwa,outStream);
+    if (accept) {
+      gtol = std::sqrt(ROL_EPSILON<Real>());
+      obj.gradient(g,x,gtol);
+      gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,g,pwa,outStream);
+    }
   }
-  return gnorm;
 }
 
 template<typename Real>
@@ -221,7 +196,7 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
   const Real zero(0), one(1);
   //Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   Real inTol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(), outTol(inTol);
-  Real ftrial(0), fcheck(0), pRed(0), rho(1), q(0);
+  Real ftrial(0), pRed(0), rho(1), q(0);
   // Initialize trust-region data
   std::vector<std::string> output;
   initialize(x,g,inTol,obj,bnd,outStream);
@@ -231,45 +206,57 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
   Ptr<Vector<Real>> pwa5 = x.clone(), pwa6 = x.clone();
   Ptr<Vector<Real>> pwa7 = x.clone();
   Ptr<Vector<Real>> dwa1 = g.clone(), dwa2 = g.clone();
+  // Initialize nonmonotone data
+  Real rhoNM(0), sigmac(0), sigmar(0);
+  Real fr(state_->value), fc(state_->value), fmin(state_->value);
+  TRUtils::ETRFlag TRflagNM;
+  int L(0);
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
 
-  std::deque<Real> fqueue;
-  if (useNM_) fqueue.push_back(state_->value);
   while (status_->check(*state_)) {
     // Build trust-region model
-    model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
+    model_->setData(obj,*state_->iterateVec,*state_->gradientVec,gtol_);
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
-    // Compute Cauchy point (TRON notation: x = x[1])
-    dcauchy(*state_->stepVec,alpha_,q,*state_->iterateVec,
-            state_->gradientVec->dual(),state_->searchSize,
-            *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
-    x.plus(*state_->stepVec);               // Set x = x[0] + alpha*g
+    q = zero;
+    gmod->set(*state_->gradientVec);
+    if (useSimpleSPG_)
+      dpsg_simple(x,q,*gmod,*state_->iterateVec,state_->searchSize,*model_,
+                  *pwa1,*pwa2,*dwa1,outStream);
+    else {
+      // Compute Cauchy point (TRON notation: x = x[1])
+      dcauchy(*state_->stepVec,alpha_,q,*state_->iterateVec,
+              state_->gradientVec->dual(),state_->searchSize,
+              *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
+      x.plus(*state_->stepVec);               // Set x = x[0] + alpha*g
 
-    // Model gradient at s = x[1] - x[0]
-    gmod->set(*dwa1); // hessVec from Cauchy point computation
-    gmod->plus(*state_->gradientVec);
+      // Model gradient at s = x[1] - x[0]
+      gmod->plus(*dwa1); // hessVec from Cauchy point computation
 
-    // Apply SPG starting from the Cauchy point
-    dpsg(x,q,*gmod,*state_->iterateVec,state_->searchSize,*model_,
-         *pwa1,*pwa2,*pwa3,*pwa4,*pwa5,*pwa6,*pwa7,*dwa1,outStream);
+      // Apply SPG starting from the Cauchy point
+      dpsg(x,q,*gmod,*state_->iterateVec,state_->searchSize,*model_,
+           *pwa1,*pwa2,*pwa3,*pwa4,*pwa5,*pwa6,*pwa7,*dwa1,outStream);
+    }
+
+    // Update storage and compute predicted reduction
     pRed = -q;
     state_->stepVec->set(x); state_->stepVec->axpy(-one,*state_->iterateVec);
     state_->snorm = state_->stepVec->norm();
 
     // Compute trial objective value
     ftrial = computeValue(inTol,outTol,pRed,state_->value,state_->iter,x,*state_->iterateVec,obj);
-    //obj.update(x,UpdateType::Trial);
-    //ftrial = obj.value(x,tol0);
     state_->nfval++;
 
     // Compute ratio of acutal and predicted reduction
-    fcheck = useNM_ ? *std::max_element(fqueue.begin(),fqueue.end()) : state_->value;
     TRflag_ = TRUtils::SUCCESS;
-    TRUtils::analyzeRatio<Real>(rho,TRflag_,fcheck,ftrial,pRed,eps_,outStream,verbosity_>1);
-    //TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    if (useNM_) {
+      TRUtils::analyzeRatio<Real>(rhoNM,TRflagNM,fr,ftrial,pRed+sigmar,eps_,outStream,verbosity_>1);
+      TRflag_ = (rho < rhoNM ? TRflagNM : TRflag_);
+      rho     = (rho < rhoNM ?    rhoNM :    rho );
+    }
 
     // Update algorithm state
     state_->iter++;
@@ -286,28 +273,32 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
       else { // Shrink trust-region radius
         state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
       }
+      computeGradient(x,*state_->gradientVec,*pwa1,state_->searchSize,obj,false,gtol_,state_->gnorm,outStream);
     }
     else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
       state_->value = ftrial;
       obj.update(x,UpdateType::Accept,state_->iter);
       inTol = outTol;
+      if (useNM_) {
+        sigmac += pRed; sigmar += pRed;
+        if (ftrial < fmin) { fmin = ftrial; fc = fmin; sigmac = zero; L = 0; }
+        else {
+          L++;
+          if (ftrial > fc)     { fc = ftrial; sigmac = zero;   }
+          if (L == storageNM_) { fr = fc;     sigmar = sigmac; }
+        }
+      }
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate
       dwa1->set(*state_->gradientVec);
-      //obj.gradient(*state_->gradientVec,x,tol0);
-      //state_->gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,*state_->gradientVec,*pwa1,outStream);
-      state_->gnorm = computeGradient(x,*state_->gradientVec,*pwa1,state_->searchSize,obj,outStream);
+      computeGradient(x,*state_->gradientVec,*pwa1,state_->searchSize,obj,true,gtol_,state_->gnorm,outStream);
       state_->ngrad++;
       state_->iterateVec->set(x);
       // Update secant information in trust-region model
       model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
                      state_->snorm,state_->iter);
-      if (useNM_) {
-        if (static_cast<int>(fqueue.size())==maxNM_) fqueue.pop_front();
-        fqueue.push_back(state_->value);
-      }
     }
 
     // Update Output
@@ -416,6 +407,105 @@ Real TrustRegionSPGAlgorithm<Real>::dcauchy(Vector<Real> &s,
 }
 
 template<typename Real>
+void TrustRegionSPGAlgorithm<Real>::dpsg_simple(Vector<Real> &y,
+                                                Real         &q,
+                                                Vector<Real> &gmod,
+                                                const Vector<Real> &x,
+                                                Real del,
+                                                TrustRegionModel_U<Real> &model,
+                                                Vector<Real> &pwa,
+                                                Vector<Real> &pwa1,
+                                                Vector<Real> &dwa,
+                                                std::ostream &outStream) {
+  // Use SPG to approximately solve TR subproblem:
+  //   min 1/2 <H(y-x), (y-x)> + <g, (y-x)>  subject to y\in C, ||y|| \le del
+  //
+  //   Inpute:
+  //       y = Primal vector
+  //       x = Current iterate
+  //       g = Current gradient
+  const Real half(0.5), one(1), safeguard(1e2*ROL_EPSILON<Real>());
+  Real tol(std::sqrt(ROL_EPSILON<Real>()));
+  Real alpha(1), alphaMax(1), s0s0(0), ss0(0), sHs(0), lambdaTmp(1), snorm(0);
+  pwa1.zero();
+
+  // Set y = x
+  y.set(x);
+
+  // Compute initial step
+  Real coeff  = one/gmod.norm();
+  Real lambda = std::max(lambdaMin_,std::min(coeff,lambdaMax_));
+  pwa.set(y); pwa.axpy(-lambda,gmod.dual());      // pwa = x - lambda gmod.dual()
+  proj_->project(pwa,outStream); state_->nproj++; // pwa = P(x - lambda gmod.dual())
+  pwa.axpy(-one,y);                               // pwa = P(x - lambda gmod.dual()) - x = step
+  Real gs = gmod.apply(pwa);                      // gs  = <step, model gradient>
+  Real ss = pwa.dot(pwa);                         // Norm squared of step
+  Real gnorm = std::sqrt(ss);
+
+  // Compute initial projected gradient norm
+  const Real gtol = std::min(tol1_,tol2_*gnorm);
+
+  if (verbosity_ > 1)
+    outStream << "  Spectral Projected Gradient"          << std::endl;
+
+  SPiter_ = 0;
+  while (SPiter_ < maxit_) {
+    SPiter_++;
+
+    // Evaluate model Hessian
+    model.hessVec(dwa,pwa,x,tol); nhess_++; // dwa = H step
+    sHs = dwa.apply(pwa);                   // sHs = <step, H step>
+
+    // Perform line search
+    alphaMax = 1;
+    if (gnorm >= del-safeguard) { // Trust-region constraint is violated
+      ss0      = pwa1.dot(pwa);
+      alphaMax = std::min(one, (-ss0 + std::sqrt(ss0*ss0 - ss*(s0s0-del*del)))/ss);
+    }
+    if (sHs <= safeguard)
+      alpha = alphaMax;
+    else
+      alpha = std::min(alphaMax, -gs/sHs);
+
+    // Update model quantities
+    q += alpha * (gs + half * alpha * sHs); // Update model value
+    gmod.axpy(alpha,dwa);                   // Update model gradient
+    y.axpy(alpha,pwa);                      // New iterate
+
+    // Check trust-region constraint violation
+    pwa1.set(y); pwa1.axpy(-one,x);
+    s0s0 = pwa1.dot(pwa1);
+    snorm = std::sqrt(s0s0);
+
+    if (verbosity_ > 1) {
+      outStream << std::endl;
+      outStream << "    Iterate:                          " << SPiter_ << std::endl;
+      outStream << "    Spectral step length (lambda):    " << lambda  << std::endl;
+      outStream << "    Step length (alpha):              " << alpha   << std::endl;
+      outStream << "    Model decrease (pRed):            " << -q      << std::endl;
+      outStream << "    Optimality criterion:             " << gnorm   << std::endl;
+      outStream << "    Step norm:                        " << snorm   << std::endl;
+      outStream << std::endl;
+    }
+
+    if (snorm >= del - safeguard) { SPflag_ = 2; break; }
+
+    // Compute new spectral step
+    lambdaTmp = (sHs <= safeguard ? one/gmod.norm() : ss/sHs);
+    lambda = std::max(lambdaMin_,std::min(lambdaTmp,lambdaMax_));
+    pwa.set(y); pwa.axpy(-lambda,gmod.dual());
+    proj_->project(pwa,outStream); state_->nproj++;
+    pwa.axpy(-one,y);
+    gs = gmod.apply(pwa);
+    ss = pwa.dot(pwa);
+    gnorm = std::sqrt(ss);
+
+    if (gnorm <= gtol) { SPflag_ = 0; break; }
+  }
+  SPflag_ = (SPiter_==maxit_) ? 1 : SPflag_;
+}
+
+template<typename Real>
 void TrustRegionSPGAlgorithm<Real>::dpsg(Vector<Real> &y,
                                          Real         &q,
                                          Vector<Real> &gmod,
@@ -438,9 +528,9 @@ void TrustRegionSPGAlgorithm<Real>::dpsg(Vector<Real> &y,
   //       y = Cauchy step
   //       x = Current iterate
   //       g = Current gradient
-  const Real zero(0), half(0.5), one(1), two(2), eps(std::sqrt(ROL_EPSILON<Real>()));
+  const Real zero(0), half(0.5), one(1), two(2); //, eps(std::sqrt(ROL_EPSILON<Real>()));
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
-  Real alpha(1), sHs(0), alphaTmp(1), mmax(0), qmin(0);
+  Real alpha(1), sHs(0), alphaTmp(1), mmax(0), qmin(0), lambdaTmp(1);
   std::deque<Real> mqueue; mqueue.push_back(q);
 
   if (useNMSP_ && useMin_) { qmin = q; ymin.set(y); }
@@ -454,7 +544,8 @@ void TrustRegionSPGAlgorithm<Real>::dpsg(Vector<Real> &y,
   const Real gtol = std::min(tol1_,tol2_*gnorm);
 
   // Compute initial step
-  Real lambda = std::max(lambdaMin_,std::min(one/gmod.norm(),lambdaMax_));
+  Real coeff  = one/gmod.norm();
+  Real lambda = std::max(lambdaMin_,std::min(coeff,lambdaMax_));
   pwa.set(y); pwa.axpy(-lambda,pwa1);             // pwa = y - lambda gmod.dual()
   dproj(pwa,x,del,pwa2,pwa3,pwa4,pwa5,outStream); // pwa = P(y - lambda gmod.dual())
   pwa.axpy(-one,y);                               // pwa = P(y - lambda gmod.dual()) - y = step
@@ -513,7 +604,9 @@ void TrustRegionSPGAlgorithm<Real>::dpsg(Vector<Real> &y,
     if (gnorm < gtol) break;
 
     // Compute new spectral step
-    lambda = (sHs<=eps ? lambdaMax_ : std::max(lambdaMin_,std::min(ss/sHs,lambdaMax_)));
+    //lambda = (sHs<=eps ? lambdaMax_ : std::max(lambdaMin_,std::min(ss/sHs,lambdaMax_)));
+    lambdaTmp = (sHs == 0 ? coeff : ss/sHs);
+    lambda = std::max(lambdaMin_,std::min(lambdaTmp,lambdaMax_));
     pwa.set(y); pwa.axpy(-lambda,pwa1);
     dproj(pwa,x,del,pwa2,pwa3,pwa4,pwa5,outStream);
     pwa.axpy(-one,y);
@@ -795,95 +888,95 @@ void TrustRegionSPGAlgorithm<Real>::dproj(Vector<Real> &x,
 
 template<typename Real>
 void TrustRegionSPGAlgorithm<Real>::writeHeader( std::ostream& os ) const {
-  std::stringstream hist;
+  std::ios_base::fmtflags osFlags(os.flags());
   if (verbosity_ > 1) {
-    hist << std::string(114,'-') << std::endl;
-    hist << " SPG trust-region method status output definitions" << std::endl << std::endl;
-    hist << "  iter    - Number of iterates (steps taken)" << std::endl;
-    hist << "  value   - Objective function value" << std::endl; 
-    hist << "  gnorm   - Norm of the gradient" << std::endl;
-    hist << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
-    hist << "  delta   - Trust-Region radius" << std::endl;
-    hist << "  #fval   - Number of times the objective function was evaluated" << std::endl;
-    hist << "  #grad   - Number of times the gradient was computed" << std::endl;
-    hist << "  #hess   - Number of times the Hessian was applied" << std::endl;
-    hist << "  #proj   - Number of times the projection was computed" << std::endl;
-    hist << std::endl;
-    hist << "  tr_flag - Trust-Region flag" << std::endl;
+    os << std::string(114,'-') << std::endl;
+    os << " SPG trust-region method status output definitions" << std::endl << std::endl;
+    os << "  iter    - Number of iterates (steps taken)" << std::endl;
+    os << "  value   - Objective function value" << std::endl; 
+    os << "  gnorm   - Norm of the gradient" << std::endl;
+    os << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
+    os << "  delta   - Trust-Region radius" << std::endl;
+    os << "  #fval   - Number of times the objective function was evaluated" << std::endl;
+    os << "  #grad   - Number of times the gradient was computed" << std::endl;
+    os << "  #hess   - Number of times the Hessian was applied" << std::endl;
+    os << "  #proj   - Number of times the projection was computed" << std::endl;
+    os << std::endl;
+    os << "  tr_flag - Trust-Region flag" << std::endl;
     for( int flag = TRUtils::SUCCESS; flag != TRUtils::UNDEFINED; ++flag ) {
-      hist << "    " << NumberToString(flag) << " - "
+      os << "    " << NumberToString(flag) << " - "
            << TRUtils::ETRFlagToString(static_cast<TRUtils::ETRFlag>(flag)) << std::endl;
     }
-    hist << std::endl;
-    hist << "  iterSPG - Number of Spectral Projected Gradient iterations" << std::endl << std::endl;
-    hist << "  flagSPG - Trust-Region Truncated CG flag" << std::endl;
-    hist << "    0 - Converged" << std::endl;
-    hist << "    1 - Iteration Limit Exceeded" << std::endl;
-    hist << std::string(114,'-') << std::endl;
+    os << std::endl;
+    os << "  iterSPG - Number of Spectral Projected Gradient iterations" << std::endl << std::endl;
+    os << "  flagSPG - Trust-Region Truncated CG flag" << std::endl;
+    os << "    0 - Converged" << std::endl;
+    os << "    1 - Iteration Limit Exceeded" << std::endl;
+    os << std::string(114,'-') << std::endl;
   }
-  hist << "  ";
-  hist << std::setw(6)  << std::left << "iter";
-  hist << std::setw(15) << std::left << "value";
-  hist << std::setw(15) << std::left << "gnorm";
-  hist << std::setw(15) << std::left << "snorm";
-  hist << std::setw(15) << std::left << "delta";
-  hist << std::setw(10) << std::left << "#fval";
-  hist << std::setw(10) << std::left << "#grad";
-  hist << std::setw(10) << std::left << "#hess";
-  hist << std::setw(10) << std::left << "#proj";
-  hist << std::setw(10) << std::left << "tr_flag";
-  hist << std::setw(10) << std::left << "iterSPG";
-  hist << std::setw(10) << std::left << "flagSPG";
-  hist << std::endl;
-  os << hist.str();
+  os << "  ";
+  os << std::setw(6)  << std::left << "iter";
+  os << std::setw(15) << std::left << "value";
+  os << std::setw(15) << std::left << "gnorm";
+  os << std::setw(15) << std::left << "snorm";
+  os << std::setw(15) << std::left << "delta";
+  os << std::setw(10) << std::left << "#fval";
+  os << std::setw(10) << std::left << "#grad";
+  os << std::setw(10) << std::left << "#hess";
+  os << std::setw(10) << std::left << "#proj";
+  os << std::setw(10) << std::left << "tr_flag";
+  os << std::setw(10) << std::left << "iterSPG";
+  os << std::setw(10) << std::left << "flagSPG";
+  os << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void TrustRegionSPGAlgorithm<Real>::writeName( std::ostream& os ) const {
-  std::stringstream hist;
-  hist << std::endl << "SPG Trust-Region Method (Type B, Bound Constraints)" << std::endl;
-  os << hist.str();
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::endl << "SPG Trust-Region Method (Type B, Bound Constraints)" << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void TrustRegionSPGAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
-  std::stringstream hist;
-  hist << std::scientific << std::setprecision(6);
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) writeName(os);
   if ( write_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << nhess_;
-    hist << std::setw(10) << std::left << state_->nproj;
-    hist << std::setw(10) << std::left << "---";
-    hist << std::setw(10) << std::left << "---";
-    hist << std::setw(10) << std::left << "---";
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << nhess_;
+    os << std::setw(10) << std::left << state_->nproj;
+    os << std::setw(10) << std::left << "---";
+    os << std::setw(10) << std::left << "---";
+    os << std::setw(10) << std::left << "---";
+    os << std::endl;
   }
   else {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << state_->snorm;
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << nhess_;
-    hist << std::setw(10) << std::left << state_->nproj;
-    hist << std::setw(10) << std::left << TRflag_;
-    hist << std::setw(10) << std::left << SPiter_;
-    hist << std::setw(10) << std::left << SPflag_;
-    hist << std::endl;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << state_->snorm;
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << nhess_;
+    os << std::setw(10) << std::left << state_->nproj;
+    os << std::setw(10) << std::left << TRflag_;
+    os << std::setw(10) << std::left << SPiter_;
+    os << std::setw(10) << std::left << SPflag_;
+    os << std::endl;
   }
-  os << hist.str();
+  os.flags(osFlags);
 }
 
 } // namespace TypeB

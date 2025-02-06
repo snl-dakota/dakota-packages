@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include <Teuchos_MathExpr.hpp>
 
 namespace Teuchos {
@@ -172,7 +181,7 @@ class CalcReader : public Reader {
     using std::swap;
     switch (prod) {
       case MathExpr::PROD_PROGRAM: {
-        TEUCHOS_TEST_FOR_EXCEPTION(rhs.at(1).empty(), ParserFail,
+        TEUCHOS_TEST_FOR_EXCEPTION(!rhs.at(1).has_value(), ParserFail,
           "Calculator needs an expression to evaluate!");
         swap(result, rhs.at(1));
         break;

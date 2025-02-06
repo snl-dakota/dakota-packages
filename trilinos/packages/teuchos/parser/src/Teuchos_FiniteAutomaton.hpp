@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TEUCHOS_FINITE_AUTOMATON_HPP
 #define TEUCHOS_FINITE_AUTOMATON_HPP
 
@@ -63,7 +72,6 @@ void make_deterministic(FiniteAutomaton& result, FiniteAutomaton& nfa);
 void simplify_once(FiniteAutomaton& result, FiniteAutomaton const& fa);
 void simplify(FiniteAutomaton& result, FiniteAutomaton const& fa);
 
-FiniteAutomaton make_char_nfa(bool is_deterministic_init, int nstates_reserve);
 void add_char_transition(FiniteAutomaton& fa, int from_state, char at_char, int to_state);
 bool is_symbol(char c);
 int get_symbol(char c);

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Teuchos_FiniteAutomaton.hpp"
 
 #include <set>
@@ -412,12 +421,6 @@ void simplify(FiniteAutomaton& result, FiniteAutomaton const& fa) {
     nstates_next = get_nstates(next);
   } while (nstates_next < nstates);
   swap(result, next);
-}
-
-void make_char_nfa(FiniteAutomaton& result, bool is_deterministic_init, int nstates_reserve) {
-  using std::swap;
-  FiniteAutomaton tmp(Teuchos::NCHARS, is_deterministic_init, nstates_reserve);
-  swap(result, tmp);
 }
 
 void add_char_transition(FiniteAutomaton& fa, int from_state, char at_char, int to_state) {

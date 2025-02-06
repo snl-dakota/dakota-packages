@@ -1,45 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 #ifndef _TEUCHOS_BLAS_WRAPPERS_HPP_
 #define _TEUCHOS_BLAS_WRAPPERS_HPP_
@@ -66,6 +32,17 @@
 #else /* Not CRAY_T3X or INTEL_CXML or INTEL_MKL */
 #  define PREFIX
 #  define Teuchos_fcd const char *
+#endif
+
+// Handle Complex types (we assume C++11 at a minumum
+// Microsoft C++11 apparently does not support float/double _Complex
+
+#if ( defined(_MSC_VER) )
+#define Teuchos_Complex_double_type_name std::complex<double>
+#define Teuchos_Complex_float_type_name std::complex<float>
+#else
+#define Teuchos_Complex_double_type_name double _Complex
+#define Teuchos_Complex_float_type_name float _Complex
 #endif
 
 
@@ -155,6 +132,9 @@
 #define CHERK_F77   F77_BLAS_MANGLE(cherk,CHERK)
 #define CTRMM_F77   F77_BLAS_MANGLE(ctrmm,CTRMM)
 #define CTRSM_F77   F77_BLAS_MANGLE(ctrsm,CTRSM)
+#define TEUCHOS_BLAS_CONVERT_COMPLEX_FORTRAN_TO_CXX(TYPE, Z) \
+   reinterpret_cast<std::complex<TYPE>&>(Z);
+// NOTE: The above is guaranteed to be okay given the C99 and C++11 standards
 
 #endif /* HAVE_TEUCHOS_COMPLEX */
 
@@ -195,7 +175,7 @@ void PREFIX ZDOT_F77(std::complex<double> *ret, const int* n, const std::complex
   // reimplementing the offending routines.
 #    endif // HAVE_COMPLEX_BLAS_PROBLEM
 #  else // no problem
-std::complex<double> PREFIX ZDOT_F77(const int* n, const std::complex<double> x[], const int* incx, const std::complex<double> y[], const int* incy);
+Teuchos_Complex_double_type_name PREFIX ZDOT_F77(const int* n, const std::complex<double> x[], const int* incx, const std::complex<double> y[], const int* incy);
 #  endif // defined(HAVE_COMPLEX_BLAS_PROBLEM)
 
 double PREFIX ZNRM2_F77(const int* n, const std::complex<double> x[], const int* incx);
@@ -255,7 +235,7 @@ float PREFIX SCNRM2_F77(const int* n, const std::complex<float> x[], const int* 
 #elif defined(HAVE_COMPLEX_BLAS_PROBLEM) && defined(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
 void PREFIX CDOT_F77(std::complex<float> *ret, const int* n, const std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy);
 #elif defined(HAVE_TEUCHOS_BLASFLOAT)
-std::complex<float> PREFIX CDOT_F77(const int* n, const std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy);
+Teuchos_Complex_float_type_name PREFIX CDOT_F77(const int* n, const std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy);
 #else
 // the code is literally in Teuchos_BLAS.cpp
 #endif

@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_TRUSTREGIONALGORITHM_U_DEF_H
@@ -70,6 +36,9 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm( ParameterList &parlist,
   gamma2_ = trlist.get("Radius Growing Rate",                  static_cast<Real>(2.5));
   TRsafe_ = trlist.get("Safeguard Size",                       static_cast<Real>(100.0));
   eps_    = TRsafe_*ROL_EPSILON<Real>();
+  // Nonmonotone Information
+  NMstorage_ = trlist.get("Nonmonotone Storage Limit", 0);
+  useNM_     = (NMstorage_ <= 0 ? false : true);
   // Inexactness Information
   ParameterList &glist = parlist.sublist("General");
   useInexact_.clear();
@@ -88,14 +57,16 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm( ParameterList &parlist,
   updateIter_  = vlist.get("Forcing Sequence Update Frequency", static_cast<int>(10));
   forceFactor_ = vlist.get("Forcing Sequence Reduction Factor", static_cast<Real>(0.1));
   // Initialize Trust Region Subproblem Solver Object
-  etr_       = StringToETrustRegionU(trlist.get("Subproblem Solver", "Dogleg"));  
+  std::string solverName = trlist.get("Subproblem Solver", "Dogleg");
+  etr_       = StringToETrustRegionU(solverName);  
   solver_    = TrustRegionUFactory<Real>(parlist);
   verbosity_ = glist.get("Output Level", 0);
   // Secant Information
   useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
   useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
   if (secant == nullPtr) {
-    esec_ = StringToESecant(glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+    std::string secantType = glist.sublist("Secant").get("Type","Limited-Memory BFGS");
+    esec_ = StringToESecant(secantType);
   }
   // Initialize trust region model
   model_ = makePtr<TrustRegionModel_U<Real>>(parlist,secant);
@@ -108,6 +79,7 @@ void TrustRegionAlgorithm<Real>::initialize( const Vector<Real> &x,
                                              Vector<Real>       &Bg,
                                              Objective<Real>    &obj,
                                              std::ostream &outStream) {
+  const Real zero(0);
   // Initialize data
   Algorithm<Real>::initialize(x,g);
   solver_->initialize(x,g);
@@ -119,15 +91,17 @@ void TrustRegionAlgorithm<Real>::initialize( const Vector<Real> &x,
   state_->nfval++;
   state_->snorm = ROL_INF<Real>();
   state_->gnorm = ROL_INF<Real>();
-  computeGradient(x,obj);
+  Real Delta = state_->searchSize;
+  if (Delta <= zero) state_->searchSize = 1e2*x.norm();
+  computeGradient(x,obj,true);
   // Check if inverse Hessian is implemented for dogleg methods
   model_->validate(obj,x,g,etr_);
   // Compute initial trust region radius if desired.
-  if ( state_->searchSize <= static_cast<Real>(0) ) {
+  if ( Delta <= zero ) {
     int nfval = 0;
     state_->searchSize
       = TRUtils::initialRadius<Real>(nfval,x,*state_->gradientVec,Bg,
-          state_->value,state_->gnorm,obj,*model_,delMax_,
+          state_->value,state_->gnorm,gtol_,obj,*model_,delMax_,
           outStream,(verbosity_>1));
     state_->nfval += nfval;
   }
@@ -156,25 +130,27 @@ Real TrustRegionAlgorithm<Real>::computeValue( const Vector<Real> &x,
 }
 
 template<typename Real>
-void TrustRegionAlgorithm<Real>::computeGradient( const Vector<Real> &x,
-                                                  Objective<Real>    &obj) {
+void TrustRegionAlgorithm<Real>::computeGradient(const Vector<Real> &x,
+                                                 Objective<Real>    &obj,
+                                                 bool accept) {
   if ( useInexact_[1] ) {
-    const Real one(1);
-    Real gtol1 = scale0_*state_->searchSize;
-    Real gtol0 = gtol1 + one;
-    while ( gtol0 > gtol1 ) {
-      obj.gradient(*state_->gradientVec,x,gtol1);
+    Real gtol0 = scale0_*state_->searchSize;
+    if (accept) gtol_ = gtol0 + static_cast<Real>(1);
+    else        gtol0 = scale0_*std::min(state_->gnorm,state_->searchSize);
+    while ( gtol_ > gtol0 ) {
+      gtol_ = gtol0;
+      obj.gradient(*state_->gradientVec,x,gtol_); state_->ngrad++;
       state_->gnorm = state_->gradientVec->norm();
-      gtol0 = gtol1;
-      gtol1 = scale0_*std::min(state_->gnorm,state_->searchSize);
+      gtol0 = scale0_*std::min(state_->gnorm,state_->searchSize);
     }
   }
   else {
-    Real gtol = std::sqrt(ROL_EPSILON<Real>());
-    obj.gradient(*state_->gradientVec,x,gtol);
-    state_->gnorm = state_->gradientVec->norm();
+    if (accept) {
+      gtol_ = std::sqrt(ROL_EPSILON<Real>());
+      obj.gradient(*state_->gradientVec,x,gtol_); state_->ngrad++;
+      state_->gnorm = state_->gradientVec->norm();
+    }
   }
-  state_->ngrad++;
 }
 
 template<typename Real>
@@ -187,13 +163,18 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
   Real ftrial(0), pRed(0), rho(0);
   Ptr<Vector<Real>> gvec = g.clone();
   initialize(x,g,*gvec,obj,outStream);
+  // Initialize nonmonotone data
+  Real rhoNM(0), sigmac(0), sigmar(0);
+  Real fr(state_->value), fc(state_->value), fmin(state_->value);
+  TRUtils::ETRFlag TRflagNM;
+  int L(0);
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
 
   while (status_->check(*state_)) {
     // Build trust-region model
-    model_->setData(obj,x,*state_->gradientVec);
+    model_->setData(obj,x,*state_->gradientVec,gtol_);
     // Minimize trust-region model over trust-region constraint
     pRed = zero;
     SPflag_ = 0; SPiter_ = 0;
@@ -205,6 +186,11 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
     // Compute ratio of actual and predicted reduction
     TRflag_ = TRUtils::SUCCESS;
     TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    if (useNM_) {
+      TRUtils::analyzeRatio<Real>(rhoNM,TRflagNM,fr,ftrial,pRed+sigmar,eps_,outStream,verbosity_>1);
+      TRflag_ = (rho < rhoNM ? TRflagNM : TRflag_);
+      rho     = (rho < rhoNM ?    rhoNM :    rho );
+    }
     // Update algorithm state
     state_->iter++;
     // Accept/reject step and update trust region radius
@@ -221,18 +207,27 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
       else { // Shrink trust-region radius
         state_->searchSize = gamma1_*std::min(state_->snorm,state_->searchSize);
       }
-      if (useInexact_[1]) computeGradient(x,obj);
+      computeGradient(x,obj,false);
     }
     else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
       state_->iterateVec->set(x);
       state_->value = ftrial;
       obj.update(x,UpdateType::Accept,state_->iter);
+      if (useNM_) {
+        sigmac += pRed; sigmar += pRed;
+        if (ftrial < fmin) { fmin = ftrial; fc = fmin; sigmac = zero; L = 0; }
+        else {
+          L++;
+          if (ftrial > fc)     { fc = ftrial; sigmac = zero;   }
+          if (L == NMstorage_) { fr = fc;     sigmar = sigmac; }
+        }
+      }
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate
       gvec->set(*state_->gradientVec);
-      computeGradient(x,obj);
+      computeGradient(x,obj,true);
       // Update secant information in trust-region model
       model_->update(x,*state_->stepVec,*gvec,*state_->gradientVec,
                      state_->snorm,state_->iter);
@@ -245,85 +240,85 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
 
 template<typename Real>
 void TrustRegionAlgorithm<Real>::writeHeader( std::ostream& os ) const {
-  std::stringstream hist;
+  std::ios_base::fmtflags osFlags(os.flags());
   if(verbosity_ > 1) {
-    hist << std::string(114,'-') << std::endl;
-    hist << "Trust-Region status output definitions" << std::endl << std::endl;
-    hist << "  iter    - Number of iterates (steps taken)" << std::endl;
-    hist << "  value   - Objective function value" << std::endl; 
-    hist << "  gnorm   - Norm of the gradient" << std::endl;
-    hist << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
-    hist << "  delta   - Trust-Region radius" << std::endl;
-    hist << "  #fval   - Number of times the objective function was evaluated" << std::endl;
-    hist << "  #grad   - Number of times the gradient was computed" << std::endl;
-    hist << std::endl;
-    hist << "  tr_flag - Trust-Region flag" << std::endl;
+    os << std::string(114,'-') << std::endl;
+    os << "Trust-Region status output definitions" << std::endl << std::endl;
+    os << "  iter    - Number of iterates (steps taken)" << std::endl;
+    os << "  value   - Objective function value" << std::endl; 
+    os << "  gnorm   - Norm of the gradient" << std::endl;
+    os << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
+    os << "  delta   - Trust-Region radius" << std::endl;
+    os << "  #fval   - Number of times the objective function was evaluated" << std::endl;
+    os << "  #grad   - Number of times the gradient was computed" << std::endl;
+    os << std::endl;
+    os << "  tr_flag - Trust-Region flag" << std::endl;
     for( int flag = TRUtils::SUCCESS; flag != TRUtils::UNDEFINED; ++flag ) {
-      hist << "    " << NumberToString(flag) << " - "
+      os << "    " << NumberToString(flag) << " - "
            << TRUtils::ETRFlagToString(static_cast<TRUtils::ETRFlag>(flag)) << std::endl;
     }
     if( etr_ == TRUSTREGION_U_TRUNCATEDCG ) {
-      hist << std::endl;
-      hist << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
-      hist << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
+      os << std::endl;
+      os << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
+      os << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
       for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
-        hist << "    " << NumberToString(flag) << " - "
+        os << "    " << NumberToString(flag) << " - "
              << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;
       }            
     }
     else if( etr_ == TRUSTREGION_U_SPG ) {
-      hist << std::endl;
-      hist << "  iterCG - Number of spectral projected gradient iterations" << std::endl << std::endl;
-      hist << "  flagGC - Trust-Region spectral projected gradient flag" << std::endl;
+      os << std::endl;
+      os << "  iterCG - Number of spectral projected gradient iterations" << std::endl << std::endl;
+      os << "  flagGC - Trust-Region spectral projected gradient flag" << std::endl;
     }
-    hist << std::string(114,'-') << std::endl;
+    os << std::string(114,'-') << std::endl;
   }
-  hist << "  ";
-  hist << std::setw(6)  << std::left << "iter";
-  hist << std::setw(15) << std::left << "value";
-  hist << std::setw(15) << std::left << "gnorm";
-  hist << std::setw(15) << std::left << "snorm";
-  hist << std::setw(15) << std::left << "delta";
-  hist << std::setw(10) << std::left << "#fval";
-  hist << std::setw(10) << std::left << "#grad";
-  hist << std::setw(10) << std::left << "tr_flag";
+  os << "  ";
+  os << std::setw(6)  << std::left << "iter";
+  os << std::setw(15) << std::left << "value";
+  os << std::setw(15) << std::left << "gnorm";
+  os << std::setw(15) << std::left << "snorm";
+  os << std::setw(15) << std::left << "delta";
+  os << std::setw(10) << std::left << "#fval";
+  os << std::setw(10) << std::left << "#grad";
+  os << std::setw(10) << std::left << "tr_flag";
   if ( etr_ == TRUSTREGION_U_TRUNCATEDCG ) {
-    hist << std::setw(10) << std::left << "iterCG";
-    hist << std::setw(10) << std::left << "flagCG";
+    os << std::setw(10) << std::left << "iterCG";
+    os << std::setw(10) << std::left << "flagCG";
   }
   else if (etr_ == TRUSTREGION_U_SPG) {
-    hist << std::setw(10) << std::left << "iterSPG";
-    hist << std::setw(10) << std::left << "flagSPG";
+    os << std::setw(10) << std::left << "iterSPG";
+    os << std::setw(10) << std::left << "flagSPG";
   }
-  hist << std::endl;
-  os << hist.str();
+  os << std::endl;
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void TrustRegionAlgorithm<Real>::writeName( std::ostream& os ) const {
-  std::stringstream hist;
-  hist << std::endl << ETrustRegionUToString(etr_) << " Trust-Region Solver";
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::endl << ETrustRegionUToString(etr_) << " Trust-Region Solver";
   if ( useSecantPrecond_ || useSecantHessVec_ ) {
     if ( useSecantPrecond_ && !useSecantHessVec_ ) {
-      hist << " with " << ESecantToString(esec_) << " Preconditioning" << std::endl;
+      os << " with " << ESecantToString(esec_) << " Preconditioning" << std::endl;
     }
     else if ( !useSecantPrecond_ && useSecantHessVec_ ) {
-      hist << " with " << ESecantToString(esec_) << " Hessian Approximation" << std::endl;
+      os << " with " << ESecantToString(esec_) << " Hessian Approximation" << std::endl;
     }
     else {
-      hist << " with " << ESecantToString(esec_) << " Preconditioning and Hessian Approximation" << std::endl;
+      os << " with " << ESecantToString(esec_) << " Preconditioning and Hessian Approximation" << std::endl;
     }
   }
   else {
-    hist << std::endl;
+    os << std::endl;
   }
-  os << hist.str();
+  os.flags(osFlags);
 }
 
 template<typename Real>
 void TrustRegionAlgorithm<Real>::writeOutput(std::ostream& os, bool print_header) const {
-  std::stringstream hist;
-  hist << std::scientific << std::setprecision(6);
+  std::ios_base::fmtflags osFlags(os.flags());
+  os << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) {
     writeName(os);
   }
@@ -331,38 +326,38 @@ void TrustRegionAlgorithm<Real>::writeOutput(std::ostream& os, bool print_header
     writeHeader(os);
   }
   if ( state_->iter == 0 ) {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << "---";
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << "---";
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << "---";
     if ( etr_ == TRUSTREGION_U_TRUNCATEDCG || etr_ == TRUSTREGION_U_SPG ) {
-      hist << std::setw(10) << std::left << "---";
-      hist << std::setw(10) << std::left << "---";
+      os << std::setw(10) << std::left << "---";
+      os << std::setw(10) << std::left << "---";
     }
-    hist << std::endl;
+    os << std::endl;
   }
   else {
-    hist << "  ";
-    hist << std::setw(6)  << std::left << state_->iter;
-    hist << std::setw(15) << std::left << state_->value;
-    hist << std::setw(15) << std::left << state_->gnorm;
-    hist << std::setw(15) << std::left << state_->snorm;
-    hist << std::setw(15) << std::left << state_->searchSize;
-    hist << std::setw(10) << std::left << state_->nfval;
-    hist << std::setw(10) << std::left << state_->ngrad;
-    hist << std::setw(10) << std::left << TRflag_;
+    os << "  ";
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << state_->snorm;
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << TRflag_;
     if ( etr_ == TRUSTREGION_U_TRUNCATEDCG || etr_ == TRUSTREGION_U_SPG ) {
-      hist << std::setw(10) << std::left << SPiter_;
-      hist << std::setw(10) << std::left << SPflag_;
+      os << std::setw(10) << std::left << SPiter_;
+      os << std::setw(10) << std::left << SPflag_;
     }
-    hist << std::endl;
+    os << std::endl;
   }
-  os << hist.str();
+  os.flags(osFlags);
 }
 } // namespace TypeU
 } // namespace ROL

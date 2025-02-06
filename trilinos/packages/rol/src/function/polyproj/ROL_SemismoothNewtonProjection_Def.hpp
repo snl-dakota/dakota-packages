@@ -1,46 +1,11 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
 
 #ifndef ROL_SEMISMOOTHNEWTONPROJECTION_DEF_H
 #define ROL_SEMISMOOTHNEWTONPROJECTION_DEF_H
@@ -83,21 +48,14 @@ SemismoothNewtonProjection<Real>::SemismoothNewtonProjection(const Vector<Real> 
   dlam_  = mul.clone();
   
   ParameterList list;
-  list.sublist("General").sublist("Krylov").set("Type",               "CG");
+  list.sublist("General").sublist("Krylov").set("Type",               "Conjugate Gradients");
   list.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-6);
   list.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
   list.sublist("General").sublist("Krylov").set("Iteration Limit",    dim_);
   list.sublist("General").set("Inexact Hessian-Times-A-Vector",      false);
   krylov_ = KrylovFactory<Real>(list);
 
-  // Set tolerance
-  Real resl = residual(*res_,*bnd_->getLowerBound());
-  Real resu = residual(*res_,*bnd_->getUpperBound());
-  Real res0 = std::max(resl,resu);
-  if (res0 < atol_) {
-    res0 = static_cast<Real>(1);
-  }
-  ctol_ = std::min(atol_,rtol_*res0);
+  ctol_ = compute_tolerance();
 }
 
 template<typename Real>
@@ -108,7 +66,33 @@ SemismoothNewtonProjection<Real>::SemismoothNewtonProjection(const Vector<Real> 
                                                              const Vector<Real>               &mul,
                                                              const Vector<Real>               &res,
                                                              ParameterList                    &list)
-  : SemismoothNewtonProjection<Real>(xprim,xdual,bnd,con,mul,res) {
+  : PolyhedralProjection<Real>(xprim,xdual,bnd,con,mul,res),
+    DEFAULT_atol_      (std::sqrt(ROL_EPSILON<Real>()*std::sqrt(ROL_EPSILON<Real>()))),
+    DEFAULT_rtol_      (std::sqrt(ROL_EPSILON<Real>())),
+    DEFAULT_stol_      (std::sqrt(ROL_EPSILON<Real>())),
+    DEFAULT_decr_      (1e-4),
+    DEFAULT_factor_    (0.5),
+    DEFAULT_regscale_  (1e-4),
+    DEFAULT_errscale_  (1e-2),
+    DEFAULT_maxit_     (5000),
+    DEFAULT_lstype_    (0),
+    DEFAULT_verbosity_ (0),
+    DEFAULT_useproj_   (false),
+    atol_      (DEFAULT_atol_),
+    rtol_      (DEFAULT_rtol_),
+    stol_      (DEFAULT_stol_),
+    decr_      (DEFAULT_decr_),
+    factor_    (DEFAULT_factor_),
+    regscale_  (DEFAULT_regscale_),
+    errscale_  (DEFAULT_errscale_),
+    maxit_     (DEFAULT_maxit_),
+    lstype_    (DEFAULT_lstype_),
+    verbosity_ (DEFAULT_verbosity_),
+    useproj_   (DEFAULT_useproj_) {
+  dim_   = mul.dimension();
+  xnew_  = xprim.clone();
+  lnew_  = mul.clone();
+  dlam_  = mul.clone();
   ParameterList &ppl = list.sublist("General").sublist("Polyhedral Projection");
   atol_      = ppl.get("Absolute Tolerance",                                              DEFAULT_atol_);
   rtol_      = ppl.get("Relative Tolerance",                                              DEFAULT_rtol_);
@@ -123,9 +107,12 @@ SemismoothNewtonProjection<Real>::SemismoothNewtonProjection(const Vector<Real> 
   useproj_   = ppl.sublist("Semismooth Newton").get("Project onto Separating Hyperplane", DEFAULT_useproj_);
   
   ParameterList klist;
+  
   klist.sublist("General").sublist("Krylov") = ppl.sublist("Semismooth Newton").sublist("Krylov");
   klist.sublist("General").set("Inexact Hessian-Times-A-Vector", false);
   krylov_ = KrylovFactory<Real>(klist);
+
+  ctol_ = compute_tolerance();
 }
 
 template<typename Real>
@@ -154,7 +141,7 @@ void SemismoothNewtonProjection<Real>::solve_newton_system(Vector<Real>       &s
                                                            const Real          rho,
                                                            int                &iter,
                                                            int                &flag) const {
-  Ptr<Precond>  M = makePtr<Precond>();
+  Ptr<Precond>  M = makePtr<Precond>(mu);
   Ptr<Jacobian> J = makePtr<Jacobian>(con_,bnd_,makePtrFromRef(y),xdual_,xprim_,mu);
   krylov_->run(s,*J,r,*M,iter,flag);
 }
@@ -267,6 +254,17 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
   }
   x.set(*xnew_);
   stream.flags(streamFlags);
+}
+
+template<typename Real>
+Real SemismoothNewtonProjection<Real>::compute_tolerance() const {
+  // Set tolerance
+  Real resl = ROL_INF<Real>(), resu = ROL_INF<Real>();
+  if (bnd_->isLowerActivated()) resl = residual(*res_,*bnd_->getLowerBound());
+  if (bnd_->isUpperActivated()) resu = residual(*res_,*bnd_->getUpperBound());
+  Real res0 = std::max(resl,resu);
+  if (res0 < atol_) res0 = static_cast<Real>(1);
+  return std::min(atol_,rtol_*res0);
 }
 
 } // namespace ROL

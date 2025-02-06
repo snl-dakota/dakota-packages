@@ -1,50 +1,18 @@
 # @HEADER
-# ************************************************************************
-#
+# *****************************************************************************
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
 #
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ************************************************************************
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
 # @HEADER
 
-# Set up to use cmake_parse_arguments() function!
-include(CMakeParseArguments)
-# NOTE: For CMake versions 3.5.0 and above, this module is empty so the
-# natively implemented function cmake_parse_arguments() will get used!
+include(TribitsDeprecatedHelpers)
+
 
 macro(parse_arguments_deprecated_warning)
-  message(WARNING "parse_arguments() is deprecated and should not be used."
-     " Instead use cmake_parse_arguments()")
+  tribits_deprecated_command(parse_arguments
+    MESSAGE "Use cmake_parse_arguments() instead.")
 endmacro()
 
 parse_arguments_deprecated_warning()
@@ -57,7 +25,7 @@ function(parse_arguments_dump_output  OUTPUT_STR)
   endif()
 endfunction()
 
-#
+
 # @MACRO: parse_arguments()
 #
 # Parse a set of macro/function input arguments into different lists.  This
@@ -248,12 +216,12 @@ endmacro()
 
 # NOTE: If the above function turns out to be a performance bottle neck, there
 # are a few things that could be done to improve performance.  One thing you
-# could do is repalce the o(len(arg_names)) and o(len(option_names)) lookups
+# could do is replace the o(len(arg_names)) and o(len(option_names)) lookup
 # with o(1) lookups by creating CMake variables of the name
 # ${OUTER_FUNC_NAME}_arg_<argNamei> and then just look of that variable exists
 # or not.  That should use a hash function.  That might actually slow things
 # down for short lists however so we would have to measure, measure,
-# measure. I would have to pass in the function/macro name to disabiguate
-# the variable names.  It would really be better if cmake would provide a
+# measure. I would have to pass in the function/macro name to disambiguate
+# the variable names.  It would really be better if CMake would provide a
 # sorted list find operation.  That would make this much faster for large
 # numbers of argument and option names.

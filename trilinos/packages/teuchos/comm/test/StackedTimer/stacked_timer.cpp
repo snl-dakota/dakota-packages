@@ -1,4 +1,10 @@
 // @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_UnitTestHarness.hpp"
@@ -15,7 +21,7 @@
 #include <iterator>
 #include <limits>
 
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
 #include "Kokkos_Core.hpp"
 #endif
 
@@ -549,9 +555,9 @@ TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersViaRCP)
 int main( int argc, char* argv[] )
 {
   // Note that the dtor for GlobalMPISession will call
-  // Kokkos::finalize_all().
+  // Kokkos::finalize().
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
   Kokkos::initialize(argc,argv);
 #endif
   {
@@ -561,9 +567,9 @@ int main( int argc, char* argv[] )
   Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
 
   auto return_val = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
   if (Kokkos::is_initialized())
-    Kokkos::finalize_all();
+    Kokkos::finalize();
 #endif
   return return_val;
 }

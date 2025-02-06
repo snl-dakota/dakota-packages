@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 from .JenkinsEnv import JenkinsEnv
 
@@ -10,11 +10,6 @@ class TrilinosJenkinsEnv(JenkinsEnv):
     """
     def __init__(self):
         pass
-
-
-    @property
-    def trilinos_source_branch(self):
-        return self.get_envvar_str("TRILINOS_SOURCE_BRANCH", error_if_missing=True)
 
 
     @property

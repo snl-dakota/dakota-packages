@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 """
 This file contains the base class for the Pull Request test driver.
@@ -15,16 +15,17 @@ from textwrap import dedent
 
 sys.dont_write_bytecode = True
 
-from . import sysinfo
+from .sysinfo import SysInfo
 from LoadEnv.load_env import LoadEnv
-from LoadEnv import setenvironment
+import setenvironment
+from .sysinfo import gpu_utils
 
 
 
 class TrilinosPRConfigurationBase(object):
     """
     Trilinos Pull Request configuration driver. This should be
-    treated as an Abstract Base Class because the `execute()`
+    treated as an Abstract Base Class because the `execute_test()`
     method is implemented as a stub.
 
     Note: Attributes / Properties prefixed with `arg_` come from the
@@ -45,6 +46,9 @@ class TrilinosPRConfigurationBase(object):
             variable set by Jenkins.)
         arg_pr_config_file: The config.ini file that specifies the configuration to load.
         arg_pr_jenkins_job_name: The Jenkins Job Name.
+        arg_ccache_enable: Enable ccache.
+        arg_dashboard_build_name: A shortened genconfig build name
+                                  for posting to a testing dashboard.
         filename_subprojects: The subprojects file.
         working_directory_ctest: Gen. working dir where TFW_testing_single_configure_prototype
             is executed from.
@@ -63,6 +67,7 @@ class TrilinosPRConfigurationBase(object):
     """
     def __init__(self, args):
         self.args                  = args
+        self.load_env_ini_file     = None
         self._config_data          = None
         self._mem_per_core         = None
         self._max_cores_allowed    = None
@@ -70,11 +75,48 @@ class TrilinosPRConfigurationBase(object):
         self._concurrency_build    = None
         self._concurrency_test     = None
         self._debug_level          = 1
+        self._arg_extra_configure_args = None
 
 
     # --------------------
     # A R G U M E N T S
     # --------------------
+
+    @property
+    def arg_slots_per_gpu(self):
+        """
+        This attribute stores the number of resource slots to be used per GPU
+        inside of the CTest resource file (e.g. 4 slots per GPU allows for 4
+        MPI ranks to talk to the each GPU).
+        """
+        if hasattr(self.args, "slots_per_gpu"):
+            return self.args.slots_per_gpu
+        else:
+            return 2
+
+    @property
+    def arg_extra_configure_args(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        This parameter stores extra configure arguments that will be passed
+        to the cmake call when configuring Trilinos.
+
+        Returns:
+            self.args.extra_configure_args
+        """
+        if not self._arg_extra_configure_args:
+            if gpu_utils.has_nvidia_gpus():
+                self.message("-- REMARK: I see that I am running on a machine that has NVidia GPUs; I will feed TriBITS some data enabling GPU resource management")
+                gpu_indices = gpu_utils.list_nvidia_gpus()
+                self.message(f"-- REMARK: Using {self.arg_slots_per_gpu} slots per GPU")
+                self.message(f"-- REMARK: Using GPUs {gpu_indices}")
+                self._arg_extra_configure_args = f"-DTrilinos_AUTOGENERATE_TEST_RESOURCE_FILE:BOOL=ON;-DTrilinos_CUDA_NUM_GPUS:STRING={len(gpu_indices)};-DTrilinos_CUDA_SLOTS_PER_GPU:STRING={self.arg_slots_per_gpu}" + (";" + self.args.extra_configure_args if self.args.extra_configure_args else "")
+            else:
+                self._arg_extra_configure_args = self.args.extra_configure_args
+        return self._arg_extra_configure_args
 
     @property
     def arg_ctest_driver(self):
@@ -106,6 +148,20 @@ class TrilinosPRConfigurationBase(object):
         """
         return self.args.ctest_drop_site
 
+    @property
+    def arg_use_explicit_cachefile(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        This parameter stores whether or not an explicit cachefile directive
+        will be passed (as opposed to using -C).
+
+        Returns:
+            self.args.use_explicit_cachefile
+        """
+        return self.args.use_explicit_cachefile
 
     @property
     def arg_build_dir(self):
@@ -222,6 +278,13 @@ class TrilinosPRConfigurationBase(object):
         """
         return self.args.filename_packageenables
 
+    @property
+    def arg_skip_create_packageenables(self):
+        """
+        This property controls whether the creation of a packageEnables.cmake fragment file
+        should be skipped.
+        """
+        return self.args.skip_create_packageenables
 
     @property
     def arg_workspace_dir(self):
@@ -268,6 +331,14 @@ class TrilinosPRConfigurationBase(object):
         """
         return self.args.genconfig_build_name
 
+    @property
+    def arg_dashboard_build_name(self):
+        """
+        The simplified genconfig build name containing only the
+        special attributes of the full build name.
+        Default is to use the value in args.dashboard_build_name.
+        """
+        return self.args.dashboard_build_name
 
     @property
     def arg_filename_subprojects(self):
@@ -276,6 +347,10 @@ class TrilinosPRConfigurationBase(object):
         """
         return self.args.filename_subprojects
 
+    @property
+    def arg_ccache_enable(self):
+        """Is ccache enabled?"""
+        return self.args.ccache_enable
 
     # --------------------
     # P R O P E R T I E S
@@ -399,7 +474,7 @@ class TrilinosPRConfigurationBase(object):
         This is equvalent to running `make -j <concurrency_build>` from the command line.
         """
         if self._concurrency_build is None:
-            si = sysinfo.SysInfo()
+            si = SysInfo()
 
             self._concurrency_build = si.compute_num_usable_cores(req_mem_gb_per_core = self.arg_req_mem_per_core,
                                                                   max_cores_allowed   = self.max_cores_allowed)
@@ -435,15 +510,37 @@ class TrilinosPRConfigurationBase(object):
         """
         Generate the build name string to report back to CDash.
 
-        PR-<PR Number>-test-<Jenkins Job Name>-<Job Number">
+        PR-<PR Number>-test-<Jenkins Job Name>-<Job Number>
         """
-        output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_genconfig_job_name, self.arg_jenkins_job_number)
+        if self.arg_dashboard_build_name:
+            output = self.arg_dashboard_build_name
+        elif "Pull Request" in self.arg_pullrequest_cdash_track:
+            output = f"PR-{self.arg_pullrequest_number}-test-{self.arg_pr_genconfig_job_name}"
+            if self.arg_jenkins_job_number:
+                output = f"{output}-{self.arg_jenkins_job_number}"
+        else:
+            output = self.arg_pr_genconfig_job_name
         return output
+
+
+    @property
+    def dashboard_model(self):
+        """
+        Generate the dashboard model for CDash
+
+        Nightly, Continuous, Experimental
+        """
+        if self.arg_pullrequest_cdash_track in ["Pull Request", "Experimental"]:
+            return "Experimental"
+        return "Nightly"
 
 
     # --------------------
     # M E T H O D S
     # --------------------
+
+    def get_formatted_msg(self, msg):
+        pass
 
     def message(self, text, debug_level_override=None):
         """
@@ -544,7 +641,6 @@ class TrilinosPRConfigurationBase(object):
         job_name = self.arg_pr_jenkins_job_name
 
         enable_map_entry = self.get_multi_property_from_config("ENABLE_MAP", job_name, delimeter=" ")
-
         # Generate files using ATDM/TriBiTS Scripts
         if enable_map_entry is None:
             cmd = [os.path.join( self.arg_workspace_dir,
@@ -625,36 +721,6 @@ class TrilinosPRConfigurationBase(object):
         return 0
 
 
-    def validate_branch_constraints(self):
-        """
-        Verify that the source branch is allowed.
-
-        For the `master` branch, we only allow the source branch to be
-        a protected branch named with the scheme `master_merge_YYYYMMDD_HHMMSS`
-        """
-        print("")
-        print("Validate target branch constraints:")
-        print("--- Target branch is '{}'".format(self.args.target_branch_name))
-
-        re_master_merge_source = "master_merge_[0-9]{8}_[0-9]{6}"
-        if "master" == self.args.target_branch_name:
-            print("--- Target branch is 'master'. Checking source branch constraints...")
-            if not re.match(re_master_merge_source, self.args.source_branch_name):
-                message  = "+" + "="*78 + "+\n"
-                message += "ERROR: Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS\n"
-                message += "       This violates Trilinos policy for pull requests into the master\n"
-                message += "       branch.\n"
-                message += "       Source branch provided is {}\n".format(self.args.source_branch_name)
-                message += "       Perhaps you forgot to set `develop` as the target in your PR?\n"
-                message += "+" + "="*78 + "+\n"
-                #print(message)
-                sys.exit(message)
-
-        print("--- target branch constraints OK")
-        print("")
-        return 0
-
-
     def prepare_test(self):
         """
         Prepares a test environment for exeution.
@@ -662,9 +728,6 @@ class TrilinosPRConfigurationBase(object):
         This includes tasks like determining the # of cores to use, setting
         environment variables, loading environment modules, etc.
         """
-        # Validate the branch constraints (i.e., if target_branch_name is master, then
-        # source_branch_name must be master_merge_YYYYMMDD_HHMMSS)
-        self.validate_branch_constraints()
 
         self.message("+" + "-"*78 + "+")
         self.message("Configuration Parameters")
@@ -678,6 +741,7 @@ class TrilinosPRConfigurationBase(object):
         self.message("--- arg_pr_gen_config_file      = {}".format(self.arg_pr_gen_config_file))
         self.message("--- arg_pr_jenkins_job_name     = {}".format(self.arg_pr_jenkins_job_name))
         self.message("--- arg_pr_genconfig_job_name   = {}".format(self.arg_pr_genconfig_job_name))
+        self.message("--- arg_dashboard_build_name    = {}".format(self.arg_dashboard_build_name))
         self.message("--- arg_pullrequest_number      = {}".format(self.arg_pullrequest_number))
         self.message("--- arg_pullrequest_cdash_track = {}".format(self.arg_pullrequest_cdash_track))
         self.message("--- arg_req_mem_per_core        = {}".format(self.arg_req_mem_per_core))
@@ -686,6 +750,8 @@ class TrilinosPRConfigurationBase(object):
         self.message("--- arg_build_dir               = {}".format(self.arg_build_dir))
         self.message("--- arg_ctest_driver            = {}".format(self.arg_ctest_driver))
         self.message("--- arg_ctest_drop_site         = {}".format(self.arg_ctest_drop_site))
+        self.message("--- arg_ccache_enable           = {}".format(self.arg_ccache_enable))
+        self.message("--- arg_skip_create_packageenables = {}".format(self.arg_skip_create_packageenables))
         self.message("")
         self.message("--- concurrency_build           = {}".format(self.concurrency_build))
         self.message("--- concurrency_test            = {}".format(self.concurrency_test))
@@ -701,7 +767,7 @@ class TrilinosPRConfigurationBase(object):
         self.message("+" + "-"*68 + "+")
         self.message("|   E N V I R O N M E N T   S E T   U P   S T A R T")
         self.message("+" + "-"*68 + "+")
-        tr_env = LoadEnv([self.arg_pr_genconfig_job_name],
+        tr_env = LoadEnv([self.arg_pr_genconfig_job_name, "--force"],
                          load_env_ini_file=Path(self.arg_pr_env_config_file))
         tr_env.load_set_environment()
 
@@ -742,7 +808,8 @@ class TrilinosPRConfigurationBase(object):
             "F77",
             "F90",
             "FC",
-            "MODULESHOME"
+            "MODULESHOME",
+            "EXTRA_CONFIGURE_ARGS"
             ]
         self.message("")
         tr_env.set_environment.pretty_print_envvars(envvar_filter=envvars_to_print)
@@ -751,16 +818,22 @@ class TrilinosPRConfigurationBase(object):
         self.message("|   E N V I R O N M E N T   S E T   U P   C O M P L E T E")
         self.message("+" + "-"*68 + "+")
 
-        self.message("+" + "-"*68 + "+")
-        self.message("|   G e n e r a t e   `packageEnables.cmake`   S T A R T I N G")
-        self.message("+" + "-"*68 + "+")
+        if self.arg_skip_create_packageenables:
+            self.message("+" + "-"*68 + "+")
+            self.message("|   S K I P P I N G   `packageEnables.cmake`   G E N E R A T I O N")
+            self.message("+" + "-"*68 + "+")
 
-        self.create_package_enables_file(dryrun=self.args.dry_run)
+        else:
+            self.message("+" + "-"*68 + "+")
+            self.message("|   G e n e r a t e   `packageEnables.cmake`   S T A R T I N G")
+            self.message("+" + "-"*68 + "+")
 
-        self.message("+" + "-"*68 + "+")
-        self.message("|   G e n e r a t e   `packageEnables.cmake`   C O M P L E T E D")
-        self.message("+" + "-"*68 + "+")
-        self.message("")
+            self.create_package_enables_file(dryrun=self.args.dry_run)
+
+            self.message("+" + "-"*68 + "+")
+            self.message("|   G e n e r a t e   `packageEnables.cmake`   C O M P L E T E D")
+            self.message("+" + "-"*68 + "+")
+            self.message("")
 
         return 0
 

@@ -25,20 +25,15 @@ except ImportError:                                                             
 
 
 
-def get_launch_env(build_name : str, system : str):
+def get_launch_env(system : str):
   """
   Gets the launch environment based on the detected system.
   This is an early environment that's required for running the driver.
-  
+
   Returns:
       str: The environment used to launch the driver.
   """
   env = ""
-  if "_rdc" in build_name:
-      env += " TRILINOS_MAX_CORES=10"
-
-  if system == "weaver" or system == "ats2":
-      env += " Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE"
 
   if env == "":
       return ""
@@ -46,17 +41,14 @@ def get_launch_env(build_name : str, system : str):
       return "env" + env + " "
 
 
-def get_launch_cmd(build_name : str, system : str):
+def get_launch_cmd(system : str):
   """
   Gets the launch command based on the detected system.
-  
+
   Returns:
       str: The command used to launch the driver.
   """
-  if system == "weaver" or system == "ats2":
-    cmd = "bsub -Is -J " + build_name + " -W 12:00"
-  else:
-    cmd = ""  
+  cmd = ""
 
   return cmd + " "
 
@@ -64,17 +56,17 @@ def get_launch_cmd(build_name : str, system : str):
 def get_driver_args(system : str):
   """
   Gets the driver arguments based on the detected system.
-  
+
   Returns:
       str: The arguments passed to the driver.
-  """  
+  """
   return " " + "--on_" + system
 
 
 def main(argv):
   """
   This python script determines what system it is running on and then launches
-  the trilinos driver script appropriatly.
+  the trilinos driver script appropriately.
 
   The script returns 0 upon success and non-zero otherwise.
   """
@@ -87,6 +79,12 @@ def main(argv):
   parser.add_argument('--supported-systems', required=False,
                       default='./LoadEnv/ini_files/supported-systems.ini',
                       help='The INI file containing supported systems')
+  parser.add_argument('--in-container', default=False, action="store_true",
+                      help="Build is happening in a container")
+  parser.add_argument("--kokkos-develop", default=False, action="store_true",
+                      help="Build is requiring to pull the current develop of kokkos and kokkos-kernels packages")
+  parser.add_argument("--extra-configure-args",
+                      help="Extra arguments that will be passed to CMake for configuring Trilinos.")
   args = parser.parse_args(argv)
 
   if os.getenv("TRILINOS_DIR") == None:
@@ -95,13 +93,34 @@ def main(argv):
 
   print("LaunchDriver> INFO: TRILINOS_DIR=\"" + os.environ["TRILINOS_DIR"] + "\"", flush=True)
 
-  ds = DetermineSystem(args.build_name, args.supported_systems)
+  ds = DetermineSystem(args.build_name, args.supported_systems, force_build_name=True)
 
-  launch_env = get_launch_env(args.build_name, ds.system_name)
-  launch_cmd = get_launch_cmd(args.build_name, ds.system_name)
+  launch_env = get_launch_env(ds.system_name)
+  launch_cmd = get_launch_cmd(ds.system_name)
   driver_args = get_driver_args(ds.system_name)
 
+  # Specify, and override the driver script for ATDM ATS2 builds. Note that
+  # args.build_name is a required argument so it will be valid by the time it
+  # reaches this check.
+  if args.build_name.startswith("ats2_cuda"):
+      args.driver = "./Trilinos/packages/framework/pr_tools/PullRequestLinuxCudaVortexDriver.sh"
+
   cmd = launch_env + launch_cmd + args.driver + driver_args
+
+  if args.build_name.startswith("rhel8"):
+    cmd += " --on_rhel8"
+
+  if args.in_container:
+     cmd += " --no-bootstrap"
+
+  if args.kokkos_develop:
+     cmd += " --kokkos-develop"
+
+  # extra-configure-args flag currently takes precedence over the env. var.
+  if args.extra_configure_args:
+     cmd += f" --extra-configure-args=\"{args.extra_configure_args}\""
+  elif os.getenv("EXTRA_CONFIGURE_ARGS"):
+     cmd += f" --extra-configure-args=\"{os.getenv('EXTRA_CONFIGURE_ARGS')}\""
 
   print("LaunchDriver> EXEC: " + cmd, flush=True)
 
@@ -112,4 +131,3 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1 :])
-

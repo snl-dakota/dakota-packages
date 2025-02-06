@@ -1,40 +1,10 @@
 # @HEADER
-# ************************************************************************
-#
+# *****************************************************************************
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
 #
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ************************************************************************
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
 # @HEADER
 
 include(TribitsPackageMacros)
@@ -88,6 +58,7 @@ macro(tribits_subpackage SUBPACKAGE_NAME_IN)
   # Now override the package-like variables
   tribits_set_common_vars(${SUBPACKAGE_FULLNAME})
   tribits_define_linkage_vars(${SUBPACKAGE_FULLNAME})
+  tribits_pkg_init_exported_vars(${SUBPACKAGE_FULLNAME})
 
   tribits_append_package_specific_compiler_flags()
   if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
@@ -123,21 +94,20 @@ function(tribits_subpackage_assert_call_context)
     if(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
       tribits_report_invalid_tribits_usage(
         "Already called tribits_subpackge() for the"
-	" ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
+        " ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
     endif()
 
     # make sure the name in the macro call matches the name in the packages cmake file
     if (NOT ${SUBPACKAGE_NAME_IN} STREQUAL ${SUBPACKAGE_NAME})
       tribits_report_invalid_tribits_usage(
         "Error, the package-defined subpackage name"
-	" '${SUBPACKAGE_NAME_IN}' is not the same as the subpackage name"
-	" '${SUBPACKAGE_NAME}' defined in the parent packages's"
-	" Dependencies.cmake file")
+        " '${SUBPACKAGE_NAME_IN}' is not the same as the subpackage name"
+        " '${SUBPACKAGE_NAME}' defined in the parent packages's"
+        " Dependencies.cmake file")
     endif()
   endif()
 
 endfunction()
-
 
 
 # @MACRO: tribits_subpackage_postprocess()
@@ -150,24 +120,30 @@ endfunction()
 #
 #   tribits_subpackage_postprocess()
 #
+# NOTE: This creates the aliased target ``${PACKAGE_NAME}::all_libs`` for all
+# libraries in all subdirectories that don't have the TRIBITS_TESTONLY_LIB
+# target property set on them.
+#
 # NOTE: It is unfortunate that a Subpackages's CMakeLists.txt file must call
 # this macro but limitations of the CMake language make it necessary to do so.
 #
 macro(tribits_subpackage_postprocess)
+  tribits_subpackage_postprocess_assert_call_context()
+  tribits_package_postprocess_common()
+endmacro()
+
+
+macro(tribits_subpackage_postprocess_assert_call_context)
 
   # check that this is not being called from a package
   if (NOT CURRENTLY_PROCESSING_SUBPACKAGE)
-
-  # This is being called from a package
-
+    # This is being called from a package
     tribits_report_invalid_tribits_usage(
       "Cannot call tribits_subpackage_postprocess() from a package."
       " Use tribits_package_postprocess() instead"
       " ${CURRENT_PACKAGE_CMAKELIST_FILE}")
-
   else()
-  # This is being caleld from a subpackage
-
+    # This is being called from a subpackage
     # check to make sure this has not already been called
     if (${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
       tribits_report_invalid_tribits_usage(
@@ -181,12 +157,9 @@ macro(tribits_subpackage_postprocess)
         "tribits_subpackage() must be called before tribits_subpackage_postprocess()"
         " for the ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
     endif()
-
   endif()
 
   # Set flags that are used  to check that macros are called in the correct order
   dual_scope_set(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED TRUE)
-
-  tribits_package_postprocess_common()
 
 endmacro()

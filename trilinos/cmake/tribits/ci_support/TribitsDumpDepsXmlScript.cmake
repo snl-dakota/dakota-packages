@@ -1,40 +1,10 @@
 # @HEADER
-# ************************************************************************
-#
+# *****************************************************************************
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
 #
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ************************************************************************
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
 # @HEADER
 
 #
@@ -49,6 +19,8 @@
 #       -D <projectName>_DEPS_XML_OUTPUT_FILE=<projectDepsFileOut> \
 #       -P <tribitsDir>/ci_support/TribitsDumpDepsXmlScript.cmake
 #
+
+cmake_minimum_required(VERSION 3.23.0 FATAL_ERROR)
 
 # A) Echo input options (must be specified with -D arguments to CMake command)
 
@@ -98,15 +70,15 @@ endif()
 get_filename_component( ${PROJECT_NAME}_TRIBITS_DIR  "${CMAKE_CURRENT_LIST_DIR}/.."  ABSOLUTE )
 message("-- Setting ${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}")
 
+include("${CMAKE_CURRENT_LIST_DIR}/../core/common/TribitsConstants.cmake")
+tribits_asesrt_minimum_cmake_version()
+include("${CMAKE_CURRENT_LIST_DIR}/../core/common/TribitsCMakePolicies.cmake"  NO_POLICY_SCOPE)
+
 set( CMAKE_MODULE_PATH
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/utils"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch"
   "${${PROJECT_NAME}_TRIBITS_DIR}/ci_support"
   )
-
-include(TribitsConstants)
-tribits_asesrt_minimum_cmake_version()
-include(TribitsCMakePolicies)
 
 include(TribitsGlobalMacros)
 include(TribitsPrintDependencyInfo)
@@ -114,8 +86,8 @@ include(TribitsWriteXmlDependenciesFiles)
 
 # Generate the dependencies file
 
-set(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
-set(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
+set(${PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES  OFF)
+set(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES  FALSE)
 if (NOT ${PROJECT_NAME}_PRE_REPOSITORIES) # Make sure is defined!
   set(${PROJECT_NAME}_PRE_REPOSITORIES "")
 endif()

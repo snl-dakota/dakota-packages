@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TEUCHOS_TEST_FOR_EXCEPTION_H
@@ -65,7 +33,8 @@ TEUCHOSCORE_LIB_DLL_EXPORT int TestForException_getThrowNumber();
 
 /** \brief The only purpose for this function is to set a breakpoint.
     \ingroup TestForException_grp */
-TEUCHOSCORE_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
+TEUCHOSCORE_LIB_DLL_EXPORT void TestForException_break(const std::string &msg,
+  int throwNumber);
 
 /** \brief Set at runtime if stacktracing functionality is enabled when *
     exceptions are thrown.  \ingroup TestForException_grp */
@@ -152,9 +121,16 @@ TEUCHOSCORE_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  * in the error message of the exception thrown, he/she will see the
  * underlying condition.
  *
- * As an alternative, you can set a breakpoint for any exception thrown
- * by setting a breakpoint in the function <tt>ThrowException_break()</tt>.
- *
+ * As an alternative, you can set a breakpoint for any exception thrown by
+ * setting a breakpoint in the function <tt>ThrowException_break()</tt>.  If
+ * multiple exceptions are thrown, then set a conditional breakpoint to break
+ * on the exact exception using the <tt>throwNumber</tt>.  For example, if the
+ * throw number printed in the exception message is <tt>10</tt> then set the
+ * break point as (assuming this is the first breakpoint):
+ \verbatim
+ (gdb) b 'Teuchos::TestForException_break( [TAB] [ENTER]
+ (gdb) cond 1 thrownNumber==10
+ \endverbatim
  * NOTE: This macro will only evaluate <tt>throw_exception_test</tt> once
  * reguardless if the test fails and the exception is thrown or
  * not. Therefore, it is safe to call a function with side-effects as the
@@ -172,17 +148,18 @@ TEUCHOSCORE_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
   const bool throw_exception = (throw_exception_test); \
   if(throw_exception) { \
     Teuchos::TestForException_incrThrowNumber(); \
+    const int throwNumber = Teuchos::TestForException_getThrowNumber(); \
     std::ostringstream omsg; \
     omsg \
       << __FILE__ << ":" << __LINE__ << ":\n\n" \
-      << "Throw number = " << Teuchos::TestForException_getThrowNumber() \
+      << "Throw number = " << throwNumber \
       << "\n\n" \
       << "Throw test that evaluated to true: "#throw_exception_test \
       << "\n\n" \
       << msg; \
     const std::string &omsgstr = omsg.str(); \
     TEUCHOS_STORE_STACKTRACE(); \
-    Teuchos::TestForException_break(omsgstr); \
+    Teuchos::TestForException_break(omsgstr, throwNumber); \
     throw Exception(omsgstr); \
   } \
 }
@@ -245,17 +222,18 @@ TEUCHOSCORE_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
  */
 #define TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test, Exception, msg) \
 { \
-    const bool throw_exception = (throw_exception_test); \
-    if(throw_exception) { \
-      Teuchos::TestForException_incrThrowNumber(); \
-      std::ostringstream omsg; \
-	    omsg << msg; \
-      omsg << "\n\nThrow number = " << Teuchos::TestForException_getThrowNumber() << "\n\n"; \
-      const std::string &omsgstr = omsg.str(); \
-      Teuchos::TestForException_break(omsgstr); \
-      TEUCHOS_STORE_STACKTRACE(); \
-      throw Exception(omsgstr); \
-    } \
+  const bool throw_exception = (throw_exception_test); \
+  if(throw_exception) { \
+    Teuchos::TestForException_incrThrowNumber(); \
+    const int throwNumber = Teuchos::TestForException_getThrowNumber(); \
+    std::ostringstream omsg; \
+	  omsg << msg; \
+    omsg << "\n\nThrow number = " << throwNumber << "\n\n"; \
+    const std::string &omsgstr = omsg.str(); \
+    Teuchos::TestForException_break(omsgstr, throwNumber); \
+    TEUCHOS_STORE_STACKTRACE(); \
+    throw Exception(omsgstr); \
+  } \
 }
 
 

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Teuchos_Graph.hpp"
 
 #include <iostream>
@@ -11,7 +20,7 @@ Graph make_graph_with_nnodes(int nnodes) {
 }
 
 int get_nnodes(Graph const& g) {
-  return size(g);
+  return Teuchos::size(g);
 }
 
 void add_edge(Graph& g, int i, int j) {
@@ -27,7 +36,7 @@ NodeEdges& get_edges(Graph& g, int i) {
 }
 
 int count_edges(const Graph& g, int i) {
-  return size(at(g, i));
+  return Teuchos::size(at(g, i));
 }
 
 Graph make_transpose(Graph const& g) {

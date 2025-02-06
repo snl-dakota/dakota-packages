@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TEUCHOS_TABLE_HPP
 #define TEUCHOS_TABLE_HPP
 
@@ -28,8 +37,8 @@ void swap(Table<T>& a, Table<T>& b) {
 template <typename T>
 int get_nrows(Table<T> const& t) {
   TEUCHOS_DEBUG_ASSERT(t.ncols > 0);
-  TEUCHOS_DEBUG_ASSERT(size(t.data) % t.ncols == 0);
-  return size(t.data) / t.ncols;
+  TEUCHOS_DEBUG_ASSERT(Teuchos::size(t.data) % t.ncols == 0);
+  return Teuchos::size(t.data) / t.ncols;
 }
 
 template <typename T>

@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_BOUND_CONSTRAINT_H
@@ -78,6 +44,8 @@ private:
 protected:
   Ptr<Vector<Real>> lower_;
   Ptr<Vector<Real>> upper_;
+
+  Real computeInf(const Vector<Real> &x) const;
 
 public:
 
@@ -182,6 +150,36 @@ public:
       @param[in]    v   is the vector to be checked.
   */
   virtual bool isFeasible( const Vector<Real> &v );
+
+  /** \brief Apply inverse scaling function.
+
+      This function applies the inverse scaling function \f$d(x,g)\f$ to
+      a vector \f$v\f$, i.e., the output is \f$\mathrm{diag}(d(x,g)^{-1})v\f$.
+      The scaling function must satisfy:
+      (i) \f$d(x,g)_i = 0\f$ if \f$x_i = a_i\f$ and \f$g_i \ge 0\f$;
+      (ii) \f$d(x,g)_i = 0\f$ if \f$x_i = b_i\f$ and \f$g_i \le 0\f$; and
+      (iii) \f$d(x,g)_i > 0\f$ otherwise.
+      @param[out] dv   is the inverse scaling function applied to v.
+      @param[in]   v   is the vector being scaled.
+      @param[in]   x   is the primal vector at which the scaling function is evaluated.
+      @param[in]   g   is the dual vector at which the scaling function is evaluated.
+  */
+  virtual void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const;
+
+  /** \brief Apply scaling function Jacobian.
+
+      This function applies the Jacobian of the scaling function \f$d(x,g)\f$ to
+      a vector \f$v\f$.  The output is \f$\mathrm{diag}(d_x(x,g)g)v\f$.  The
+      scaling function must satisfy:
+      (i) \f$d(x,g)_i = 0\f$ if \f$x_i = a_i\f$ and \f$g_i \ge 0\f$;
+      (ii) \f$d(x,g)_i = 0\f$ if \f$x_i = b_i\f$ and \f$g_i \le 0\f$; and
+      (iii) \f$d(x,g)_i > 0\f$ otherwise.
+      @param[out] dv   is the scaling function Jacobian applied to v.
+      @param[in]   v   is the vector being scaled.
+      @param[in]   x   is the primal vector at which the scaling function is evaluated.
+      @param[in]   g   is the dual vector at which the scaling function is evaluated.
+  */
+  virtual void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const;
 
   /** \brief Turn on lower bound.
 

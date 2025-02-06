@@ -1,64 +1,57 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_VerbosityLevel.hpp"
-#include "Teuchos_Array.hpp"
+#include "Teuchos_Tuple.hpp"
 #include "Teuchos_as.hpp"
 
 
-namespace {
+Teuchos::ArrayView<const Teuchos::EVerbosityLevel> Teuchos::getValidVerbLevels()
+{
+  static const Tuple<Teuchos::EVerbosityLevel, EVerbosityLevel_size>
+    verbLevelArray = tuple<Teuchos::EVerbosityLevel>(
+      Teuchos::VERB_DEFAULT,
+      Teuchos::VERB_NONE,
+      Teuchos::VERB_LOW,
+      Teuchos::VERB_MEDIUM,
+      Teuchos::VERB_HIGH,
+      Teuchos::VERB_EXTREME
+      );
+  return verbLevelArray();
+}
 
 
-const Teuchos::Array<Teuchos::EVerbosityLevel> verbLevelArray =
-  Teuchos::tuple<Teuchos::EVerbosityLevel>(
-    Teuchos::VERB_NONE,
-    Teuchos::VERB_LOW,
-    Teuchos::VERB_MEDIUM,
-    Teuchos::VERB_HIGH,
-    Teuchos::VERB_EXTREME
-    );
+Teuchos::ArrayView<const std::string> Teuchos::getValidVerbLevelsNames()
+{
+  static const Tuple<std::string, EVerbosityLevel_size>
+    verbLevelNamesArray = tuple<std::string>(
+      "VERB_DEFAULT",
+      "VERB_NONE",
+      "VERB_LOW",
+      "VERB_MEDIUM",
+      "VERB_HIGH",
+      "VERB_EXTREME"
+      );
+  return verbLevelNamesArray();
+}
 
 
-} // namespace
-
+Teuchos::ArrayView<const char * const> Teuchos::getValidVerbLevelsNamesRawStrings()
+{
+  ArrayView<const std::string> verbLevelNamesArray = getValidVerbLevelsNames();
+  static const Tuple<const char*, EVerbosityLevel_size>
+    verbLevelNamesRawStringsArray;
+  for (int i = 0; i < EVerbosityLevel_size; ++i) {
+    verbLevelNamesRawStringsArray[i] = verbLevelNamesArray[i].c_str();
+  }
+  return verbLevelNamesRawStringsArray();
+}
 
 
 std::string Teuchos::toString(const EVerbosityLevel verbLevel)
@@ -128,5 +121,5 @@ Teuchos::incrVerbLevel(
   else if (intVerbLevel > as<int>(VERB_EXTREME))
     return VERB_EXTREME;
   // If we get here, then intVerbLevel is a valid verbosity level.
-  return verbLevelArray[intVerbLevel];
+  return getValidVerbLevels()[intVerbLevel];
 }
