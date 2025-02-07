@@ -1241,6 +1241,17 @@ class Any
     ContainerBase *m_data;
   };
 
+/// C++20 deletes std::ostream::operator << for wchar_t
+#if __cplusplus >= 202002L
+template<>
+class Any::DefaultPrinter<wchar_t> {
+public:
+  static std::ostream& print( std::ostream& os, const wchar_t& data ) {
+    return (os << static_cast<char>(data));
+  }
+};
+#endif
+
 
 /// Override definition that avoids reference to copy constructor
 template<typename TYPE, typename COPIER> 
@@ -1635,8 +1646,9 @@ DEFINE_FULL_ANY_EXTENSIONS(std::string);
 
 // wchar_t is not readable...
 DEFINE_DEFAULT_ANY_COMPARATOR(wchar_t);
+#if __cplusplus < 202002L
 DEFINE_DEFAULT_ANY_PRINTER(wchar_t);
-
+#endif
 // floating-point requires a special printer
 DEFINE_DEFAULT_ANY_COMPARATOR(float);
 DEFINE_DEFAULT_ANY_READER(float);
