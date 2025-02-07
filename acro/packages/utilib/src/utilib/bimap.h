@@ -85,7 +85,7 @@
  * does it in a safe manner. Starting with GCC 3.1, an annoying warning is
  * issued in this situation. Workarounded it thanks to a tip by Andrew Pollard.
  */
-
+#if __cplusplus < 201101L
 #if defined(__GNUC__)&&(__GNUC__>3||(__GNUC__==3&&__GNUC_MINOR__>= 1))
 #define BIMAP_OFFSETOF_9B698EF9_C6E9_4BC4_A7D2_5B4D71155761(type,member) \
 (__extension__                         \
@@ -103,17 +103,25 @@
 #else
 #define BIMAP_OFFSETOF_9B698EF9_C6E9_4BC4_A7D2_5B4D71155761(type,member) offsetof(type,member)
 #endif
+#else // C++11 introduces offsetof macro
+#define BIMAP_OFFSETOF_9B698EF9_C6E9_4BC4_A7D2_5B4D71155761(type,member) offsetof(type,member)
+#endif
 
 /* MSVC++ 6.0 do not support allocator::rebind; in these cases, the only
  * option is use the original allocator_type unrebound, which VC++ 6.0
  * accepts merrily nevertheless.
  */
 
+#if __cplusplus < 202002L
 #if defined(_MSC_VER)&&_MSC_VER==1200 /* MSVC++ 6.0 */
 #define BIMAP_REBIND_9B698EF9_C6E9_4BC4_A7D2_5B4D71155761(type1,type2) type1
 #else
 #define BIMAP_REBIND_9B698EF9_C6E9_4BC4_A7D2_5B4D71155761(type1,type2) \
 typename type1::template rebind<type2>::other
+#endif
+#else // std::allocator::rebind is deprecated in C++17 and removed in C++20
+#define BIMAP_REBIND_9B698EF9_C6E9_4BC4_A7D2_5B4D71155761(type1,type2) \
+typename std::allocator_traits<type1>::template rebind_alloc<type2>
 #endif
 
 namespace utilib{
@@ -811,7 +819,10 @@ public:
      * compatible with the weaker value_compare implemented by maps.
      */
 
-    class value_compare:public std::binary_function<value_type,value_type,bool>
+    class value_compare
+#if __cplusplus < 201703L
+      : public std::binary_function<value_type,value_type,bool>
+#endif
     {
     public:
       bool operator()(const value_type& x,const value_type& y)
@@ -1262,7 +1273,10 @@ public:
         const to_type_,
         const from_type_>   value_type;
 
-    class value_compare:public std::binary_function<value_type,value_type,bool>
+    class value_compare
+#if __cplusplus < 201703L
+      : public std::binary_function<value_type,value_type,bool>
+#endif
     {
     public:
       bool operator()(const value_type& x,const value_type& y)
@@ -2076,7 +2090,7 @@ public:
   }
 
   /* inverse copy ctor (from a bimap<to_type,from_type>) */
-
+#if __cplusplus < 201703L
 #if defined(_MSC_VER)&&_MSC_VER==1200 /* MSVC++ 6.0 */
   /* no allocator::rebind, assume allocator_type==std::allocator */
 
@@ -2101,6 +2115,20 @@ public:
   explicit bimap(const inv_bimap& r):
     super(r.to.key_comp(),r.from.key_comp(),r.get_allocator())
 #endif
+#else // std::allocator::rebind was deprecated in C++17 and removed in C++20
+typedef
+  bimap<
+    to_type_, from_type_,
+    to_compare, from_compare,
+    typename std::allocator_traits<allocator_type>::template rebind_alloc<
+      direct_pair<const to_type_, const from_type_> >
+  > inv_bimap;
+
+explicit bimap(const inv_bimap& r):
+  super(r.to.key_comp(), r.from.key_comp(), r.get_allocator())
+#endif
+
+
 
 /* body of bimap(const inv_bimap& r) follows */
 

@@ -49,7 +49,12 @@ public:
  * to simplify their create_option() declaration by omitting the second
  * template parameter.
  */
-class ParameterValidatorFunction : public std::unary_function<Any,bool>
+class ParameterValidatorFunction : public
+#if __cplusplus < 201703L
+  std::unary_function<Any,bool>
+#else
+  std::function<bool(Any)>
+#endif
 {
 };
 
@@ -91,7 +96,12 @@ public:
  * Class that validates a lower bound of a parameter.
  */
 template <class Type>
-class ParameterLowerBound : public std::unary_function<Any,bool>
+class ParameterLowerBound : public
+#if __cplusplus < 201703L
+  std::unary_function<Any,bool>
+#else
+  std::function<bool(Any)>
+#endif
 {
 public:
 
@@ -115,7 +125,12 @@ public:
  * Class that validates an upper bound of a parameter.
  */
 template <class Type>
-class ParameterUpperBound : public std::unary_function<Any,bool>
+class ParameterUpperBound : public
+#if __cplusplus < 201703L
+  std::unary_function<Any,bool>
+#else
+  std::function<bool(Any)>
+#endif
 {
 public:
 
@@ -139,7 +154,12 @@ public:
  * Class that validates a lower and upper bounds of a parameter.
  */
 template <class Type>
-class ParameterBounds : public std::unary_function<Any,bool>
+class ParameterBounds : public
+#if __cplusplus < 201703L
+  std::unary_function<Any,bool>
+#else
+  std::function<bool(Any)>
+#endif
 {
 public:
 
@@ -168,7 +188,12 @@ public:
  * Class that validates a non-negative parameter.
  */
 template <class Type>
-class ParameterNonnegative : public std::unary_function<Any,bool>
+class ParameterNonnegative : public
+#if __cplusplus < 201703L
+  std::unary_function<Any,bool>
+#else
+  std::function<bool(Any)>
+#endif
 {
 public:
 
@@ -189,7 +214,12 @@ public:
  * Class that validates a positive parameter.
  */
 template <class Type>
-class ParameterPositive : public std::unary_function<Any,bool>
+class ParameterPositive : public
+#if __cplusplus < 201703L
+  std::unary_function<Any,bool>
+#else
+  std::function<bool(Any)>
+#endif
 {
 public:
 

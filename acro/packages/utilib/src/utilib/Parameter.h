@@ -217,7 +217,11 @@ public:
     * Pointer to an object that contains a unary_function that performs a
     * callback when the parameter is set.
     */
+#if __cplusplus < 201703L
    std::unary_function<Any, void>* callback;
+#else // std::unary_function is deprecated in C++11 and removed in C++17
+   std::function<void(Any)>* callback;
+#endif
 
    ///
    bool is_bool;

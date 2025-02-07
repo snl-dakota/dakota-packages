@@ -38,7 +38,12 @@ class ParameterList;
 /**
  * A callback class that can be used with a ParameterSet object.
  */
-class ParamFileCallback : public std::unary_function<Any,void>
+class ParamFileCallback : public
+#if __cplusplus < 201703L
+  std::unary_function<Any,void>
+#else
+  std::function<void(Any)>
+#endif
 {
 public:
 
@@ -236,7 +241,12 @@ public:
 
   /// Set a parameter callback that is called when the parameter is set
   void set_parameter_callback(const std::string& name, 
-		std::unary_function<Any,void>& func);
+#if __cplusplus < 201703L
+		std::unary_function<Any,void>& func
+#else
+		std::function<void(Any)>& func
+#endif
+                );
 
   /// Set a parameter default
   void set_parameter_default(const std::string& name, const std::string& default_value);
@@ -579,7 +589,12 @@ catch (std::invalid_argument& ) {
 //
 //
 inline void ParameterSet::set_parameter_callback(const std::string& name, 
-			std::unary_function<Any,void>& func)
+#if __cplusplus < 201703L
+			std::unary_function<Any,void>& func
+#else
+			std::function<void(Any)>& func
+#endif
+                        )
 {
 try {
   Parameter& param = find_parameter(name);

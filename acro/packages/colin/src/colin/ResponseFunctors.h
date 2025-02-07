@@ -30,7 +30,10 @@
 namespace colin
 {
 
-class ResponseFunctors : public std::unary_function<const std::vector<utilib::Any>, utilib::Any >
+class ResponseFunctor
+#if __cplusplus < 201703L // std::unary_function is deprecated in C++11 and removed in C++17
+  : public std::unary_function<const std::vector<utilib::Any>, utilib::Any >
+#endif
 {
 public:
    /// Empty virtual destructor to silence compiler warnings
