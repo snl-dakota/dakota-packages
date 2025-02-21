@@ -14,25 +14,7 @@ return 0;
 BOOST_GRAPH_COMPILES)
 
 
-CHECK_CXX_SOURCE_COMPILES(
-"
-#include <iostream>
-#include <iterator>
-#include <algorithm>
-#include <boost/filesystem.hpp>
-using namespace std;
-using namespace boost::filesystem;
-int main(int argc, char* argv[])
-{
-path p (argv[1]);
-directory_iterator temp(p);
-directory_iterator temp2(temp);
-return 0;
-}
-"
-BOOST_DIRECTORY_ITERATOR_COMPILES)
-
-if(NOT BOOST_GRAPH_COMPILES OR NOT BOOST_DIRECTORY_ITERATOR_COMPILES)
+if(NOT BOOST_GRAPH_COMPILES)
 	set(BOOST_TEST_FAIL 1)
 else()
 	set(BOOST_TEST_FAIL 0)
