@@ -417,7 +417,7 @@ DesignMultiSet<Pred>::mark(
     iterator_pair bounds(this->equal_range(key));
 
     // unmark all those before the range
-    mark_all_designs(this->begin(), bounds.first(), mark, false);
+    mark_all_designs(this->begin(), bounds.first, mark, false);
 
     // now mark all those in the range.  Also track our number marked.
     for(; bounds.first!=bounds.second; ++bounds.first)
@@ -454,9 +454,9 @@ DesignMultiSet<Pred>::mark_not_exact(
     // object as key.  Also track our number marked.
     for(; bounds.first!=bounds.second; ++bounds.first)
     {
-        bool mark = *bounds.first != key;
-        (*bounds.first)->ModifyAttribute(mark, mark);
-        if(mark) ++nmarked;
+        const bool m = *bounds.first != key;
+        (*bounds.first)->ModifyAttribute(mark, m);
+        if(m) ++nmarked;
     }
 
     // now unmark all those after the range.
