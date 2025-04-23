@@ -155,10 +155,10 @@ keyed_registry<KeyType, ValueType>::is_registered(
 template<typename KeyType, typename ValueType>
 bool
 keyed_registry<KeyType, ValueType>::unregister(
-    const KeyType& value
+    const KeyType& key
     )
 {
-    typename container::iterator it(this->find(this->key));
+    typename container::iterator it(this->find(key));
     if(it == this->_registry.end()) return false;
     this->_registry.erase(it);
     return true;
