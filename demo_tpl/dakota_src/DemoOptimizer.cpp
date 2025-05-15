@@ -224,7 +224,7 @@ void DemoTPLOptimizer::set_demo_parameters()
   String adv_opts_file = probDescDB.get_string("method.advanced_options_file");
   if (!adv_opts_file.empty())
   {
-    if (!boost::filesystem::exists(adv_opts_file))
+    if (!std::filesystem::exists(adv_opts_file))
     {
       Cerr << "\nError: Demo_Opt options_file '" << adv_opts_file
 	   << "' specified, but file not found.\n";
