@@ -71,8 +71,10 @@ namespace Dakota {
 // the necessary objects have to be instantiated/initialized in the
 // constructor as long as they are created before they are accessed.
 
-DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db, std::shared_ptr<Model> model):
-  Optimizer(problem_db, model, std::shared_ptr<TraitsBase>(new DemoOptTraits())),
+DemoTPLOptimizer::DemoTPLOptimizer(ProblemDescDB& problem_db,
+                                   ParallelLibrary& parallel_lib,
+                                   std::shared_ptr<Model> model):
+  Optimizer(problem_db, parallel_lib, model, std::shared_ptr<TraitsBase>(new DemoOptTraits())),
   Demo_Opt::ObjectiveFn(),
   Demo_Opt::NonlinearEqFn(),
   Demo_Opt::NonlinearIneqFn(),

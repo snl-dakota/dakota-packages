@@ -41,7 +41,7 @@ class DemoTPLOptimizer : public Optimizer,
     //
 
     /// Standard constructor
-    DemoTPLOptimizer(ProblemDescDB& problem_db, std::shared_ptr<Model> model);
+    DemoTPLOptimizer(ProblemDescDB&, ParallelLibrary&, std::shared_ptr<Model>);
 
     /// Destructor
     ~DemoTPLOptimizer() {}
