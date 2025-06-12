@@ -10,7 +10,7 @@ if(NOT DEFINED MUQ_BOOST_DIR)
 	unset(Boost_LIBRARY_DIRS)
 	set(Boost_USE_STATIC_LIBS ON)
 
-	find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS system filesystem graph)
+	find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS system graph)
 
 	IF(Boost_FOUND)
 		set(BOOST_LIBRARIES_STATIC ${Boost_LIBRARIES})
@@ -21,7 +21,7 @@ if(NOT DEFINED MUQ_BOOST_DIR)
 	unset(Boost_LIBRARY_DIRS)
 	unset(Boost_USE_STATIC_LIBS)
 
-	find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS system filesystem graph)
+	find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS system graph)
 
 	IF(Boost_FOUND)
 		set(BOOST_LIBRARY ${Boost_LIBRARIES})
@@ -36,8 +36,6 @@ else()
 
 	find_library(BOOST_SYSTEM_LIBRARY_STATIC NAMES ${library_prefix}boost_system.${static_library_suffix}
 	             HINTS ${MUQ_BOOST_DIR}/lib ${MUQ_BOOST_DIR}/stage/lib NO_DEFAULT_PATH)
-	find_library(BOOST_FILESYSTEM_LIBRARY_STATIC NAMES ${library_prefix}boost_filesystem.${static_library_suffix}
-	             HINTS ${MUQ_BOOST_DIR}/lib ${MUQ_BOOST_DIR}/stage/lib NO_DEFAULT_PATH)
  	find_library(BOOST_GRAPH_LIBRARY_STATIC NAMES ${library_prefix}boost_graph.${static_library_suffix}
  	             HINTS ${MUQ_BOOST_DIR}/lib ${MUQ_BOOST_DIR}/stage/lib NO_DEFAULT_PATH)
 	find_library(BOOST_REGEX_LIBRARY_STATIC NAMES ${library_prefix}boost_regex.${static_library_suffix}
@@ -45,15 +43,13 @@ else()
 
  	find_library(BOOST_SYSTEM_LIBRARY NAMES boost_system
  		 	     HINTS ${MUQ_BOOST_DIR}/lib ${MUQ_BOOST_DIR}/stage/lib NO_DEFAULT_PATH)
- 	find_library(BOOST_FILESYSTEM_LIBRARY NAMES boost_filesystem
- 		 	     HINTS ${MUQ_BOOST_DIR}/lib ${MUQ_BOOST_DIR}/stage/lib NO_DEFAULT_PATH)
  	find_library(BOOST_GRAPH_LIBRARY NAMES boost_graph
  		 	     HINTS ${MUQ_BOOST_DIR}/lib ${MUQ_BOOST_DIR}/stage/lib NO_DEFAULT_PATH)
 	find_library(BOOST_REGEX_LIBRARY NAMES boost_regex
 				 HINTS ${MUQ_BOOST_DIR}/lib ${MUQ_BOOST_DIR}/stage/lib NO_DEFAULT_PATH)
 
-	set(BOOST_LIBRARY ${BOOST_SYSTEM_LIBRARY} ${BOOST_FILESYSTEM_LIBRARY} ${BOOST_GRAPH_LIBRARY} ${BOOST_REGEX_LIBRARY})
-	set(BOOST_LIBRARY_STATIC ${BOOST_SYSTEM_LIBRARY_STATIC} ${BOOST_FILESYSTEM_LIBRARY_STATIC} ${BOOST_GRAPH_LIBRARY_STATIC} ${BOOST_REGEX_LIBRARY_STATIC})
+	set(BOOST_LIBRARY ${BOOST_SYSTEM_LIBRARY} ${BOOST_GRAPH_LIBRARY} ${BOOST_REGEX_LIBRARY})
+	set(BOOST_LIBRARY_STATIC ${BOOST_SYSTEM_LIBRARY_STATIC} ${BOOST_GRAPH_LIBRARY_STATIC} ${BOOST_REGEX_LIBRARY_STATIC})
 endif()
 
 include(FindPackageHandleStandardArgs)
