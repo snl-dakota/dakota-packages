@@ -2473,7 +2473,14 @@ nidr_cleanup(void)
 		}
 	if (AVLT)
 		AVL_Clear();
-	return nidr_parse_error();
+
+    const int ec = nidr_parse_error();
+    if (ec) {
+        nsquawk = 0;
+        nparse_errors = 0;
+    }
+
+    return ec;
 	}
 
  void
