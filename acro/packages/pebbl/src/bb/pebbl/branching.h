@@ -785,6 +785,7 @@ public:
 
   branching() : 
   sense(minimization),    // Default is now minimization unless specified...
+      incumbentValue(0.0),
       incumbent(NULL),
       pool(NULL),
       handler(NULL),
@@ -1198,6 +1199,7 @@ class coreSPInfo : public pebblBase
   virtual bool canFathom();
 
   coreSPInfo() : 
+    bound(MAXDOUBLE),
     integralityMeasure(MAXDOUBLE)
   { }
 
