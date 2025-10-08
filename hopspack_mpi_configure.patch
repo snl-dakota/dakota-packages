@@ -1,0 +1,107 @@
+diff --git a/hopspack/ConfigureMPI.cmake b/hopspack/ConfigureMPI.cmake
+index df7900b9..37c14d49 100644
+--- a/hopspack/ConfigureMPI.cmake
++++ b/hopspack/ConfigureMPI.cmake
+@@ -39,7 +39,7 @@ IF (NOT mpi)
+ #-------------------------------------------------------------------------
+     MESSAGE (STATUS "HOPSPACK: Using the standard C++ compiler (no MPI):")
+     MESSAGE (STATUS "  " ${CMAKE_CXX_COMPILER})
+-
++    set(HOPSPACK_MPI OFF)
+ #-------------------------------------------------------------------------
+ ELSE (NOT mpi)
+ #-------------------------------------------------------------------------
+@@ -53,8 +53,6 @@ ELSE (NOT mpi)
+ 
+     IF (MPI_COMPILER OR MPI_INCLUDE_PATH OR MPI_LIBRARY)
+         #---- The user defined MPI.
+-        SET (MPI_FOUND TRUE)
+-
+         #---- The HOPSPACK header file needs to know that MPI is used.
+         SET (HAVE_MPI TRUE)
+ 
+@@ -94,8 +92,7 @@ ELSE (NOT mpi)
+ 
+     MESSAGE (STATUS "HOPSPACK: Building with MPI, compiler is:")
+     MESSAGE (STATUS "  " ${CMAKE_CXX_COMPILER})
+-
+-
++    SET (HOPSPACK_MPI TRUE)
+ #-------------------------------------------------------------------------
+ ENDIF (NOT mpi)
+ #-------------------------------------------------------------------------
+diff --git a/hopspack/src/src-executor/CMakeLists.txt b/hopspack/src/src-executor/CMakeLists.txt
+index 8bc5a43a..4ccf0e2d 100644
+--- a/hopspack/src/src-executor/CMakeLists.txt
++++ b/hopspack/src/src-executor/CMakeLists.txt
+@@ -11,10 +11,10 @@
+ 
+ 
+ #---- List the source files to be built.
+-IF (MPI_FOUND)
++IF (HOPSPACK_MPI)
+     SET (src-executor_sources HOPSPACK_ExecutorMpi.cpp)
+ 
+-ELSE (MPI_FOUND)
++ELSE (HOPSPACK_MPI)
+     IF (MT_FOUND)
+         SET (src-executor_sources
+              HOPSPACK_ExecutorMultiThreaded.cpp
+@@ -24,4 +24,4 @@ ELSE (MPI_FOUND)
+         SET (src-executor_sources HOPSPACK_ExecutorSerial.cpp)
+ 
+     ENDIF (MT_FOUND)
+-ENDIF (MPI_FOUND)
++ENDIF (HOPSPACK_MPI)
+diff --git a/hopspack/src/src-main/CMakeLists.txt b/hopspack/src/src-main/CMakeLists.txt
+index 053b0b20..fc8ed587 100644
+--- a/hopspack/src/src-main/CMakeLists.txt
++++ b/hopspack/src/src-main/CMakeLists.txt
+@@ -25,11 +25,11 @@ SET (src-main_sources HOPSPACK_Hopspack.cpp)
+ 
+ 
+ #---- Define which target executable to build.
+-IF (MPI_FOUND)
++IF (HOPSPACK_MPI)
+     #---- Build MPI-enabled executable (multiple processes).
+     SET (HOPSPACK_EXEC_NAME HOPSPACK_main_mpi)
+ 
+-ELSE (MPI_FOUND)
++ELSE (HOPSPACK_MPI)
+     IF (MT_FOUND)
+         #---- Build multi-threaded executable (single process, multiple threads).
+         SET (HOPSPACK_EXEC_NAME HOPSPACK_main_threaded)
+@@ -39,7 +39,7 @@ ELSE (MPI_FOUND)
+         SET (HOPSPACK_EXEC_NAME HOPSPACK_main_serial)
+ 
+     ENDIF (MT_FOUND)
+-ENDIF (MPI_FOUND)
++ENDIF (HOPSPACK_MPI)
+ 
+ #---- List the source files to be built.
+ ## BMA, 20170904: Disabled in Dakota build 
+diff --git a/hopspack/src/src-shared/CMakeLists.txt b/hopspack/src/src-shared/CMakeLists.txt
+index 5899ac46..d51efd67 100644
+--- a/hopspack/src/src-shared/CMakeLists.txt
++++ b/hopspack/src/src-shared/CMakeLists.txt
+@@ -35,9 +35,9 @@ SET (BASIC_LIST
+     HOPSPACK_utils.cpp
+     HOPSPACK_Vector.cpp
+ )
+-IF (MPI_FOUND)
++IF (HOPSPACK_MPI)
+     SET (SOURCE_LIST ${BASIC_LIST} HOPSPACK_GenProcComm.cpp)
+-ELSE (MPI_FOUND)
++ELSE (HOPSPACK_MPI)
+     IF (MT_FOUND)
+         SET (SOURCE_LIST ${BASIC_LIST} HOPSPACK_ThreadRunnable.cpp
+                                        HOPSPACK_ThreadSimpleLock.cpp
+@@ -45,7 +45,7 @@ ELSE (MPI_FOUND)
+     ELSE (MT_FOUND)
+         SET (SOURCE_LIST ${BASIC_LIST})
+     ENDIF (MT_FOUND)
+-ENDIF (MPI_FOUND)
++ENDIF (HOPSPACK_MPI)
+ 
+ #---- src-shared directory sources.
+ set (src-shared_sources ${SOURCE_LIST})

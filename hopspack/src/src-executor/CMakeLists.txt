@@ -11,10 +11,10 @@
 
 
 #---- List the source files to be built.
-IF (MPI_FOUND)
+IF (HOPSPACK_MPI)
     SET (src-executor_sources HOPSPACK_ExecutorMpi.cpp)
 
-ELSE (MPI_FOUND)
+ELSE (HOPSPACK_MPI)
     IF (MT_FOUND)
         SET (src-executor_sources
              HOPSPACK_ExecutorMultiThreaded.cpp
@@ -24,4 +24,4 @@ ELSE (MPI_FOUND)
         SET (src-executor_sources HOPSPACK_ExecutorSerial.cpp)
 
     ENDIF (MT_FOUND)
-ENDIF (MPI_FOUND)
+ENDIF (HOPSPACK_MPI)

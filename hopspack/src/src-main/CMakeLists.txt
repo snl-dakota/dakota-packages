@@ -25,11 +25,11 @@ SET (src-main_sources HOPSPACK_Hopspack.cpp)
 
 
 #---- Define which target executable to build.
-IF (MPI_FOUND)
+IF (HOPSPACK_MPI)
     #---- Build MPI-enabled executable (multiple processes).
     SET (HOPSPACK_EXEC_NAME HOPSPACK_main_mpi)
 
-ELSE (MPI_FOUND)
+ELSE (HOPSPACK_MPI)
     IF (MT_FOUND)
         #---- Build multi-threaded executable (single process, multiple threads).
         SET (HOPSPACK_EXEC_NAME HOPSPACK_main_threaded)
@@ -39,7 +39,7 @@ ELSE (MPI_FOUND)
         SET (HOPSPACK_EXEC_NAME HOPSPACK_main_serial)
 
     ENDIF (MT_FOUND)
-ENDIF (MPI_FOUND)
+ENDIF (HOPSPACK_MPI)
 
 #---- List the source files to be built.
 ## BMA, 20170904: Disabled in Dakota build 

@@ -39,7 +39,7 @@ IF (NOT mpi)
 #-------------------------------------------------------------------------
     MESSAGE (STATUS "HOPSPACK: Using the standard C++ compiler (no MPI):")
     MESSAGE (STATUS "  " ${CMAKE_CXX_COMPILER})
-
+    set(HOPSPACK_MPI OFF)
 #-------------------------------------------------------------------------
 ELSE (NOT mpi)
 #-------------------------------------------------------------------------
@@ -53,8 +53,6 @@ ELSE (NOT mpi)
 
     IF (MPI_COMPILER OR MPI_INCLUDE_PATH OR MPI_LIBRARY)
         #---- The user defined MPI.
-        SET (MPI_FOUND TRUE)
-
         #---- The HOPSPACK header file needs to know that MPI is used.
         SET (HAVE_MPI TRUE)
 
@@ -94,8 +92,7 @@ ELSE (NOT mpi)
 
     MESSAGE (STATUS "HOPSPACK: Building with MPI, compiler is:")
     MESSAGE (STATUS "  " ${CMAKE_CXX_COMPILER})
-
-
+    SET (HOPSPACK_MPI TRUE)
 #-------------------------------------------------------------------------
 ENDIF (NOT mpi)
 #-------------------------------------------------------------------------

@@ -35,9 +35,9 @@ SET (BASIC_LIST
     HOPSPACK_utils.cpp
     HOPSPACK_Vector.cpp
 )
-IF (MPI_FOUND)
+IF (HOPSPACK_MPI)
     SET (SOURCE_LIST ${BASIC_LIST} HOPSPACK_GenProcComm.cpp)
-ELSE (MPI_FOUND)
+ELSE (HOPSPACK_MPI)
     IF (MT_FOUND)
         SET (SOURCE_LIST ${BASIC_LIST} HOPSPACK_ThreadRunnable.cpp
                                        HOPSPACK_ThreadSimpleLock.cpp
@@ -45,7 +45,7 @@ ELSE (MPI_FOUND)
     ELSE (MT_FOUND)
         SET (SOURCE_LIST ${BASIC_LIST})
     ENDIF (MT_FOUND)
-ENDIF (MPI_FOUND)
+ENDIF (HOPSPACK_MPI)
 
 #---- src-shared directory sources.
 set (src-shared_sources ${SOURCE_LIST})
