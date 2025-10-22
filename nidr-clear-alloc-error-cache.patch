@@ -1,0 +1,13 @@
+diff --git a/nidr/nidr.c b/nidr/nidr.c
+index a5858d12..d535a974 100644
+--- a/nidr/nidr.c
++++ b/nidr/nidr.c
+@@ -2479,6 +2479,8 @@ nidr_cleanup(void)
+  void
+ nidr_setup(const char *parser, FILE *df)
+ {
++	nidr_alloc_error_cache();
++
+ 	const char *s;
+ 	int comkeep, oneline;
+ 

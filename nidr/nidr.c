@@ -2479,6 +2479,8 @@ nidr_cleanup(void)
  void
 nidr_setup(const char *parser, FILE *df)
 {
+	nidr_alloc_error_cache();
+
 	const char *s;
 	int comkeep, oneline;
 
