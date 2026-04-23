@@ -44,8 +44,7 @@ C+-----------------------------------------------------------------------+
       SUBROUTINE ncsuopt_direct(fep, x, n, eps, maxf, maxT, fmin, l, u,
      +                          algmethod, Ierror, logfile, fglobal,
      +                          fglper, volper, sigmaper, iidata, 
-     +                          iisize, ddata, idsize, cdata, icsize, 
-     +                          quiet)
+     +                          iisize, ddata, idsize, quiet)
 
 C+-----------------------------------------------------------------------+
 C|    SUBROUTINE Direct                                                  |
@@ -180,10 +179,9 @@ C| User Variables.                                                       |
 C| These can be used to pass user defined data to the function to be     |
 C| optimized.                                                            |
 C+-----------------------------------------------------------------------+
-      INTEGER iisize, idsize, icsize
+      INTEGER iisize, idsize
       INTEGER iidata(iisize)
       DOUBLE PRECISION ddata(idsize)
-      Character*40 cdata(icsize)
 
       logical quiet    ! bjb
 
@@ -342,8 +340,7 @@ C+-----------------------------------------------------------------------+
       CALL DIRheader(logfile, version, x, n, eps, maxf, maxT, l, u,
      +               algmethod, maxfunc, maxdeep, fglobal, fglper,
      +               Ierror, epsfix, iepschange, volper, sigmaper,
-     +               iidata, iisize, ddata, idsize, cdata,
-     +               icsize, quiet)   ! bjb
+     +               iidata, iisize, ddata, idsize, quiet)   ! bjb
 C+-----------------------------------------------------------------------+
 C| If an error has occured while writing the header (we do some checking |
 C| of variables there), return to the main program.                      |
@@ -366,7 +363,7 @@ C+-----------------------------------------------------------------------+
 C| Start of application-specific initialisation.                         |
 C+-----------------------------------------------------------------------+
       CALL DIRInitSpecific(x,n,
-     +   iidata, iisize, ddata, idsize, cdata, icsize)
+     +   iidata, iisize, ddata, idsize)
 C+-----------------------------------------------------------------------+
 C| End of application-specific initialisation.                           |
 C+-----------------------------------------------------------------------+
@@ -391,7 +388,7 @@ C+-----------------------------------------------------------------------+
       CALL DIRpreprc(u,l,n,l,u,oops)
       IF (oops .GT. 0) THEN
         Write(*,10005)
-        Write(logfile,10005)
+        IF (logfile .gt. 0) Write(logfile,10005)
         IError = -3
         Return
       END IF
@@ -406,19 +403,19 @@ C+-----------------------------------------------------------------------+
      +   dwrit,logfile,ArrayI,maxI,List2,w,x,l,u,fmin,minpos,
      +   thirds,levels,maxfunc,maxdeep,n,MaxDim,fmax,Ifeasiblef,
      +   IInfesiblef, Ierror,
-     +   iidata, iisize, ddata, idsize, cdata, icsize)
+     +   iidata, iisize, ddata, idsize)
 C+-----------------------------------------------------------------------+
 C| Added error checking.                                                 |
 C+-----------------------------------------------------------------------+
       IF (Ierror .lt. 0) then
          IF (Ierror .eq. -4) THEN
             Write(*,10006)
-            Write(logfile,10006)
+            IF (logfile .gt. 0) Write(logfile,10006)
             return
          END IF
          IF (Ierror .eq. -5) THEN
             Write(*,10007)
-            Write(logfile,10007)
+            IF (logfile .gt. 0) Write(logfile,10007)
             return
          END IF
       END IF
@@ -434,10 +431,10 @@ C| the iteration, the number of function evaluations done and fmin.      |
 C+-----------------------------------------------------------------------+
       IF (Ifeasiblef .gt. 0) then
         if (.not. quiet) write(*,10012) tstart-1,numfunc     ! bjb
-        write(logfile,10012) t,numfunc
+        IF (logfile .gt. 0) write(logfile,10012) tstart-1,numfunc
       ELSE
         if (.not. quiet) Write(*,10002) numfunc, fmin, fmax     ! bjb
-        Write(logfile,10003) tstart-1,numfunc,fmin
+        IF (logfile .gt. 0) Write(logfile,10003) tstart-1,numfunc,fmin
       END IF
 C+-----------------------------------------------------------------------+
 C+-----------------------------------------------------------------------+
@@ -467,10 +464,12 @@ C+-----------------------------------------------------------------------+
               Write(*,10021)
               Write(*,10022)
               Write(*,10023)
-              Write(logfile,10020)
-              Write(logfile,10021)
-              Write(logfile,10022)
-              Write(logfile,10023)
+              IF (logfile .gt. 0) THEN
+                 Write(logfile,10020)
+                 Write(logfile,10021)
+                 Write(logfile,10022)
+                 Write(logfile,10023)
+              END IF
               return
           END IF
         ENDIF
@@ -497,7 +496,7 @@ C| dept, stop the computation.                                           |
 C+-----------------------------------------------------------------------+
               IF (actdeep+1 .GE. mdeep) THEN
                  Write(*,10004)
-                 write(logfile,10004)
+                 IF (logfile .gt. 0) write(logfile,10004)
                  Ierror = -6
                  GOTO 100
               END IF
@@ -530,13 +529,13 @@ C+-----------------------------------------------------------------------+
      +             x,l,fmin,minpos,u,n,maxfunc,maxdeep,oops)
               IF (oops .GT. 0) THEN
                 Write(*,10006)
-                Write(logfile,10006)
+                IF (logfile .gt. 0) Write(logfile,10006)
                 IError = -4
                 return
               END IF
               Newtosample = newtosample + maxI
               CALL fep(n,c,l,u,point,maxI,start,maxfunc,f,
-     +                 iidata, iisize, ddata, idsize, cdata, icsize)
+     +                 iidata, iisize, ddata, idsize)
 C+-----------------------------------------------------------------------+
 C| JG 01/22/01 Added variable to keep track of the maximum value found.  |
 C+-----------------------------------------------------------------------+
@@ -544,10 +543,10 @@ C+-----------------------------------------------------------------------+
      +            length,dwrit,logfile,f,free,maxI,point,x,l,
      +            fmin,minpos,u,n,maxfunc,maxdeep,oops,fmax,
      +            Ifeasiblef,IInfesiblef,
-     +            iidata, iisize, ddata, idsize, cdata, icsize)
+     +            iidata, iisize, ddata, idsize)
               IF (oops .GT. 0) THEN
                 Write(*,10007)
-                Write(logfile,10007)
+                IF (logfile .gt. 0) Write(logfile,10007)
                 IError = -5
                 return
               END IF
@@ -577,7 +576,7 @@ C| in the array.                                                         |
 C+-----------------------------------------------------------------------+
         IF (oldpos .LT. minpos) THEN
           if (.not. quiet) Write(*,10002) numfunc,fmin, fmax     ! bjb
-          Write(logfile,10003) t,numfunc,fmin
+          IF (logfile .gt. 0) Write(logfile,10003) t,numfunc,fmin
         END IF
 C+-----------------------------------------------------------------------+
 C| If no feasible point has been found, give out the iteration, the      |
@@ -585,7 +584,7 @@ C| number of function evaluations and a warning.                         |
 C+-----------------------------------------------------------------------+
         IF (Ifeasiblef .gt. 0) then
           if (.not. quiet) write(*,10012) t,numfunc     ! bjb
-          write(logfile,10012) t,numfunc
+          IF (logfile .gt. 0) write(logfile,10012) t,numfunc
         END IF
 C+-----------------------------------------------------------------------+
 C+-----------------------------------------------------------------------+
@@ -612,7 +611,7 @@ C+-----------------------------------------------------------------------+
         IF (delta .LE. volper) THEN
            Ierror = 4
            if (.not. quiet) Write(*,10011) delta, volper    ! bjb
-           Write(logfile,10011) delta, volper
+           IF (logfile .gt. 0) Write(logfile,10011) delta, volper
            GOTO 100
         END IF
 C+-----------------------------------------------------------------------+
@@ -625,7 +624,7 @@ C+-----------------------------------------------------------------------+
         IF (delta .LE. sigmaper) THEN
            Ierror = 5
            if (.not. quiet) Write(*,10013) delta, sigmaper     ! bjb
-           Write(logfile,10013) delta, sigmaper
+           IF (logfile .gt. 0) Write(logfile,10013) delta, sigmaper
            GOTO 100
         END IF
 C+-----------------------------------------------------------------------+
@@ -637,7 +636,7 @@ C+-----------------------------------------------------------------------+
      +   THEN
            Ierror = 3
            if (.not. quiet) Write(*,10010)     ! bjb
-           Write(logfile,10010)
+           IF (logfile .gt. 0) Write(logfile,10010)
            GOTO 100
         END IF
 C+-----------------------------------------------------------------------+
@@ -668,7 +667,7 @@ C+-----------------------------------------------------------------------+
         IF (increase .eq. 1) then        
            maxf = numfunc + oldmaxf
            IF (Ifeasiblef .eq. 0) then
-             write(logfile,10031) maxf
+             IF (logfile .gt. 0) write(logfile,10031) maxf
              increase = 0
            END IF
         END IF
@@ -682,11 +681,11 @@ C+-----------------------------------------------------------------------+
            IF (Ifeasiblef .eq. 0) then
               Ierror = 1
               if (.not. quiet) Write(*,10008)     ! bjb
-              Write(logfile,10008)
+              IF (logfile .gt. 0) Write(logfile,10008)
               GOTO 100
            ELSE
               increase = 1
-              write(logfile,10030) numfunc
+              IF (logfile .gt. 0) write(logfile,10030) numfunc
               maxf = numfunc+ oldmaxf
            END IF
         END IF
@@ -702,7 +701,7 @@ C| The algorithm stopped after maxT iterations.                          |
 C+-----------------------------------------------------------------------+
       Ierror = 2
       if (.not. quiet) Write(*,10009)     ! bjb
-      Write(logfile,10009)
+      IF (logfile .gt. 0) Write(logfile,10009)
 
 100   CONTINUE
 C+-----------------------------------------------------------------------+

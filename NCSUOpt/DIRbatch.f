@@ -12,7 +12,7 @@ C+-----------------------------------------------------------------------+
      +           dwrit,logfile,f,free,maxI,point,x,l,fmin,
      +           minpos,u,n,maxfunc,maxdeep,oops,fmax,
      +            IFeasiblef,IInfesiblef,
-     +           iidata, iisize, ddata, idsize, cdata, icsize) 
+     +           iidata, iisize, ddata, idsize) 
       IMPLICIT NONE
 
 C+-----------------------------------------------------------------------+
@@ -39,10 +39,9 @@ C+-----------------------------------------------------------------------+
 C+-----------------------------------------------------------------------+
 C| Variables to pass user defined data to the function to be optimized.  |
 C+-----------------------------------------------------------------------+
-      INTEGER iisize, idsize, icsize
+      INTEGER iisize, idsize
       INTEGER iidata(iisize)
       DOUBLE PRECISION ddata(idsize)
-      CHARACTER*40 cdata(icsize)
       
 C+-----------------------------------------------------------------------+
 C| Set the pointer to the first function to be evaluated,                |
@@ -130,17 +129,16 @@ C+-----------------------------------------------------------------------+
 C| Problem-specific Initialisation                                       |
 C+-----------------------------------------------------------------------+
       SUBROUTINE DIRInitSpecific(x,n,
-     +   iidata, iisize, ddata, idsize, cdata, icsize)
+     +   iidata, iisize, ddata, idsize)
       IMPLICIT NONE
       INTEGER n
       DOUBLE PRECISION x(n)
 C+-----------------------------------------------------------------------+
 C| Variables to pass user defined data to the function to be optimized.  |
 C+-----------------------------------------------------------------------+
-      INTEGER iisize, idsize, icsize
+      INTEGER iisize, idsize
       INTEGER iidata(iisize)
       DOUBLE PRECISION ddata(idsize)
-      CHARACTER*40 cdata(icsize)
 C+-----------------------------------------------------------------------+
 C| Problem - specific variables !                                        |
 C+-----------------------------------------------------------------------+

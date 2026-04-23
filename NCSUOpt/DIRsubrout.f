@@ -82,15 +82,17 @@ C+-----------------------------------------------------------------------+
                help2 = thirds(S(i,2)) - thirds(S(j,2))
                help2 = (f(i_,1) - f(j_,1))/help2
                IF (help2 .LE. 0.D0) THEN
-                 IF (dwrit .EQ. 2) THEN
-                   Write(logfile,*) "thirds > 0,help2 <= 0"
-                 END IF
+                IF (dwrit .EQ. 2) THEN
+                   IF (logfile .gt. 0)
+     +                Write(logfile,*) "thirds > 0,help2 <= 0"
+                END IF
                  GOTO 60
                END IF
                IF (help2 .LT. helplower) THEN
-                 IF (dwrit .EQ. 2) THEN
-                   Write(logfile,*) "helplower = ",help2
-                 END IF
+                IF (dwrit .EQ. 2) THEN
+                   IF (logfile .gt. 0)
+     +                Write(logfile,*) "helplower = ",help2
+                END IF
                  helplower = help2
                END IF
          	   END IF
@@ -109,15 +111,17 @@ C+-----------------------------------------------------------------------+
                help2 = thirds(S(i,2)) - thirds(S(j,2))
                help2 = (f(i_,1) - f(j_,1))/help2
                IF (help2 .LE. 0.D0) THEN
-                 IF (dwrit .EQ. 2) THEN
-                   Write(logfile,*) "thirds < 0,help2 <= 0"
-                 END IF
+                IF (dwrit .EQ. 2) THEN
+                   IF (logfile .gt. 0)
+     +                Write(logfile,*) "thirds < 0,help2 <= 0"
+                END IF
                  GOTO 60
                END IF
                IF (help2 .GT. helpgreater) THEN
-                 IF (dwrit .EQ. 2) THEN
-                   Write(logfile,*) "helpgreater = ",help2
-                 END IF
+                IF (dwrit .EQ. 2) THEN
+                   IF (logfile .gt. 0)
+     +                Write(logfile,*) "helpgreater = ",help2
+                END IF
                  helpgreater = help2
                END IF
              END IF
@@ -135,14 +139,16 @@ C+-----------------------------------------------------------------------+
            IF ((f(j_,1) - helplower * thirds(S(j,2))) .GT. 
      +        (fmin - eps*abs(fmin))) THEN
               IF (dwrit .EQ. 2) THEN
-                Write(logfile,*) "> fmin - eps|fmin|"
+                IF (logfile .gt. 0)
+     +             Write(logfile,*) "> fmin - eps|fmin|"
               END IF
               GOTO 60
             END IF
          ELSE
            IF (dwrit .EQ. 2) THEN
-           Write(logfile,*) "helpgreater > helplower",helpgreater,
-     +            helplower,helpgreater - helplower
+              IF (logfile .gt. 0)
+     +           Write(logfile,*) "helpgreater > helplower",
+     +              helpgreater, helplower, helpgreater - helplower
            END IF
            GOTO 60
          END IF
@@ -445,8 +451,9 @@ C+-----------------------------------------------------------------------+
                pos = point(pos)
             end if
             if (pos .eq. 0) then
-               write(logfile,*) 'Error in DIRREsortlist: We went ',
-     + 'through the whole list and could not find the point to 
+               IF (logfile .gt. 0)
+     +            write(logfile,*) 'Error in DIRREsortlist: We went ',
+     +            'through the whole list and could not find the point to 
      +  replace!!'
                goto 20
             end if
@@ -652,7 +659,7 @@ C+-----------------------------------------------------------------------+
      + dwrit,logfile,ArrayI,maxI,List2,w,x,l,u,fmin,minpos,thirds,
      + levels,maxfunc,maxdeep,n,maxor,fmax,Ifeasiblef,IInfeasible, 
      + Ierror,
-     + iidata, iisize, ddata, idsize, cdata, icsize)
+     + iidata, iisize, ddata, idsize)
       IMPLICIT None
       Integer maxfunc,maxdeep,n,maxor
       Double Precision  f(maxfunc,2),c(maxfunc,maxor),fmin
@@ -683,10 +690,9 @@ C JG 09/15/00 Added variable JONES (see above)
 C+-----------------------------------------------------------------------+
 C| Variables to pass user defined data to the function to be optimized.  |
 C+-----------------------------------------------------------------------+
-      INTEGER iisize, idsize, icsize
+      INTEGER iisize, idsize
       INTEGER iidata(iisize)
       Double Precision ddata(idsize)
-      Character*40 cdata(icsize)
         
       fmin = 1.D20
       costmin = fmin
@@ -724,7 +730,7 @@ C JG 09/15/00 Initialiase levels to contain 1/j
         length(1,i) = 0
 20    CONTINUE
       CALL fep(n,x,l,u,0,0,1,maxfunc,f,
-     +         iidata, iisize, ddata, idsize, cdata, icsize)
+     +         iidata, iisize, ddata, idsize)
       help=f(1,2)
 C+------------------------------------------------------------------+
 C|      CALL DIRinfcn(fcn,x,l,u,n,f(1,1),help,
@@ -766,7 +772,7 @@ C+-----------------------------------------------------------------------+
          return
       END IF
       CALL fep(n,c,l,u,point,maxI,new,maxfunc,f,
-     +         iidata, iisize, ddata, idsize, cdata, icsize)
+     +         iidata, iisize, ddata, idsize)
 C+-----------------------------------------------------------------------+
 C| JG 01/22/01 Added variable to keep track of the maximum value found.  |
 C|             Added variable to keep track if feasible point was found. |
@@ -775,7 +781,7 @@ C+-----------------------------------------------------------------------+
      +         dwrit,logfile,f,free,maxI,point,x,l,
      +         fmin,minpos,u,n,maxfunc,maxdeep,oops,fmax,Ifeasiblef,
      +         IInfeasible,
-     +         iidata, iisize, ddata, idsize, cdata, icsize)
+     +         iidata, iisize, ddata, idsize)
 C+-----------------------------------------------------------------------+
 C| JG 01/23/01 Added error checking.                                     |
 C+-----------------------------------------------------------------------+
@@ -870,8 +876,10 @@ C+-----------------------------------------------------------------------+
            Write(*,1000) 
            Write(*,1001) 
            IF (dwrit .EQ. 2) THEN
-             Write(logfile,1000)
-             Write(logfile,1001)
+             IF (logfile .gt. 0) THEN
+                Write(logfile,1000)
+                Write(logfile,1001)
+             END IF
            END IF
            oops = 1
            RETURN
@@ -890,7 +898,7 @@ C+-----------------------------------------------------------------------+
       IF (pos .GT. 0) THEN
           Write(*,2000)
           IF (dwrit .EQ. 2) THEN
-             Write(logfile,2000)
+             IF (logfile .gt. 0) Write(logfile,2000)
            END IF
           STOP
 2000      FORMAT("Error ! ") 
@@ -1184,7 +1192,7 @@ C| The subroutine whose name is passed through the argument fcn.         |
 C|                                                                       |
 C+-----------------------------------------------------------------------+
       subroutine DIRinfcn(fcn,x,c1,c2,n,f,flag,
-     +                  iidata, iisize, ddata, idsize, cdata, icsize)
+     +                  iidata, iisize, ddata, idsize)
 
       implicit none
       integer n,i, flag
@@ -1194,10 +1202,9 @@ C+-----------------------------------------------------------------------+
 C+-----------------------------------------------------------------------+
 C| Variables to pass user defined data to the function to be optimized.  |
 C+-----------------------------------------------------------------------+
-      INTEGER iisize, idsize, icsize
+      INTEGER iisize, idsize
       INTEGER iidata(iisize)
       Double Precision ddata(idsize)
-      Character*40 cdata(icsize)
 
 
 C+-----------------------------------------------------------------------+
@@ -1210,7 +1217,7 @@ C+-----------------------------------------------------------------------+
 C| Call the function-evaluation subroutine fcn.                          |
 C+-----------------------------------------------------------------------+
       f = 0.D0
-      CALL fcn(n,x,f,flag,iidata, iisize, ddata, idsize, cdata, icsize)
+      CALL fcn(n,x,f,flag,iidata, iisize, ddata, idsize)
 
 C+-----------------------------------------------------------------------+
 C| Rescale the variable x.                                               |
@@ -1260,8 +1267,7 @@ C+-----------------------------------------------------------------------+
      +               algmethod, maxfunc, maxdeep,    
      +               fglobal, fglper, Ierror,epsfix, iepschange,
      +               volper, sigmaper, 
-     +               iidata, iisize, ddata, idsize, cdata, icsize, 
-     +               quiet)
+     +               iidata, iisize, ddata, idsize, quiet)
       IMPLICIT None
       Integer logfile, version,n, maxf, maxT
       Integer algmethod, Ierror, i, maxfunc, maxdeep
@@ -1272,16 +1278,15 @@ C+-----------------------------------------------------------------------+
 C+-----------------------------------------------------------------------+
 C| Variables to pass user defined data to the function to be optimized.  |
 C+-----------------------------------------------------------------------+
-      INTEGER iisize, idsize, icsize
+      INTEGER iisize, idsize
       INTEGER iidata(iisize)
       Double Precision ddata(idsize)
-      Character*40 cdata(icsize)
       
       Integer Imainver, Isubver, Isubsubver, Ihelp, numerrors
 
       logical quiet     ! bjb
 
-      Write(logfile,900)
+      IF (logfile .gt. 0) Write(logfile,900)
       numerrors = 0
       IError = 0
       Imainver = INT(version/100)
@@ -1304,7 +1309,10 @@ C+-----------------------------------------------------------------------+
         epsfix = 1.D100
       endif
       
-      write(logfile,100) Imainver, Isubver, Isubsubver
+      IF (logfile .gt. 0) then
+         write(logfile,100) Imainver, Isubver,
+     +      Isubsubver
+      end if
       if (.not. quiet) then   ! bjb
          write(*,100) Imainver, Isubver, Isubsubver
 C+-----------------------------------------------------------------------+
@@ -1329,31 +1337,35 @@ C+-----------------------------------------------------------------------+
 C| JG 07/16/01 Removed printout of contents in cdata(1).                 |
 C+-----------------------------------------------------------------------+
 C      write(logfile,*) cdata(1)
-      write(logfile,200) n
-      write(logfile,201) eps
-      write(logfile,202) maxf
-      write(logfile,203) maxT
-      write(logfile,204) fglobal
-      write(logfile,205) fglper
-      write(logfile,208) volper
-      write(logfile,209) sigmaper
-      if (iepschange .eq. 1) then
-         write(logfile,206)
-      else
-         write(logfile,207)
-      end if
+      IF (logfile .gt. 0) THEN
+         write(logfile,200) n
+         write(logfile,201) eps
+         write(logfile,202) maxf
+         write(logfile,203) maxT
+         write(logfile,204) fglobal
+         write(logfile,205) fglper
+         write(logfile,208) volper
+         write(logfile,209) sigmaper
+         if (iepschange .eq. 1) then
+            write(logfile,206)
+         else
+            write(logfile,207)
+         end if
+      END IF
       if (algmethod .eq. 0) then
          if (.not. quiet) then     ! bjb
             write(*,*) 'Jones original DIRECT algorithm is used.'
          end if
-         write(logfile,*) 'Jones original DIRECT algorithm is used.'
+         IF (logfile .gt. 0)
+     +      write(logfile,*) 'Jones original DIRECT algorithm is used.'
       else
          if (.not. quiet) then     ! bjb
             write(*,*) 'Our modification of the DIRECT algorithm',
      +                 ' is used.'
          end if
-         write(logfile,*) 'Our modification of the DIRECT algorithm',
-     +                    ' is used.'
+         IF (logfile .gt. 0)
+     +      write(logfile,*) 'Our modification of the DIRECT algorithm',
+     +                         ' is used.'
       end if
       do 1010, i = 1,n
          IF (u(i) .le. l(i)) then
@@ -1361,13 +1373,13 @@ C      write(logfile,*) cdata(1)
             if (.not. quiet) then     ! bjb
                write(*,153) i,l(i), u(i)
             end if
-            write(logfile,153) i,l(i), u(i)
+            IF (logfile .gt. 0) write(logfile,153) i,l(i), u(i)
             numerrors = numerrors + 1
          else
             if (.not. quiet) then     ! bjb
                write(*,152) i,l(i), u(i)
             end if
-            write(logfile,152) i,l(i), u(i)
+            IF (logfile .gt. 0) write(logfile,152) i,l(i), u(i)
          end if
 1010  continue
 C+-----------------------------------------------------------------------+
@@ -1377,25 +1389,26 @@ C| occurred, we give out an extra message.                               |
 C+-----------------------------------------------------------------------+
       IF ((maxf+20) .GT. maxfunc) THEN
          Write(*,10001) maxf, maxfunc
-         Write(logfile,10001) maxf, maxfunc
+         IF (logfile .gt. 0) Write(logfile,10001) maxf, maxfunc
          numerrors = numerrors + 1
          IError = -2
       END IF
       if (IError .lt. 0) then
-         write(logfile,120)
+         IF (logfile .gt. 0) write(logfile,120)
          if (.not. quiet) write(*,120)     ! bjb
          if (numerrors .eq. 1) then
             write(*,105)
-            write(logfile,105)
+            IF (logfile .gt. 0) write(logfile,105)
          else
             write(*,110) numerrors
-            write(logfile,110) numerrors
+            IF (logfile .gt. 0) write(logfile,110) numerrors
          end if
       end if
-      write(logfile,120)
+      IF (logfile .gt. 0) write(logfile,120)
       if (.not. quiet) write(*,120)     ! bjb
       if (IError .ge. 0) then
-         write(logfile,*) 'Iteration   # of f-eval.   fmin'
+         IF (logfile .gt. 0)
+     +      write(logfile,*) 'Iteration   # of f-eval.   fmin'
       end if
 
 10001 FORMAT("WARNING : The maximum number of function evaluations (",
@@ -1438,17 +1451,20 @@ C+-----------------------------------------------------------------------+
       Double Precision x(n), l(n), u(n)
       Double Precision fglobal , fmin
 
-      Write(logfile,900)
-      Write(logfile,1000) fmin
-      Write(logfile,1010) numfunc
-      if (fglobal .gt. -1.D99) then
-         write(logfile,1001) 100*(fmin-fglobal)/max(1.D0,abs(fglobal))
-      end if
-      Write(logfile,1002) 
-      do 100, i = 1,n
-         write(logfile,1003) i, x(i), x(i)-l(i), u(i) - x(i)
-100   continue
-      write(logfile,1200)
+      IF (logfile .gt. 0) THEN
+         Write(logfile,900)
+         Write(logfile,1000) fmin
+         Write(logfile,1010) numfunc
+         if (fglobal .gt. -1.D99) then
+            write(logfile,1001)
+     +         100*(fmin-fglobal)/max(1.D0,abs(fglobal))
+         end if
+         Write(logfile,1002) 
+         do 100, i = 1,n
+            write(logfile,1003) i, x(i), x(i)-l(i), u(i) - x(i)
+100      continue
+         write(logfile,1200)
+      END IF
       
 900   FORMAT('--------------------------------- Summary -------------'
      +       ,'-------------------')
@@ -1473,10 +1489,12 @@ C+-----------------------------------------------------------------------+
       Write(*,10003)
       Write(*,10004)
       IF (dwrit .EQ. 2) THEN
-         Write(logfile,10001) maxf
-         Write(logfile,10002) maxfunc
-         Write(logfile,10003)
-         Write(logfile,10004)
+         IF (logfile .gt. 0) THEN
+            Write(logfile,10001) maxf
+            Write(logfile,10002) maxfunc
+            Write(logfile,10003)
+            Write(logfile,10004)
+         END IF
       END IF
 
 10001 FORMAT("The maximum number of function evaluations (",
@@ -1495,9 +1513,11 @@ C+-----------------------------------------------------------------------+
       Write(*,10002) maxdeep
       Write(*,10003)
       IF (dwrit .EQ. 2) THEN
-         Write(logfile,10001) maxT
-         Write(logfile,10002) maxdeep
-         Write(logfile,10003)
+         IF (logfile .gt. 0) THEN
+            Write(logfile,10001) maxT
+            Write(logfile,10002) maxdeep
+            Write(logfile,10003)
+         END IF
       END IF
 
 10001 FORMAT("The maximum number of iterations (",I5,
