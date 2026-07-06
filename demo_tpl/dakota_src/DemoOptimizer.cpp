@@ -223,7 +223,7 @@ void DemoTPLOptimizer::set_demo_parameters()
 
   // Check for native Demo_Opt input file.  The file name needs to be
   // included in the Dakota input file.
-  String adv_opts_file = probDescDB.get_string("method.advanced_options_file");
+  String adv_opts_file = probDescDB.get<const String>("method.advanced_options_file");
   if (!adv_opts_file.empty())
   {
     if (!std::filesystem::exists(adv_opts_file))
