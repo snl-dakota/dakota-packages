@@ -1,9 +1,9 @@
-prefix=/ascldap/users/rhoope/temp/dakota-packages/eigen3
+prefix=/Users/mbolsta/test/Dakota/dakota-packages/eigen3
 exec_prefix=${prefix}
 
 Name: Eigen3
 Description: A C++ template library for linear algebra: vectors, matrices, and related algorithms
 Requires:
-Version: 3.3.7
+Version: 3.4.1
 Libs:
 Cflags: -I${prefix}/include/eigen3
