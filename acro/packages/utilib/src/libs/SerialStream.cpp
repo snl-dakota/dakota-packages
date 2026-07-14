@@ -325,7 +325,11 @@ public:
 
    ~sentry()
    {
+#if __cplusplus < 202002L
       if ( (oss.flags() & ios_base::unitbuf) && ! std::uncaught_exception() )
+#else
+      if ( (oss.flags() & ios_base::unitbuf) && ! std::uncaught_exceptions() )
+#endif
       {
          // Can't call flush directly or else will get into recursive lock.
          if ( oss.rdbuf() && oss.rdbuf()->pubsync() == -1 )
