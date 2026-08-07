@@ -160,17 +160,17 @@ public:
   #endif
 
   /// Empty constructor.
-  BitArrayBase<k,T,P>() { construct(0); }
+  BitArrayBase() { construct(0); }
 
   /// Explicit constructor.
   explicit
-  BitArrayBase<k,T,P>(const size_type     len,
-		      bitword*            d=0,
-		      const EnumDataOwned o=DataNotOwned) 
+  BitArrayBase(const size_type     len,
+	       bitword*            d=0,
+	       const EnumDataOwned o=DataNotOwned) 
     { construct(len,d,o); }
 
   /// Copy constructor
-  BitArrayBase<k,T,P>(const BitArrayBase<k,T,P>& array)
+  BitArrayBase(const BitArrayBase<k,T,P>& array)
      : ArrayBase<bitword,P>(array)
     { construct(array.Len,array.Data,DataOwned); }
 

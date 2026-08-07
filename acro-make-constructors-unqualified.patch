@@ -1,0 +1,70 @@
+diff --git a/acro/packages/utilib/src/utilib/BitArrayBase.h b/acro/packages/utilib/src/utilib/BitArrayBase.h
+index ce703288..3ee9f128 100644
+--- a/acro/packages/utilib/src/utilib/BitArrayBase.h
++++ b/acro/packages/utilib/src/utilib/BitArrayBase.h
+@@ -160,17 +160,17 @@ public:
+   #endif
+ 
+   /// Empty constructor.
+-  BitArrayBase<k,T,P>() { construct(0); }
++  BitArrayBase() { construct(0); }
+ 
+   /// Explicit constructor.
+   explicit
+-  BitArrayBase<k,T,P>(const size_type     len,
+-		      bitword*            d=0,
+-		      const EnumDataOwned o=DataNotOwned) 
++  BitArrayBase(const size_type     len,
++	       bitword*            d=0,
++	       const EnumDataOwned o=DataNotOwned) 
+     { construct(len,d,o); }
+ 
+   /// Copy constructor
+-  BitArrayBase<k,T,P>(const BitArrayBase<k,T,P>& array)
++  BitArrayBase(const BitArrayBase<k,T,P>& array)
+      : ArrayBase<bitword,P>(array)
+     { construct(array.Len,array.Data,DataOwned); }
+ 
+diff --git a/acro/packages/utilib/src/utilib/EnumBitArray.h b/acro/packages/utilib/src/utilib/EnumBitArray.h
+index eb427164..3a5e5873 100644
+--- a/acro/packages/utilib/src/utilib/EnumBitArray.h
++++ b/acro/packages/utilib/src/utilib/EnumBitArray.h
+@@ -43,20 +43,20 @@ class EnumBitArray : public BitArrayBase< k, T, EnumBitArray<k,T> >
+ public:
+ 
+   /// Empty constructor.
+-  EnumBitArray<k,T>() : 
++  EnumBitArray() : 
+ 	BitArrayBase< k, T, EnumBitArray<k,T> >()
+ 	{ }
+   
+   /// Explicit constructor: construct with data provided by the \a d array.
+   explicit
+-  EnumBitArray<k,T>(const size_type len, 
+-		    bitword* d=0, 
+-		    const EnumDataOwned o=DataNotOwned) :
++  EnumBitArray(const size_type len, 
++	       bitword* d=0, 
++	       const EnumDataOwned o=DataNotOwned) :
+ 	BitArrayBase< k, T, EnumBitArray<k,T> >(len,d,o)
+ 	{ }
+   
+   /// Copy constructor.
+-  EnumBitArray<k,T>(const EnumBitArray<k,T>& array) :
++  EnumBitArray(const EnumBitArray<k,T>& array) :
+ 	BitArrayBase< k, T, EnumBitArray<k,T> >(array.Len,array.Data,DataOwned)
+ 	{ }
+ 
+diff --git a/acro/packages/utilib/src/utilib/Num2DArray.h b/acro/packages/utilib/src/utilib/Num2DArray.h
+index 13a4f0aa..0f98d94b 100644
+--- a/acro/packages/utilib/src/utilib/Num2DArray.h
++++ b/acro/packages/utilib/src/utilib/Num2DArray.h
+@@ -177,7 +177,7 @@ public:
+   Num2DArray<T>& operator=(const Num2DArray<T>& array)
+                 {Simple2DArray<T>::operator=(array); return *this;}
+ 
+-  virtual ~Num2DArray<T>() {}
++  virtual ~Num2DArray() {}
+ 
+ 	/// Sets the array equal to the pair-wise value \a x + \a y
+   void plus  (const Num2DArray<T>& x, const Num2DArray<T>& y);

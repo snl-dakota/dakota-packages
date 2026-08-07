@@ -43,20 +43,20 @@ class EnumBitArray : public BitArrayBase< k, T, EnumBitArray<k,T> >
 public:
 
   /// Empty constructor.
-  EnumBitArray<k,T>() : 
+  EnumBitArray() : 
 	BitArrayBase< k, T, EnumBitArray<k,T> >()
 	{ }
   
   /// Explicit constructor: construct with data provided by the \a d array.
   explicit
-  EnumBitArray<k,T>(const size_type len, 
-		    bitword* d=0, 
-		    const EnumDataOwned o=DataNotOwned) :
+  EnumBitArray(const size_type len, 
+	       bitword* d=0, 
+	       const EnumDataOwned o=DataNotOwned) :
 	BitArrayBase< k, T, EnumBitArray<k,T> >(len,d,o)
 	{ }
   
   /// Copy constructor.
-  EnumBitArray<k,T>(const EnumBitArray<k,T>& array) :
+  EnumBitArray(const EnumBitArray<k,T>& array) :
 	BitArrayBase< k, T, EnumBitArray<k,T> >(array.Len,array.Data,DataOwned)
 	{ }
 

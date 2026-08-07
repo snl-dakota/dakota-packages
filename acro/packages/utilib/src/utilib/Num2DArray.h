@@ -177,7 +177,7 @@ public:
   Num2DArray<T>& operator=(const Num2DArray<T>& array)
                 {Simple2DArray<T>::operator=(array); return *this;}
 
-  virtual ~Num2DArray<T>() {}
+  virtual ~Num2DArray() {}
 
 	/// Sets the array equal to the pair-wise value \a x + \a y
   void plus  (const Num2DArray<T>& x, const Num2DArray<T>& y);
