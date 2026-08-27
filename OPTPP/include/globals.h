@@ -42,14 +42,6 @@ inline int max(int a,int b) { return ((a) >= (b) ? (a) : (b)); }
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
-// Microsoft's starts with an underscore, which is their convention 
-// for non-standard language extensions
-// Leveraging boost::math copysign might be an alternative worth considering
-#define copysign _copysign
-#endif
-
-
 #define WANT_MATH
 
 namespace OPTPP {
