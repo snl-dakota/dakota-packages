@@ -1,0 +1,13 @@
+diff --git a/acro/packages/utilib/src/utilib/pvector.h b/acro/packages/utilib/src/utilib/pvector.h
+index 6bc3efc5..9e670f35 100644
+--- a/acro/packages/utilib/src/utilib/pvector.h
++++ b/acro/packages/utilib/src/utilib/pvector.h
+@@ -65,6 +65,8 @@ public:
+    typedef const _Tp  *const_pointer;
+    typedef _Tp & reference;
+    typedef const _Tp & const_reference;
++   typedef typename base_t::iterator iterator;
++   typedef typename base_t::const_iterator const_iterator;
+    //typedef _PAlloc allocator_type;
+ 
+ #elif defined(UTILIB_OSF_CC) || defined(UTILIB_SOLARIS_CC)

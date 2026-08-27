@@ -65,6 +65,8 @@ public:
    typedef const _Tp  *const_pointer;
    typedef _Tp & reference;
    typedef const _Tp & const_reference;
+   typedef typename base_t::iterator iterator;
+   typedef typename base_t::const_iterator const_iterator;
    //typedef _PAlloc allocator_type;
 
 #elif defined(UTILIB_OSF_CC) || defined(UTILIB_SOLARIS_CC)
