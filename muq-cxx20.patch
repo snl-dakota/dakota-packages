@@ -1,0 +1,13 @@
+diff --git a/muq2/cmake/SetupCompiler.cmake b/muq2/cmake/SetupCompiler.cmake
+index 9df58402..ae371a57 100644
+--- a/muq2/cmake/SetupCompiler.cmake
++++ b/muq2/cmake/SetupCompiler.cmake
+@@ -32,7 +32,7 @@ endif()
+ message(STATUS "Final build type = " ${CMAKE_BUILD_TYPE})
+ 
+ # Require C++11
+-set(CMAKE_CXX_STANDARD 11)
++set(CMAKE_CXX_STANDARD 20)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ 
+ # Check to see if const& and by value need to be treated separately in AnyConstCast
