@@ -38,8 +38,8 @@ int CharString::serializer( SerialObject::elementList_t& serial,
    return BasicArray<char>::serializer(serial, tmp, serialize); 
 }
 
-const int CharString::register_serializer = 
-   Serializer().register_serializer<CharString>( "utilib::CharString", 
+const int CharString::register_serializer =
+   Serializer().register_serializer<CharString>( "utilib::CharString",
                                                  &CharString::serializer );
 
 

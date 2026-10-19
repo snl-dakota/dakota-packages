@@ -1,0 +1,38 @@
+diff --git a/acro/packages/utilib/src/libs/CharString.cpp b/acro/packages/utilib/src/libs/CharString.cpp
+index 1de4fb79..b4ea5dce 100644
+--- a/acro/packages/utilib/src/libs/CharString.cpp
++++ b/acro/packages/utilib/src/libs/CharString.cpp
+@@ -38,8 +38,8 @@ int CharString::serializer( SerialObject::elementList_t& serial,
+    return BasicArray<char>::serializer(serial, tmp, serialize); 
+ }
+ 
+-const int CharString::register_serializer = 
+-   Serializer().register_serializer<CharString>( "utilib::CharString", 
++const int CharString::register_serializer =
++   Serializer().register_serializer<CharString>( "utilib::CharString",
+                                                  &CharString::serializer );
+ 
+ 
+diff --git a/acro/packages/utilib/src/utilib/CharString.h b/acro/packages/utilib/src/utilib/CharString.h
+index 977b6e48..2bc6d8cb 100644
+--- a/acro/packages/utilib/src/utilib/CharString.h
++++ b/acro/packages/utilib/src/utilib/CharString.h
+@@ -402,6 +402,18 @@ inline utilib::UnPackBuffer& operator>>(utilib::UnPackBuffer& is,
+ 
+ DEFINE_FULL_ANY_EXTENSIONS(utilib::CharString);
+ 
++// Suppress duplicate-registration warnings that arise when multiple
++// shared libraries (e.g. libutilib.so and libdakota_src.so) each
++// instantiate BasicArray<CharString> and independently call
++// Serializer().register_serializer<BasicArray<CharString>>() with
++// their own copy of the function pointer.
++// BasicArray<CharString> is used purely as a container (e.g. string
++// splitting); it does not need a serializer of its own.
++template <>
++struct BasicArray_registration<CharString> {
++   static bool registrar() { return false; }
++};
++
+ } // namespace utilib
+ 
+ 

@@ -402,6 +402,18 @@ inline utilib::UnPackBuffer& operator>>(utilib::UnPackBuffer& is,
 
 DEFINE_FULL_ANY_EXTENSIONS(utilib::CharString);
 
+// Suppress duplicate-registration warnings that arise when multiple
+// shared libraries (e.g. libutilib.so and libdakota_src.so) each
+// instantiate BasicArray<CharString> and independently call
+// Serializer().register_serializer<BasicArray<CharString>>() with
+// their own copy of the function pointer.
+// BasicArray<CharString> is used purely as a container (e.g. string
+// splitting); it does not need a serializer of its own.
+template <>
+struct BasicArray_registration<CharString> {
+   static bool registrar() { return false; }
+};
+
 } // namespace utilib
 
 
